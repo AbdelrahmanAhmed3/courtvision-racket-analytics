@@ -8,6 +8,12 @@ DEFAULT_REPO_URL = "https://github.com/yastrebksv/TrackNet.git"
 DEFAULT_TRACKNET_DIR = "/kaggle/working/TrackNet"
 DEFAULT_INPUT = "data/raw/youtube_-jtV7IJP8NU_15s.mp4"
 DEFAULT_OUTPUT_DIR = "outputs/tracknet_ball"
+TRACKNET_RUNTIME_DEPS = [
+    "numpy",
+    "opencv-python",
+    "scipy",
+    "tqdm",
+]
 
 
 def run_command(command: list[str], cwd: Path | None = None) -> None:
@@ -28,16 +34,20 @@ def maybe_install_requirements(
     python_executable: str,
     tracknet_dir: Path,
     install_requirements: bool,
+    install_upstream_requirements: bool,
 ) -> None:
     requirements_path = tracknet_dir / "requirements.txt"
-    if not install_requirements:
-        return
-    if not requirements_path.exists():
-        raise FileNotFoundError(f"TrackNet requirements not found: {requirements_path}")
+    if install_requirements:
+        run_command([python_executable, "-m", "pip", "install", *TRACKNET_RUNTIME_DEPS])
 
-    run_command(
-        [python_executable, "-m", "pip", "install", "-r", str(requirements_path)]
-    )
+    if install_upstream_requirements:
+        if not requirements_path.exists():
+            raise FileNotFoundError(
+                f"TrackNet requirements not found: {requirements_path}"
+            )
+        run_command(
+            [python_executable, "-m", "pip", "install", "-r", str(requirements_path)]
+        )
 
 
 def infer_tracknet(
@@ -120,7 +130,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--install-requirements",
         action="store_true",
-        help="Install TrackNet requirements before inference.",
+        help=(
+            "Install compatible TrackNet runtime packages. This intentionally avoids "
+            "the upstream pinned requirements, which are too old for Kaggle "
+            "Python 3.12."
+        ),
+    )
+    parser.add_argument(
+        "--install-upstream-requirements",
+        action="store_true",
+        help=(
+            "Install TrackNet's original requirements.txt. Usually not recommended on "
+            "modern Kaggle images because it pins old packages like numpy 1.19.5."
+        ),
     )
     parser.add_argument(
         "--extrapolation",
@@ -145,7 +167,12 @@ def main() -> None:
 
     if not args.skip_clone:
         ensure_tracknet_repo(tracknet_dir, args.repo_url)
-    maybe_install_requirements(args.python, tracknet_dir, args.install_requirements)
+    maybe_install_requirements(
+        args.python,
+        tracknet_dir,
+        args.install_requirements,
+        args.install_upstream_requirements,
+    )
     infer_tracknet(
         python_executable=args.python,
         tracknet_dir=tracknet_dir,
