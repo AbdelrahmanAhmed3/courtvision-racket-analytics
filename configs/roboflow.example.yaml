@@ -1,0 +1,3 @@
+workspace: your_workspace
+workflow_id: your_workflow_id
+api_key_env: ROBOFLOW_API_KEY

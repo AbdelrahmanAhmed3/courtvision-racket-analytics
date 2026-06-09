@@ -1,0 +1,4 @@
+input_video: data/processed/demo_20s_720p.mp4
+polygon_path: configs/polygon_720p.json
+output_dir: outputs/demo
+frame_stride: 5

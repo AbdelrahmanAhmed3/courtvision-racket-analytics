@@ -1,0 +1,17 @@
+numpy
+opencv-python
+pandas
+pyyaml
+python-dotenv
+tqdm
+
+[dev]
+black
+pytest
+ruff
+
+[gpu]
+ultralytics
+
+[roboflow]
+inference-sdk

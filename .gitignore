@@ -1,0 +1,25 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local media, model weights, and generated outputs
+data/
+outputs/
+!data/
+!data/raw/
+!data/processed/
+!data/raw/README.md
+!data/processed/README.md
+!outputs/
+!outputs/README.md
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.pt
+*.pth
+*.onnx
