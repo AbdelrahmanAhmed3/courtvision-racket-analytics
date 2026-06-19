@@ -5,17 +5,26 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
+src/*.egg-info/
 
 # Local media, model weights, and generated outputs
-data/
-outputs/
 !data/
+data/*
 !data/raw/
+data/raw/*
 !data/processed/
+data/processed/*
 !data/raw/README.md
 !data/processed/README.md
 !outputs/
+outputs/*
 !outputs/README.md
+*.csv
+*.jsonl
+*.jpg
+*.jpeg
+*.png
 *.mp4
 *.avi
 *.mov
