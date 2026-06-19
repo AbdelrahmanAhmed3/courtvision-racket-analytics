@@ -13,9 +13,14 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from courtvision.detectors.base import Detection, filter_player_detections
-from courtvision.detectors.roboflow_detector import RoboflowDetector
-from courtvision.tracking.simple_tracker import (
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
+from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
+from courtvision.tracking.simple_tracker import (  # noqa: E402
     DEFAULT_IOU_THRESHOLD,
     SimpleIouTracker,
     TrackedDetection,
