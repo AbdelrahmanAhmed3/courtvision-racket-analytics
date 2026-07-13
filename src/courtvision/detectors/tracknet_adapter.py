@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,7 @@ import cv2
 import numpy as np
 
 TRACKNET_INPUT_SIZE = (640, 360)
+DEFAULT_TRACKNET_REPO_URL = "https://github.com/yastrebksv/TrackNet.git"
 
 
 @dataclass(frozen=True)
@@ -61,6 +63,18 @@ def load_tracknet_model(tracknet_dir: str | Path, model_path: str | Path, device
     model.to(device)
     model.eval()
     return model
+
+
+def ensure_tracknet_repo(
+    tracknet_dir: str | Path,
+    repo_url: str = DEFAULT_TRACKNET_REPO_URL,
+) -> Path:
+    tracknet_dir = Path(tracknet_dir)
+    if (tracknet_dir / "model.py").exists():
+        return tracknet_dir
+    tracknet_dir.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "clone", repo_url, str(tracknet_dir)], check=True)
+    return tracknet_dir
 
 
 def infer_ball_track(

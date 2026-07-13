@@ -36,6 +36,8 @@ from courtvision.calibration.landmarks import (  # noqa: E402
 from courtvision.calibration.validation import validate_homography  # noqa: E402
 
 DEFAULT_MODEL_ID = "tennis-v4d0h/2"
+DEFAULT_TRACKNET_DIR = REPO_ROOT / "tracknet-model" / "TrackNet"
+DEFAULT_TRACKNET_WEIGHTS = REPO_ROOT / "tracknet-model" / "model_best.pt"
 
 
 def reset_calibration() -> None:
@@ -139,6 +141,7 @@ def run_pipeline(
     tracknet_dir: str | None,
     tracknet_model_path: str | None,
     tracknet_device: str,
+    clone_tracknet: bool,
 ) -> subprocess.CompletedProcess[str]:
     command = [
         sys.executable,
@@ -167,6 +170,8 @@ def run_pipeline(
                 tracknet_device,
             ]
         )
+        if clone_tracknet:
+            command.append("--clone-tracknet")
     return subprocess.run(
         command,
         cwd=REPO_ROOT,
@@ -283,16 +288,33 @@ def main() -> None:
         )
         court_type = st.selectbox("Court type", ["tennis", "padel"])
         model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
-        track_ball = st.checkbox("Track ball with TrackNet")
+        track_ball = st.checkbox(
+            "Include TrackNet ball projection",
+            value=DEFAULT_TRACKNET_WEIGHTS.exists(),
+        )
         tracknet_dir = None
         tracknet_model_path = None
         tracknet_device = "auto"
+        clone_tracknet = False
         if track_ball:
-            tracknet_dir = st.text_input("TrackNet repository directory")
-            tracknet_model_path = st.text_input("TrackNet weights path")
+            st.caption(
+                "Runs player and ball projection together on the same court map."
+            )
+            tracknet_dir = st.text_input(
+                "TrackNet source directory",
+                value=str(DEFAULT_TRACKNET_DIR),
+            )
+            tracknet_model_path = st.text_input(
+                "TrackNet weights",
+                value=str(DEFAULT_TRACKNET_WEIGHTS),
+            )
             tracknet_device = st.selectbox(
                 "TrackNet device",
                 ["auto", "mps", "cuda", "cpu"],
+            )
+            clone_tracknet = st.checkbox(
+                "Download TrackNet source if missing",
+                value=True,
             )
 
     if uploaded_video is None:
@@ -408,7 +430,10 @@ def main() -> None:
         f"{validation.mean_reprojection_error_px:.2f}px."
     )
 
-    if st.button("Run tracking and court mapping", type="primary"):
+    run_label = (
+        "Run player + ball projection" if track_ball else "Run player projection"
+    )
+    if st.button(run_label, type="primary"):
         if track_ball and (not tracknet_dir or not tracknet_model_path):
             st.error(
                 "Ball tracking requires both the TrackNet directory and weights path."
@@ -428,6 +453,7 @@ def main() -> None:
                 tracknet_dir,
                 tracknet_model_path,
                 tracknet_device,
+                clone_tracknet,
             )
         if result.returncode != 0:
             st.error("The pipeline did not finish.")

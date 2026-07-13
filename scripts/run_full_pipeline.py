@@ -44,6 +44,8 @@ from courtvision.detectors.base import Detection, filter_player_detections  # no
 from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
 from courtvision.detectors.tracknet_adapter import (  # noqa: E402
     BallPoint,
+    DEFAULT_TRACKNET_REPO_URL,
+    ensure_tracknet_repo,
     get_device as get_tracknet_device,
     infer_ball_track,
     load_tracknet_model,
@@ -263,6 +265,16 @@ def parse_args() -> argparse.Namespace:
         help="TrackNet device: auto, cuda, mps, or cpu.",
     )
     parser.add_argument(
+        "--clone-tracknet",
+        action="store_true",
+        help="Clone yastrebksv/TrackNet into --tracknet-dir when model.py is missing.",
+    )
+    parser.add_argument(
+        "--tracknet-repo-url",
+        default=DEFAULT_TRACKNET_REPO_URL,
+        help="TrackNet source repository used with --clone-tracknet.",
+    )
+    parser.add_argument(
         "--ball-trace",
         type=int,
         default=7,
@@ -460,6 +472,8 @@ def main() -> None:
 
     ball_tracks_by_frame: dict[int, BallPoint] = {}
     if args.tracknet_model_path:
+        if args.clone_tracknet:
+            ensure_tracknet_repo(args.tracknet_dir, args.tracknet_repo_url)
         tracknet_device = get_tracknet_device(args.tracknet_device)
         print(f"Running TrackNet ball tracking on: {tracknet_device}")
         tracknet_model = load_tracknet_model(

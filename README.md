@@ -38,6 +38,11 @@ then run player tracking and court mapping. The app uses the local `.env` for
 Completed runs show the tracked broadcast and the standalone court map side by
 side; their play, pause, and seek controls stay synchronized.
 
+When `tracknet-model/model_best.pt` exists, the app automatically enables the
+unified player-plus-ball projection option. It can clone the matching TrackNet
+source into `tracknet-model/TrackNet/` on the first run when the setup checkbox
+is enabled.
+
 To include TrackNet ball tracking and project the ball to the court map, pass
 the TrackNet clone and weights to the full pipeline:
 

@@ -32,3 +32,4 @@ outputs/*
 *.pt
 *.pth
 *.onnx
+tracknet-model/TrackNet/

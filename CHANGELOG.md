@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1 - Unified Local Ball Projection
+
+- auto-detect `tracknet-model/model_best.pt` in the local web app
+- prefill local TrackNet source and weights paths for a unified player-plus-ball run
+- optionally clone the required TrackNet source automatically when it is missing
+
 ## v2.0 - TrackNet Ball Projection
 
 - added optional yastrebksv/TrackNet inference to the full pipeline
