@@ -54,6 +54,31 @@ python scripts/calibrate_court.py \
   --output configs/calibrations/your_video_frame_90.json
 ```
 
+For Kaggle, create the calibration directly from the notebook's input video.
+Run these cells before the pipeline command; `%run` is essential because it
+keeps the interactive Matplotlib canvas in the notebook kernel:
+
+```python
+%pip install -q ipympl
+%matplotlib widget
+```
+
+```python
+%run scripts/run_full_pipeline.py \
+  --input /kaggle/input/your-video/video.mp4 \
+  --output-dir /kaggle/working/outputs/courtvision_v1 \
+  --create-calibration \
+  --court-type tennis \
+  --calibration-frame 90 \
+  --calibration-backend matplotlib \
+  --draw-court-map \
+  --draw-calibration-overlay
+```
+
+Click the eight prompted landmarks in order. The pipeline saves
+`/kaggle/working/outputs/courtvision_v1/calibration.json`, validates it, then
+continues with tracking and projection in the same run.
+
 Validate the saved landmarks and render a court overlay:
 
 ```bash

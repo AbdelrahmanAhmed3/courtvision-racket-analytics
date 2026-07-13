@@ -50,6 +50,71 @@ def collect_manual_landmarks(
     }
 
 
+def collect_matplotlib_landmarks(
+    frame: np.ndarray,
+    landmarks: Iterable[LandmarkDefinition],
+) -> dict[str, tuple[float, float]]:
+    """Collect landmarks from an interactive Matplotlib notebook canvas.
+
+    This is intended for notebook environments such as Kaggle. The caller must
+    enable an interactive Matplotlib backend (``%matplotlib widget``) first.
+    """
+    try:
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except ImportError as error:
+        raise RuntimeError(
+            "Matplotlib is required for notebook calibration. Install matplotlib "
+            "and ipympl, then run %matplotlib widget."
+        ) from error
+
+    backend = matplotlib.get_backend().lower()
+    if "inline" in backend or "agg" in backend:
+        raise RuntimeError(
+            "Notebook calibration needs an interactive Matplotlib backend. In Kaggle, "
+            "run `%matplotlib widget` in one cell, then invoke this script with `%run` "
+            "instead of `!python`."
+        )
+
+    ordered_landmarks = list(landmarks)
+    selected: list[tuple[float, float]] = []
+    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    figure, axis = plt.subplots(figsize=(14, 8))
+    axis.imshow(image_rgb)
+    axis.set_axis_off()
+
+    for index, landmark in enumerate(ordered_landmarks):
+        axis.set_title(
+            f"Click {index + 1}/{len(ordered_landmarks)}: "
+            f"{display_landmark_name(landmark.name)}\n"
+            "Far = top/opposite camera end | Near = bottom/camera-side end"
+        )
+        figure.canvas.draw_idle()
+        point = plt.ginput(1, timeout=-1)
+        if not point:
+            plt.close(figure)
+            raise RuntimeError("Notebook calibration cancelled before all points were set")
+        x, y = point[0]
+        selected.append((float(x), float(y)))
+        axis.plot(x, y, "mo", markersize=7)
+        axis.annotate(
+            str(index + 1),
+            (x, y),
+            xytext=(7, -7),
+            textcoords="offset points",
+            color="magenta",
+            weight="bold",
+        )
+
+    axis.set_title("Calibration complete")
+    figure.canvas.draw_idle()
+    plt.close(figure)
+    return {
+        landmark.name: point
+        for landmark, point in zip(ordered_landmarks, selected, strict=True)
+    }
+
+
 def _draw_instructions(
     image: np.ndarray,
     landmarks: list[LandmarkDefinition],

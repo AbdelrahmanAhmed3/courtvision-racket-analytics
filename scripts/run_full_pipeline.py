@@ -21,7 +21,20 @@ from courtvision.analytics.court_coordinates import (  # noqa: E402
 from courtvision.calibration.homography import (  # noqa: E402
     estimate_template_homography,
 )
-from courtvision.calibration.io import load_calibration  # noqa: E402
+from courtvision.calibration.io import (  # noqa: E402
+    CalibrationRecord,
+    LandmarkObservation,
+    load_calibration,
+    save_calibration,
+)
+from courtvision.calibration.landmarks import (  # noqa: E402
+    default_landmark_names,
+    landmark_by_name,
+)
+from courtvision.calibration.manual import (  # noqa: E402
+    collect_manual_landmarks,
+    collect_matplotlib_landmarks,
+)
 from courtvision.calibration.validation import validate_homography  # noqa: E402
 from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
 from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
@@ -201,6 +214,32 @@ def parse_args() -> argparse.Namespace:
         help="Named calibration JSON. Enables homography mapping and coordinate CSV.",
     )
     parser.add_argument(
+        "--create-calibration",
+        action="store_true",
+        help="Interactively click landmarks on this video's frame before processing.",
+    )
+    parser.add_argument(
+        "--court-type",
+        choices=["tennis", "padel"],
+        help="Court type for --create-calibration.",
+    )
+    parser.add_argument(
+        "--calibration-frame",
+        type=int,
+        default=0,
+        help="Video frame used for --create-calibration.",
+    )
+    parser.add_argument(
+        "--calibration-output",
+        help="Where --create-calibration saves its JSON (default: OUTPUT_DIR/calibration.json).",
+    )
+    parser.add_argument(
+        "--calibration-backend",
+        choices=["opencv", "matplotlib"],
+        default="opencv",
+        help="Click UI for --create-calibration. Use matplotlib from a Kaggle notebook.",
+    )
+    parser.add_argument(
         "--draw-court-map",
         action="store_true",
         help=(
@@ -221,16 +260,85 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def load_frame(video_path: Path, frame_index: int):
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        raise ValueError(f"Could not open input video: {video_path}")
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+    ok, frame = cap.read()
+    cap.release()
+    if not ok:
+        raise ValueError(f"Could not read frame {frame_index} from {video_path}")
+    return frame
+
+
+def create_calibration(
+    input_path: Path,
+    output_path: Path,
+    court_type: str,
+    frame_index: int,
+    backend: str,
+) -> None:
+    frame = load_frame(input_path, frame_index)
+    definitions = [
+        landmark_by_name(court_type, name)
+        for name in default_landmark_names(court_type)
+    ]
+    if backend == "matplotlib":
+        selected = collect_matplotlib_landmarks(frame, definitions)
+    else:
+        selected = collect_manual_landmarks(frame, definitions)
+    observations = {
+        definition.name: LandmarkObservation(
+            image=selected[definition.name],
+            template=definition.template,
+            visible=True,
+            confidence=1.0,
+            source="manual",
+        )
+        for definition in definitions
+    }
+    height, width = frame.shape[:2]
+    save_calibration(
+        output_path,
+        CalibrationRecord(
+            video_id=input_path.name,
+            frame_index=frame_index,
+            frame_width=width,
+            frame_height=height,
+            court_type=court_type,
+            landmarks=observations,
+        ),
+    )
+    print(f"Saved calibration: {output_path}")
+
+
 def main() -> None:
     args = parse_args()
-    if args.draw_court_map and not args.calibration:
-        raise ValueError("--draw-court-map requires --calibration")
-    if args.draw_calibration_overlay and not args.calibration:
-        raise ValueError("--draw-calibration-overlay requires --calibration")
+    if args.create_calibration and args.calibration:
+        raise ValueError("Use either --calibration or --create-calibration, not both")
+    if args.create_calibration and not args.court_type:
+        raise ValueError("--create-calibration requires --court-type")
+    if args.court_type and not args.create_calibration:
+        raise ValueError("--court-type is only used with --create-calibration")
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if args.create_calibration:
+        calibration_output = Path(args.calibration_output or output_dir / "calibration.json")
+        create_calibration(
+            input_path,
+            calibration_output,
+            args.court_type,
+            args.calibration_frame,
+            args.calibration_backend,
+        )
+        args.calibration = str(calibration_output)
+    if args.draw_court_map and not args.calibration:
+        raise ValueError("--draw-court-map requires --calibration")
+    if args.draw_calibration_overlay and not args.calibration:
+        raise ValueError("--draw-calibration-overlay requires --calibration")
 
     calibration = None
     estimate = None
