@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# ruff: noqa: E402, I001
+
 import argparse
 import csv
 import math
@@ -17,6 +19,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from courtvision.analytics.court_coordinates import (  # noqa: E402
     CourtCoordinate,
+    project_ball_point,
     project_player_detection,
 )
 from courtvision.calibration.homography import (  # noqa: E402
@@ -39,6 +42,12 @@ from courtvision.calibration.manual import (  # noqa: E402
 from courtvision.calibration.validation import validate_homography  # noqa: E402
 from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
 from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
+from courtvision.detectors.tracknet_adapter import (  # noqa: E402
+    BallPoint,
+    get_device as get_tracknet_device,
+    infer_ball_track,
+    load_tracknet_model,
+)
 from courtvision.tracking.simple_tracker import (  # noqa: E402
     DEFAULT_IOU_THRESHOLD,
     SimpleIouTracker,
@@ -82,6 +91,33 @@ def draw_player(frame, track: FrameTrack):
         cv2.LINE_AA,
     )
     return frame
+
+
+def draw_ball(frame, ball: BallPoint | None, trace: list[BallPoint]) -> None:
+    for index, point in enumerate(reversed(trace)):
+        if not point.visible:
+            continue
+        radius = max(2, 6 - index)
+        cv2.circle(
+            frame,
+            (int(round(point.x)), int(round(point.y))),
+            radius,
+            (0, 0, 255),
+            -1,
+        )
+    if ball is not None and ball.visible:
+        x, y = int(round(ball.x)), int(round(ball.y))
+        cv2.circle(frame, (x, y), 8, (0, 0, 255), 2)
+        cv2.putText(
+            frame,
+            "ball",
+            (x + 10, max(16, y - 10)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 255),
+            2,
+            cv2.LINE_AA,
+        )
 
 
 def tracks_from_detections(
@@ -213,6 +249,25 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--iou-threshold", type=float, default=DEFAULT_IOU_THRESHOLD)
     parser.add_argument("--max-missing-frames", type=int, default=10)
+    parser.add_argument(
+        "--tracknet-model-path",
+        help="TrackNet weights path. Enables ball tracking and ball projection.",
+    )
+    parser.add_argument(
+        "--tracknet-dir",
+        help="Directory containing yastrebksv/TrackNet model.py.",
+    )
+    parser.add_argument(
+        "--tracknet-device",
+        default="auto",
+        help="TrackNet device: auto, cuda, mps, or cpu.",
+    )
+    parser.add_argument(
+        "--ball-trace",
+        type=int,
+        default=7,
+        help="Number of visible ball positions to draw as a trail.",
+    )
     parser.add_argument("--confidence", type=float, default=None)
     parser.add_argument("--overlap", type=float, default=None)
     parser.add_argument(
@@ -335,6 +390,10 @@ def main() -> None:
         raise ValueError("--court-type is only used with --create-calibration")
     if args.max_seconds is not None and args.max_seconds <= 0:
         raise ValueError("--max-seconds must be greater than zero")
+    if args.tracknet_model_path and not args.tracknet_dir:
+        raise ValueError("--tracknet-model-path requires --tracknet-dir")
+    if args.ball_trace < 0:
+        raise ValueError("--ball-trace cannot be negative")
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
@@ -399,6 +458,29 @@ def main() -> None:
             "resolution before mapping."
         )
 
+    ball_tracks_by_frame: dict[int, BallPoint] = {}
+    if args.tracknet_model_path:
+        tracknet_device = get_tracknet_device(args.tracknet_device)
+        print(f"Running TrackNet ball tracking on: {tracknet_device}")
+        tracknet_model = load_tracknet_model(
+            args.tracknet_dir,
+            args.tracknet_model_path,
+            tracknet_device,
+        )
+        ball_tracks_by_frame = {
+            point.frame: point
+            for point in infer_ball_track(
+                input_path,
+                tracknet_model,
+                tracknet_device,
+                max_frames=max_frames,
+            )
+        }
+        visible_ball_count = sum(
+            point.visible for point in ball_tracks_by_frame.values()
+        )
+        print(f"TrackNet visible ball observations: {visible_ball_count}/{max_frames}")
+
     source_writer = cv2.VideoWriter(
         str(output_dir / "annotated.mp4"),
         cv2.VideoWriter_fourcc(*"mp4v"),
@@ -444,6 +526,8 @@ def main() -> None:
     tracks_by_frame: dict[int, list[FrameTrack]] = {}
     court_points: list[CourtCoordinate] = []
     last_tracks: list[FrameTrack] = []
+    ball_trace: list[BallPoint] = []
+    ball_court_trace: list[CourtCoordinate] = []
     frame_index = 0
     progress = tqdm(total=max_frames, desc="Full pipeline")
     while True:
@@ -481,6 +565,11 @@ def main() -> None:
             )
         for track in current_tracks:
             annotated = draw_player(annotated, track)
+        ball = ball_tracks_by_frame.get(frame_index)
+        if ball is not None and ball.visible:
+            ball_trace.append(ball)
+            ball_trace = ball_trace[-args.ball_trace :] if args.ball_trace else []
+        draw_ball(annotated, ball, ball_trace)
         source_writer.write(annotated)
 
         if estimate is not None and spec is not None:
@@ -497,6 +586,17 @@ def main() -> None:
                 for track in current_tracks
             ]
             court_points.extend(frame_points)
+            ball_coordinate = None
+            if ball is not None:
+                ball_coordinate = project_ball_point(ball, estimate, spec)
+                if ball_coordinate is not None:
+                    court_points.append(ball_coordinate)
+                    if ball_coordinate.in_bounds:
+                        if args.ball_trace:
+                            ball_court_trace.append(ball_coordinate)
+                            ball_court_trace = ball_court_trace[-args.ball_trace :]
+                        else:
+                            ball_court_trace = []
             if map_writer is not None:
                 map_image = draw_court_map(calibration.court_type)
                 for point in frame_points:
@@ -507,6 +607,23 @@ def main() -> None:
                         calibration.court_type,
                         f"P{point.track_id}",
                         color,
+                    )
+                for point in ball_court_trace[:-1]:
+                    draw_projected_point(
+                        map_image,
+                        (point.court_x_m, point.court_y_m),
+                        calibration.court_type,
+                        None,
+                        (0, 0, 150),
+                        radius=4,
+                    )
+                if ball_coordinate is not None:
+                    draw_projected_point(
+                        map_image,
+                        (ball_coordinate.court_x_m, ball_coordinate.court_y_m),
+                        calibration.court_type,
+                        "BALL",
+                        (0, 0, 255),
                     )
                 assert court_map_writer is not None
                 court_map_writer.write(map_image)

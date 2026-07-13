@@ -136,24 +136,39 @@ def run_pipeline(
     calibration_path: Path,
     model_id: str,
     seconds: float,
+    tracknet_dir: str | None,
+    tracknet_model_path: str | None,
+    tracknet_device: str,
 ) -> subprocess.CompletedProcess[str]:
+    command = [
+        sys.executable,
+        "scripts/run_full_pipeline.py",
+        "--input",
+        str(video_path),
+        "--output-dir",
+        str(output_dir),
+        "--model-id",
+        model_id,
+        "--max-seconds",
+        str(seconds),
+        "--calibration",
+        str(calibration_path),
+        "--draw-court-map",
+        "--draw-calibration-overlay",
+    ]
+    if tracknet_model_path:
+        command.extend(
+            [
+                "--tracknet-dir",
+                tracknet_dir or "",
+                "--tracknet-model-path",
+                tracknet_model_path,
+                "--tracknet-device",
+                tracknet_device,
+            ]
+        )
     return subprocess.run(
-        [
-            sys.executable,
-            "scripts/run_full_pipeline.py",
-            "--input",
-            str(video_path),
-            "--output-dir",
-            str(output_dir),
-            "--model-id",
-            model_id,
-            "--max-seconds",
-            str(seconds),
-            "--calibration",
-            str(calibration_path),
-            "--draw-court-map",
-            "--draw-calibration-overlay",
-        ],
+        command,
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -268,6 +283,17 @@ def main() -> None:
         )
         court_type = st.selectbox("Court type", ["tennis", "padel"])
         model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
+        track_ball = st.checkbox("Track ball with TrackNet")
+        tracknet_dir = None
+        tracknet_model_path = None
+        tracknet_device = "auto"
+        if track_ball:
+            tracknet_dir = st.text_input("TrackNet repository directory")
+            tracknet_model_path = st.text_input("TrackNet weights path")
+            tracknet_device = st.selectbox(
+                "TrackNet device",
+                ["auto", "mps", "cuda", "cpu"],
+            )
 
     if uploaded_video is None:
         st.info("Choose a local video to begin.")
@@ -383,6 +409,11 @@ def main() -> None:
     )
 
     if st.button("Run tracking and court mapping", type="primary"):
+        if track_ball and (not tracknet_dir or not tracknet_model_path):
+            st.error(
+                "Ball tracking requires both the TrackNet directory and weights path."
+            )
+            return
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = REPO_ROOT / "outputs" / "ui_runs" / f"{video_path.stem}_{run_id}"
         calibration_path = output_dir / "calibration.json"
@@ -394,6 +425,9 @@ def main() -> None:
                 calibration_path,
                 model_id,
                 run_seconds,
+                tracknet_dir,
+                tracknet_model_path,
+                tracknet_device,
             )
         if result.returncode != 0:
             st.error("The pipeline did not finish.")

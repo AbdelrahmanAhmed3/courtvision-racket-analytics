@@ -44,7 +44,7 @@ Padel, Qatar Major frame 90:
 
 ## Phase 2 - Project Tracks Into Court Coordinates
 
-Status: player projection complete; ball projection pending TrackNet integration
+Status: complete with optional TrackNet ball projection
 
 Deliverables:
 
@@ -66,9 +66,18 @@ Tracked tennis player foot positions are projected into normalized and meter-spa
 coordinates. tracks_with_court_coords.csv records in-bounds status for each frame.
 ```
 
+Current v2 addition:
+
+```text
+When TrackNet weights are configured, visible ball centers are projected with the
+same validated homography and emitted as object_type=ball rows. This treats the
+ball image center as its court contact estimate; airborne ball positions can be
+geometrically offset because a planar homography cannot recover height.
+```
+
 ## Phase 3 - Minimap and Trajectory Visualization
 
-Status: player minimap render complete; ball trail pending TrackNet integration
+Status: complete for player and optional TrackNet ball rendering
 
 Deliverables:
 

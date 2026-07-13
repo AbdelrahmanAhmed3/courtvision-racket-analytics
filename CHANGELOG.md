@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0 - TrackNet Ball Projection
+
+- added optional yastrebksv/TrackNet inference to the full pipeline
+- projected visible ball centers through the selected tennis or padel homography
+- added `object_type=ball` rows to `tracks_with_court_coords.csv`
+- rendered a ball marker and trajectory on both the broadcast and court map
+- added local web-app controls for TrackNet repository, weights, and device
+
 ## v1.2 - Browser-Safe Video Results
 
 - transcode app results to browser-compatible H.264/yuv420p MP4 files

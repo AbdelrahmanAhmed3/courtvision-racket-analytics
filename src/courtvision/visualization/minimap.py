@@ -144,24 +144,26 @@ def draw_projected_point(
     image: np.ndarray,
     point: tuple[float, float],
     court_type: str,
-    label: str,
+    label: str | None,
     color: tuple[int, int, int],
+    radius: int = 8,
     canvas_size: tuple[int, int] = (500, 900),
     margin: int = 45,
 ) -> np.ndarray:
     spec = get_court_spec(court_type)
     x, y = world_to_canvas(point, spec, canvas_size, margin)
-    cv2.circle(image, (x, y), 8, color, -1)
-    cv2.putText(
-        image,
-        label,
-        (x + 10, y - 10),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.55,
-        color,
-        2,
-        cv2.LINE_AA,
-    )
+    cv2.circle(image, (x, y), radius, color, -1)
+    if label:
+        cv2.putText(
+            image,
+            label,
+            (x + 10, y - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            color,
+            2,
+            cv2.LINE_AA,
+        )
     return image
 
 

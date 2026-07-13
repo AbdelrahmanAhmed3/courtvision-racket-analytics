@@ -38,6 +38,30 @@ then run player tracking and court mapping. The app uses the local `.env` for
 Completed runs show the tracked broadcast and the standalone court map side by
 side; their play, pause, and seek controls stay synchronized.
 
+To include TrackNet ball tracking and project the ball to the court map, pass
+the TrackNet clone and weights to the full pipeline:
+
+```bash
+python scripts/run_full_pipeline.py \
+  --input data/raw/your_video.mp4 \
+  --output-dir outputs/your_run \
+  --calibration configs/calibrations/your_video.json \
+  --draw-court-map \
+  --tracknet-dir /path/to/TrackNet \
+  --tracknet-model-path /path/to/tracknet_weights.pth
+```
+
+TrackNet runs only when its weights are supplied. Ball points are recorded as
+`object_type=ball` alongside player rows in `tracks_with_court_coords.csv`.
+Install PyTorch for TrackNet runs with:
+
+```bash
+pip install -e ".[tracknet]"
+```
+
+The ball center is projected onto the court plane. During high airborne shots,
+that is an approximation because a planar homography cannot represent height.
+
 ## Versioning
 
 CourtVision uses feature releases such as `v1.1`, `v1.2`, and `v1.3` for

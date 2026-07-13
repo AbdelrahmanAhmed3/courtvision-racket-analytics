@@ -6,6 +6,7 @@ import numpy as np
 
 from courtvision.calibration.homography import HomographyEstimate, project_image_points
 from courtvision.detectors.base import Detection
+from courtvision.detectors.tracknet_adapter import BallPoint
 from courtvision.geometry.homography import bottom_center
 from courtvision.visualization.minimap import CourtSpec
 
@@ -54,4 +55,32 @@ def project_player_detection(
         court_y_m=float(template_y * spec.length_m),
         in_bounds=in_bounds,
         confidence=detection.confidence,
+    )
+
+
+def project_ball_point(
+    point: BallPoint,
+    estimate: HomographyEstimate,
+    spec: CourtSpec,
+) -> CourtCoordinate | None:
+    """Project a TrackNet source-pixel ball center into court coordinates."""
+    if not point.visible:
+        return None
+    template_x, template_y = project_image_points(
+        np.asarray([[point.x, point.y]]),
+        estimate,
+    )[0]
+    in_bounds = bool(0 <= template_x <= 1 and 0 <= template_y <= 1)
+    return CourtCoordinate(
+        frame=point.frame,
+        track_id=0,
+        object_type="ball",
+        image_x=float(point.x),
+        image_y=float(point.y),
+        template_x=float(template_x),
+        template_y=float(template_y),
+        court_x_m=float(template_x * spec.width_m),
+        court_y_m=float(template_y * spec.length_m),
+        in_bounds=in_bounds,
+        confidence=point.confidence,
     )
