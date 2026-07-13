@@ -36,6 +36,14 @@ select its court type, click the eight prompted court landmarks in the browser,
 then run player tracking and court mapping. The app uses the local `.env` for
 `ROBOFLOW_API_KEY` and writes generated artifacts under `outputs/ui_runs/`.
 
+## Versioning
+
+CourtVision uses feature releases such as `v1.1`, `v1.2`, and `v1.3` for
+backwards-compatible additions. Changes to calibration/homography logic, model
+or tracking behavior, ball projection, analytics definitions, or published
+output schemas start a new major release (`v2.0`, `v3.0`, and so on). See
+[CHANGELOG.md](CHANGELOG.md) for the release history and full policy.
+
 ## Project Layout
 
 ```text
