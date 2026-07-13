@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2 - Browser-Safe Video Results
+
+- transcode app results to browser-compatible H.264/yuv420p MP4 files
+- write a standalone court-map video alongside the combined render
+- display tracked video and court map as independently visible, synchronized
+  players in the local web app
+
 ## v1.1 - Local Web Interface
 
 - added the Streamlit localhost app for browser-based video selection,

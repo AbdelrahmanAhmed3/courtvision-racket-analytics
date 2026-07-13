@@ -406,6 +406,7 @@ def main() -> None:
         (width, height),
     )
     map_writer = None
+    court_map_writer = None
     map_width = 0
     if args.draw_court_map:
         map_preview = draw_court_map(calibration.court_type)
@@ -415,6 +416,13 @@ def main() -> None:
             cv2.VideoWriter_fourcc(*"mp4v"),
             fps,
             (width + map_width, height),
+        )
+        map_height, map_canvas_width = map_preview.shape[:2]
+        court_map_writer = cv2.VideoWriter(
+            str(output_dir / "court_map.mp4"),
+            cv2.VideoWriter_fourcc(*"mp4v"),
+            fps,
+            (map_canvas_width, map_height),
         )
 
     tracks_from_csv = (
@@ -500,6 +508,8 @@ def main() -> None:
                         f"P{point.track_id}",
                         color,
                     )
+                assert court_map_writer is not None
+                court_map_writer.write(map_image)
                 map_image = cv2.resize(map_image, (map_width, height))
                 map_writer.write(cv2.hconcat((annotated, map_image)))
 
@@ -511,6 +521,8 @@ def main() -> None:
     source_writer.release()
     if map_writer is not None:
         map_writer.release()
+    if court_map_writer is not None:
+        court_map_writer.release()
 
     write_detections_csv(output_dir / "detections.csv", tracks_by_frame)
     if court_points:
@@ -523,6 +535,7 @@ def main() -> None:
         print(f"Wrote court coordinates: {output_dir / 'tracks_with_court_coords.csv'}")
     if map_writer is not None:
         print(f"Wrote court-map video: {output_dir / 'court_map_annotated.mp4'}")
+        print(f"Wrote standalone court map: {output_dir / 'court_map.mp4'}")
 
 
 if __name__ == "__main__":

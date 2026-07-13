@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import subprocess
 import sys
@@ -12,6 +13,8 @@ from pathlib import Path
 
 import cv2
 import streamlit as st
+import streamlit.components.v1 as components
+from imageio_ffmpeg import get_ffmpeg_exe
 from streamlit_image_coordinates import streamlit_image_coordinates
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -154,6 +157,95 @@ def run_pipeline(
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+    )
+
+
+def transcode_for_browser(video_path: Path) -> Path:
+    """Create an H.264/yuv420p MP4 that browser video elements can decode."""
+    output_path = video_path.with_name(f"{video_path.stem}_web.mp4")
+    if output_path.exists() and (
+        output_path.stat().st_mtime >= video_path.stat().st_mtime
+    ):
+        return output_path
+    result = subprocess.run(
+        [
+            get_ffmpeg_exe(),
+            "-y",
+            "-i",
+            str(video_path),
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            "-an",
+            str(output_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr or "Could not prepare video for the browser.")
+    return output_path
+
+
+def video_data_url(video_path: Path) -> str:
+    encoded = base64.b64encode(video_path.read_bytes()).decode("ascii")
+    return f"data:video/mp4;base64,{encoded}"
+
+
+def render_synchronized_videos(tracked_video: Path, court_map_video: Path) -> None:
+    tracked_url = video_data_url(tracked_video)
+    map_url = video_data_url(court_map_video)
+    components.html(
+        f"""
+        <style>
+          body {{ margin: 0; background: #101817; color: #eef2ef;
+                 font-family: sans-serif; }}
+          .results {{ display: grid;
+                     grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+                     gap: 12px; }}
+          .panel {{ background: #182422; padding: 10px; border-radius: 6px; }}
+          .title {{ font-size: 14px; margin: 0 0 8px; color: #d8e5dc; }}
+          video {{ width: 100%; max-height: 72vh; background: #000; display: block; }}
+        </style>
+        <div class="results">
+          <section class="panel">
+            <p class="title">Tracked video</p>
+            <video id="tracked" controls preload="metadata" src="{tracked_url}"></video>
+          </section>
+          <section class="panel">
+            <p class="title">Court map</p>
+            <video id="court-map" controls preload="metadata" src="{map_url}"></video>
+          </section>
+        </div>
+        <script>
+          const tracked = document.getElementById('tracked');
+          const courtMap = document.getElementById('court-map');
+          let synchronizing = false;
+          function syncTime(source, target) {{
+            if (synchronizing ||
+                Math.abs(source.currentTime - target.currentTime) < 0.08) return;
+            synchronizing = true;
+            target.currentTime = source.currentTime;
+            synchronizing = false;
+          }}
+          function syncPlay(source, target) {{
+            if (!source.paused) target.play().catch(() => {{}});
+          }}
+          tracked.addEventListener('timeupdate', () => syncTime(tracked, courtMap));
+          courtMap.addEventListener('timeupdate', () => syncTime(courtMap, tracked));
+          tracked.addEventListener('play', () => syncPlay(tracked, courtMap));
+          courtMap.addEventListener('play', () => syncPlay(courtMap, tracked));
+          tracked.addEventListener('pause', () => courtMap.pause());
+          courtMap.addEventListener('pause', () => tracked.pause());
+          tracked.addEventListener('seeking', () => syncTime(tracked, courtMap));
+          courtMap.addEventListener('seeking', () => syncTime(courtMap, tracked));
+        </script>
+        """,
+        height=700,
+        scrolling=False,
     )
 
 
@@ -308,8 +400,13 @@ def main() -> None:
             st.code(result.stderr or result.stdout)
             return
         st.success(f"Finished. Results saved to {output_dir.relative_to(REPO_ROOT)}")
-        st.video(str(output_dir / "annotated.mp4"))
-        st.video(str(output_dir / "court_map_annotated.mp4"))
+        try:
+            tracked_video = transcode_for_browser(output_dir / "annotated.mp4")
+            court_map_video = transcode_for_browser(output_dir / "court_map.mp4")
+        except RuntimeError as error:
+            st.error(f"Could not prepare browser videos: {error}")
+            return
+        render_synchronized_videos(tracked_video, court_map_video)
         st.download_button(
             "Download court coordinates CSV",
             data=(output_dir / "tracks_with_court_coords.csv").read_bytes(),

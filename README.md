@@ -35,6 +35,8 @@ Open the localhost URL printed by Streamlit. Choose a video from your computer,
 select its court type, click the eight prompted court landmarks in the browser,
 then run player tracking and court mapping. The app uses the local `.env` for
 `ROBOFLOW_API_KEY` and writes generated artifacts under `outputs/ui_runs/`.
+Completed runs show the tracked broadcast and the standalone court map side by
+side; their play, pause, and seek controls stay synchronized.
 
 ## Versioning
 
