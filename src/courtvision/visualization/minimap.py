@@ -29,6 +29,9 @@ PADEL_COURT = CourtSpec(
     service_line_from_baseline_m=3.0,
 )
 
+SIDE_OUT_OF_COURT_RATIO = 0.18
+BASELINE_OUT_OF_COURT_RATIO = 0.22
+
 
 def get_court_spec(court_type: str) -> CourtSpec:
     normalized = court_type.strip().lower()
@@ -48,8 +51,12 @@ def world_to_canvas(
     canvas_width, canvas_height = canvas_size
     usable_width = canvas_width - 2 * margin
     usable_height = canvas_height - 2 * margin
-    x = margin + point[0] / spec.width_m * usable_width
-    y = margin + point[1] / spec.length_m * usable_height
+    side_buffer = spec.width_m * SIDE_OUT_OF_COURT_RATIO
+    baseline_buffer = spec.length_m * BASELINE_OUT_OF_COURT_RATIO
+    visible_width = spec.width_m + 2 * side_buffer
+    visible_length = spec.length_m + 2 * baseline_buffer
+    x = margin + (point[0] + side_buffer) / visible_width * usable_width
+    y = margin + (point[1] + baseline_buffer) / visible_length * usable_height
     return int(round(x)), int(round(y))
 
 
@@ -61,6 +68,22 @@ def draw_court_map(
     spec = get_court_spec(court_type)
     canvas_width, canvas_height = canvas_size
     image = np.full((canvas_height, canvas_width, 3), (31, 91, 59), dtype=np.uint8)
+
+    side_buffer = spec.width_m * SIDE_OUT_OF_COURT_RATIO
+    baseline_buffer = spec.length_m * BASELINE_OUT_OF_COURT_RATIO
+    outer_top_left = world_to_canvas(
+        (-side_buffer, -baseline_buffer),
+        spec,
+        canvas_size,
+        margin,
+    )
+    outer_bottom_right = world_to_canvas(
+        (spec.width_m + side_buffer, spec.length_m + baseline_buffer),
+        spec,
+        canvas_size,
+        margin,
+    )
+    cv2.rectangle(image, outer_top_left, outer_bottom_right, (80, 120, 95), 1)
 
     top_left = world_to_canvas((0, 0), spec, canvas_size, margin)
     bottom_right = world_to_canvas(

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import base64
+import csv
 import hashlib
 import subprocess
 import sys
@@ -215,6 +216,16 @@ def video_data_url(video_path: Path) -> str:
     return f"data:video/mp4;base64,{encoded}"
 
 
+def projection_counts(path: Path) -> dict[str, int]:
+    counts = {"player": 0, "ball": 0}
+    with path.open(newline="") as file:
+        for row in csv.DictReader(file):
+            object_type = row["object_type"]
+            if object_type in counts:
+                counts[object_type] += 1
+    return counts
+
+
 def render_synchronized_videos(tracked_video: Path, court_map_video: Path) -> None:
     tracked_url = video_data_url(tracked_video)
     map_url = video_data_url(court_map_video)
@@ -348,7 +359,7 @@ def main() -> None:
         )
     with warning_column:
         st.warning(
-            "V1 assumes a stable camera. Recalibrate after a cut or significant "
+            "V2 assumes a stable camera. Recalibrate after a cut or significant "
             "camera move; per-frame automatic recalibration is the next phase."
         )
         st.caption(f"Video: {width} x {height}, {fps:.2f} fps, {duration:.1f}s")
@@ -460,6 +471,15 @@ def main() -> None:
             st.code(result.stderr or result.stdout)
             return
         st.success(f"Finished. Results saved to {output_dir.relative_to(REPO_ROOT)}")
+        counts = projection_counts(output_dir / "tracks_with_court_coords.csv")
+        player_metric, ball_metric = st.columns(2)
+        player_metric.metric("Player projections", counts["player"])
+        ball_metric.metric("Ball projections", counts["ball"])
+        if track_ball and counts["ball"] == 0:
+            st.warning(
+                "TrackNet found no visible ball in this time range. Increase the run "
+                "duration or choose a segment where the ball is visible."
+            )
         try:
             tracked_video = transcode_for_browser(output_dir / "annotated.mp4")
             court_map_video = transcode_for_browser(output_dir / "court_map.mp4")

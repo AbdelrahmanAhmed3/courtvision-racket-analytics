@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.2 - Projection Visibility
+
+- added an extended out-of-court region to the minimap so players behind a
+  baseline remain visible
+- show player and ball projection counts in the local app result view
+- restored TrackNet's upstream Hough-circle candidate behavior
+
 ## v2.1 - Unified Local Ball Projection
 
 - auto-detect `tracknet-model/model_best.pt` in the local web app

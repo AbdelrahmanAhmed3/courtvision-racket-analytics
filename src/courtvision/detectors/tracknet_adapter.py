@@ -158,7 +158,7 @@ def postprocess_heatmap(output: np.ndarray) -> tuple[float | None, float | None]
         minRadius=2,
         maxRadius=7,
     )
-    if circles is None or circles.shape[1] != 1:
+    if circles is None:
         return None, None
     return float(circles[0][0][0]), float(circles[0][0][1])
 
