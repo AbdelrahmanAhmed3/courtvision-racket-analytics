@@ -37,3 +37,45 @@ data/                 Local raw/processed data, ignored by Git
 ## Secrets
 
 Copy `.env.example` to `.env` locally and set your own values. Never commit `.env`.
+
+## Court Calibration and Mapping
+
+CourtVision v1 uses named manual landmarks for reliable court calibration. The
+calibration is validated with RANSAC inliers and reprojection error before player
+tracks are projected into normalized and meter-space court coordinates.
+
+Create a calibration locally with the OpenCV click tool:
+
+```bash
+python scripts/calibrate_court.py \
+  --input data/raw/your_video.mp4 \
+  --court-type tennis \
+  --frame 90 \
+  --output configs/calibrations/your_video_frame_90.json
+```
+
+Validate the saved landmarks and render a court overlay:
+
+```bash
+python scripts/validate_calibration.py \
+  --input data/raw/your_video.mp4 \
+  --calibration configs/calibrations/your_video_frame_90.json \
+  --output outputs/calibration/your_video_frame_90_overlay.jpg
+```
+
+Render existing tracked detections with a court map. This mode is Kaggle-safe and
+does not require a Roboflow API call:
+
+```bash
+python scripts/run_full_pipeline.py \
+  --input /kaggle/input/your-video/video.mp4 \
+  --detections /kaggle/input/your-tracks/detections.csv \
+  --calibration /kaggle/input/your-calibration/calibration.json \
+  --draw-court-map \
+  --draw-calibration-overlay \
+  --output-dir /kaggle/working/outputs/courtvision_v1
+```
+
+Omit `--detections` to run Roboflow player detection and IoU tracking in the same
+pipeline. In that mode, set `ROBOFLOW_API_KEY` through `.env` locally or a Kaggle
+Secret.

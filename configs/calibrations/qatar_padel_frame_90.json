@@ -1,0 +1,113 @@
+{
+  "video_id": "youtube_gFl3ADnFRtc_15s.mp4",
+  "frame_index": 90,
+  "frame_width": 1280,
+  "frame_height": 720,
+  "court_type": "padel",
+  "landmarks": {
+    "far_left_baseline_corner": {
+      "image": [
+        379.0,
+        217.0
+      ],
+      "template": [
+        0.0,
+        0.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_right_baseline_corner": {
+      "image": [
+        900.0,
+        217.0
+      ],
+      "template": [
+        1.0,
+        0.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_right_baseline_corner": {
+      "image": [
+        1139.0,
+        646.0
+      ],
+      "template": [
+        1.0,
+        1.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_left_baseline_corner": {
+      "image": [
+        140.0,
+        640.0
+      ],
+      "template": [
+        0.0,
+        1.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_left_service_intersection": {
+      "image": [
+        357.0,
+        258.0
+      ],
+      "template": [
+        0.0,
+        0.15
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_right_service_intersection": {
+      "image": [
+        923.0,
+        257.0
+      ],
+      "template": [
+        1.0,
+        0.15
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_right_service_intersection": {
+      "image": [
+        1075.0,
+        535.0
+      ],
+      "template": [
+        1.0,
+        0.85
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_left_service_intersection": {
+      "image": [
+        204.0,
+        535.0
+      ],
+      "template": [
+        0.0,
+        0.85
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    }
+  }
+}

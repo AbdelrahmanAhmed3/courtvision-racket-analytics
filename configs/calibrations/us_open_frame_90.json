@@ -1,0 +1,113 @@
+{
+  "video_id": "youtube_-jtV7IJP8NU_15s.mp4",
+  "frame_index": 90,
+  "frame_width": 1280,
+  "frame_height": 720,
+  "court_type": "tennis",
+  "landmarks": {
+    "far_left_baseline_corner": {
+      "image": [
+        452.0,
+        158.0
+      ],
+      "template": [
+        0.0,
+        0.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_right_baseline_corner": {
+      "image": [
+        834.0,
+        161.0
+      ],
+      "template": [
+        1.0,
+        0.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_right_baseline_corner": {
+      "image": [
+        1018.0,
+        520.0
+      ],
+      "template": [
+        1.0,
+        1.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_left_baseline_corner": {
+      "image": [
+        262.0,
+        510.0
+      ],
+      "template": [
+        0.0,
+        1.0
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_left_service_intersection": {
+      "image": [
+        483.0,
+        205.0
+      ],
+      "template": [
+        0.12488605287146765,
+        0.23075305006310476
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_right_service_intersection": {
+      "image": [
+        802.0,
+        209.0
+      ],
+      "template": [
+        0.8751139471285323,
+        0.23075305006310476
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_left_service_intersection": {
+      "image": [
+        412.0,
+        379.0
+      ],
+      "template": [
+        0.12488605287146765,
+        0.7692469499368952
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_right_service_intersection": {
+      "image": [
+        871.0,
+        387.0
+      ],
+      "template": [
+        0.8751139471285323,
+        0.7692469499368952
+      ],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    }
+  }
+}

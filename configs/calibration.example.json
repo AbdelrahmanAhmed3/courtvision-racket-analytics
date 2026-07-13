@@ -1,0 +1,37 @@
+{
+  "video_id": "demo_tennis_001.mp4",
+  "frame_index": 0,
+  "frame_width": 1280,
+  "frame_height": 720,
+  "court_type": "tennis",
+  "landmarks": {
+    "far_left_baseline_corner": {
+      "image": [449, 157],
+      "template": [0.0, 0.0],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "far_right_baseline_corner": {
+      "image": [782, 157],
+      "template": [1.0, 0.0],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_right_baseline_corner": {
+      "image": [1019, 520],
+      "template": [1.0, 1.0],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    },
+    "near_left_baseline_corner": {
+      "image": [260, 510],
+      "template": [0.0, 1.0],
+      "visible": true,
+      "confidence": 1.0,
+      "source": "manual"
+    }
+  }
+}
