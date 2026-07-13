@@ -33,6 +33,10 @@ media = [
     "imageio-ffmpeg",
     "yt-dlp",
 ]
+ui = [
+    "streamlit",
+    "streamlit-image-coordinates",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

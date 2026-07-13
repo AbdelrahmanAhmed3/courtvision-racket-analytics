@@ -105,6 +105,40 @@ Success condition:
 Automation speeds up calibration, but the system rejects or corrects unreliable model output.
 ```
 
+### Camera motion and RANSAC
+
+RANSAC is not a court-point detector and it does not by itself make a one-time
+calibration follow a moving camera. Given several proposed image-to-court point
+pairs, it repeatedly estimates a homography from a small random subset, counts
+how many of the remaining pairs agree within a pixel-error threshold, and keeps
+the best-supported transform. It protects the calibration from one or two bad
+clicks or bad model landmarks.
+
+To handle pan, zoom, or broadcast cuts, Phase 4 must produce landmarks on each
+usable frame (or track the last reliable landmarks with optical flow), estimate
+a fresh RANSAC homography, validate it, and temporally smooth only compatible
+transforms. A cut or failed validation must invalidate mapping until a new
+calibration is obtained. Manual correction remains the fallback.
+
+## Phase 5 - Ball Projection and Analytics
+
+Deliverables:
+
+- a common ball-track interface backed initially by TrackNet
+- ball center projection through the calibrated image-to-court homography
+- ball coordinates and confidence in the same per-frame CSV as player tracks
+- minimap ball marker and trajectory trail for tennis and padel
+- analytics built only from validated court-space tracks: player speed,
+  distance, court coverage, ball speed, rally segments, and shot events
+
+Success condition:
+
+```text
+Every metric records its source tracks and confidence, and clips with unstable
+calibration or missing ball observations are visibly marked rather than silently
+reported as precise measurements.
+```
+
 ## Architecture
 
 ```text

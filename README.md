@@ -22,6 +22,20 @@ Run tests:
 pytest
 ```
 
+## Local Web App
+
+Install the UI and Roboflow extras, then start the local app:
+
+```bash
+pip install -e ".[ui,roboflow]"
+streamlit run app.py
+```
+
+Open the localhost URL printed by Streamlit. Choose a video from your computer,
+select its court type, click the eight prompted court landmarks in the browser,
+then run player tracking and court mapping. The app uses the local `.env` for
+`ROBOFLOW_API_KEY` and writes generated artifacts under `outputs/ui_runs/`.
+
 ## Project Layout
 
 ```text
