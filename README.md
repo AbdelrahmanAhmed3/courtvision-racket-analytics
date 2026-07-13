@@ -44,6 +44,18 @@ CourtVision v1 uses named manual landmarks for reliable court calibration. The
 calibration is validated with RANSAC inliers and reprojection error before player
 tracks are projected into normalized and meter-space court coordinates.
 
+For an interactive local macOS run, open a native video picker, choose the
+court type and duration, then click the eight prompted landmarks in the OpenCV
+window:
+
+```bash
+python scripts/run_local_interactive.py
+```
+
+It writes a timestamped folder under `outputs/local_runs/` containing the saved
+calibration JSON, annotated video, court-map video, and CSV files. The launcher
+uses `ROBOFLOW_API_KEY` from the local `.env` file.
+
 Create a calibration locally with the OpenCV click tool:
 
 ```bash

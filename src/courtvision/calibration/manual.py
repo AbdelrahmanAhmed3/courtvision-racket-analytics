@@ -93,7 +93,9 @@ def collect_matplotlib_landmarks(
         point = plt.ginput(1, timeout=-1)
         if not point:
             plt.close(figure)
-            raise RuntimeError("Notebook calibration cancelled before all points were set")
+            raise RuntimeError(
+                "Notebook calibration cancelled before all points were set"
+            )
         x, y = point[0]
         selected.append((float(x), float(y)))
         axis.plot(x, y, "mo", markersize=7)

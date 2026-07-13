@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -205,6 +206,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
     parser.add_argument("--frame-stride", type=int, default=1)
+    parser.add_argument(
+        "--max-seconds",
+        type=float,
+        help="Process only the first N seconds of the input video.",
+    )
     parser.add_argument("--iou-threshold", type=float, default=DEFAULT_IOU_THRESHOLD)
     parser.add_argument("--max-missing-frames", type=int, default=10)
     parser.add_argument("--confidence", type=float, default=None)
@@ -231,13 +237,19 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--calibration-output",
-        help="Where --create-calibration saves its JSON (default: OUTPUT_DIR/calibration.json).",
+        help=(
+            "Where --create-calibration saves its JSON "
+            "(default: OUTPUT_DIR/calibration.json)."
+        ),
     )
     parser.add_argument(
         "--calibration-backend",
         choices=["opencv", "matplotlib"],
         default="opencv",
-        help="Click UI for --create-calibration. Use matplotlib from a Kaggle notebook.",
+        help=(
+            "Click UI for --create-calibration. "
+            "Use matplotlib from a Kaggle notebook."
+        ),
     )
     parser.add_argument(
         "--draw-court-map",
@@ -321,12 +333,16 @@ def main() -> None:
         raise ValueError("--create-calibration requires --court-type")
     if args.court_type and not args.create_calibration:
         raise ValueError("--court-type is only used with --create-calibration")
+    if args.max_seconds is not None and args.max_seconds <= 0:
+        raise ValueError("--max-seconds must be greater than zero")
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     if args.create_calibration:
-        calibration_output = Path(args.calibration_output or output_dir / "calibration.json")
+        calibration_output = Path(
+            args.calibration_output or output_dir / "calibration.json"
+        )
         create_calibration(
             input_path,
             calibration_output,
@@ -372,6 +388,9 @@ def main() -> None:
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    max_frames = frame_count
+    if args.max_seconds is not None:
+        max_frames = min(frame_count, math.ceil(args.max_seconds * fps))
     if calibration and (
         width != calibration.frame_width or height != calibration.frame_height
     ):
@@ -418,8 +437,10 @@ def main() -> None:
     court_points: list[CourtCoordinate] = []
     last_tracks: list[FrameTrack] = []
     frame_index = 0
-    progress = tqdm(total=frame_count, desc="Full pipeline")
+    progress = tqdm(total=max_frames, desc="Full pipeline")
     while True:
+        if frame_index >= max_frames:
+            break
         ok, frame = cap.read()
         if not ok:
             break
