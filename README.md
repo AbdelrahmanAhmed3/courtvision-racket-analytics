@@ -67,6 +67,16 @@ pip install -e ".[tracknet]"
 The ball center is projected onto the court plane. During high airborne shots,
 that is an approximation because a planar homography cannot represent height.
 
+## Moving Cameras
+
+Enable **Adapt calibration to camera movement** in the local web app, or pass
+`--track-calibration` to the full pipeline. Starting from the manually
+calibrated frame, CourtVision tracks the named court landmarks with sparse
+optical flow and uses RANSAC to estimate a fresh homography per frame. Frames
+before the selected calibration timestamp, or frames that fail validation after
+a cut or landmark drift, are deliberately left unmapped rather than projected
+with stale geometry.
+
 ## Versioning
 
 CourtVision uses feature releases such as `v1.1`, `v1.2`, and `v1.3` for

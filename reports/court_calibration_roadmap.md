@@ -99,7 +99,18 @@ run_full_pipeline.py can render a side-by-side source video and player minimap w
 validated calibration lines, tracked player IDs, and out-of-court markers.
 ```
 
-## Phase 4 - Model-Assisted Calibration
+## Phase 4 - Temporal and Model-Assisted Calibration
+
+Status: temporal optical-flow calibration complete; model landmarks pending
+
+Completed temporal deliverables:
+
+- sparse Lucas-Kanade optical flow for the named manual landmarks
+- forward-backward consistency rejection for unstable tracks
+- per-frame RANSAC homography with at least six inliers
+- validated homographies used for player and ball projection after the manual
+  calibration frame
+- unmapped fallback on failed validation instead of stale projection
 
 Deliverables:
 

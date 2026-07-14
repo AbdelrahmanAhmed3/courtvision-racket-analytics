@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.0 - Temporal Court Calibration
+
+- track named manual court landmarks with sparse Lucas-Kanade optical flow
+- use forward-backward tracking consistency and per-frame RANSAC validation
+- estimate a fresh homography for every validated frame after calibration
+- leave frames unmapped after validation failure instead of applying stale geometry
+- added a default-on moving-camera option to the local web app
+
 ## v2.2 - Projection Visibility
 
 - added an extended out-of-court region to the minimap so players behind a

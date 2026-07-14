@@ -28,6 +28,7 @@ class HomographyEstimate:
 def estimate_template_homography(
     calibration: CalibrationRecord,
     ransac_reprojection_threshold_px: float = 6.0,
+    preserve_manual_baseline_corners: bool = True,
 ) -> HomographyEstimate:
     names = tuple(
         name
@@ -62,7 +63,11 @@ def estimate_template_homography(
     # Manual baseline corners are the geometric anchors. Optional landmarks such
     # as a net post must not be allowed to flip or collapse the court if their
     # physical meaning was clicked incorrectly.
-    if len(required_indexes) == 4 and not inliers[required_indexes].all():
+    if (
+        preserve_manual_baseline_corners
+        and len(required_indexes) == 4
+        and not inliers[required_indexes].all()
+    ):
         corner_template = template_points[required_indexes].astype(np.float32)
         corner_image = image_points[required_indexes].astype(np.float32)
         template_to_image = cv2.getPerspectiveTransform(corner_template, corner_image)

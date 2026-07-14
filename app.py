@@ -143,6 +143,7 @@ def run_pipeline(
     tracknet_model_path: str | None,
     tracknet_device: str,
     clone_tracknet: bool,
+    track_calibration: bool,
 ) -> subprocess.CompletedProcess[str]:
     command = [
         sys.executable,
@@ -173,6 +174,8 @@ def run_pipeline(
         )
         if clone_tracknet:
             command.append("--clone-tracknet")
+    if track_calibration:
+        command.append("--track-calibration")
     return subprocess.run(
         command,
         cwd=REPO_ROOT,
@@ -299,6 +302,14 @@ def main() -> None:
         )
         court_type = st.selectbox("Court type", ["tennis", "padel"])
         model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
+        track_calibration = st.checkbox(
+            "Adapt calibration to camera movement",
+            value=True,
+            help=(
+                "Tracks the clicked court landmarks with sparse optical flow and "
+                "uses RANSAC to refresh the homography per frame."
+            ),
+        )
         track_ball = st.checkbox(
             "Include TrackNet ball projection",
             value=DEFAULT_TRACKNET_WEIGHTS.exists(),
@@ -359,8 +370,8 @@ def main() -> None:
         )
     with warning_column:
         st.warning(
-            "V2 assumes a stable camera. Recalibrate after a cut or significant "
-            "camera move; per-frame automatic recalibration is the next phase."
+            "Temporal calibration starts at the selected calibration timestamp. "
+            "After a camera cut or failed validation, that frame is left unmapped."
         )
         st.caption(f"Video: {width} x {height}, {fps:.2f} fps, {duration:.1f}s")
 
@@ -465,6 +476,7 @@ def main() -> None:
                 tracknet_model_path,
                 tracknet_device,
                 clone_tracknet,
+                track_calibration,
             )
         if result.returncode != 0:
             st.error("The pipeline did not finish.")

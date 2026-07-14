@@ -39,6 +39,10 @@ from courtvision.calibration.manual import (  # noqa: E402
     collect_manual_landmarks,
     collect_matplotlib_landmarks,
 )
+from courtvision.calibration.temporal import (  # noqa: E402
+    TemporalCalibrationResult,
+    TemporalCourtCalibrator,
+)
 from courtvision.calibration.validation import validate_homography  # noqa: E402
 from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
 from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
@@ -287,6 +291,20 @@ def parse_args() -> argparse.Namespace:
         help="Named calibration JSON. Enables homography mapping and coordinate CSV.",
     )
     parser.add_argument(
+        "--track-calibration",
+        action="store_true",
+        help=(
+            "Track manual court landmarks with optical flow and estimate a fresh "
+            "RANSAC homography per frame after the calibration frame."
+        ),
+    )
+    parser.add_argument(
+        "--temporal-min-inliers",
+        type=int,
+        default=6,
+        help="Minimum RANSAC inliers required for a temporal calibration frame.",
+    )
+    parser.add_argument(
         "--create-calibration",
         action="store_true",
         help="Interactively click landmarks on this video's frame before processing.",
@@ -406,6 +424,10 @@ def main() -> None:
         raise ValueError("--tracknet-model-path requires --tracknet-dir")
     if args.ball_trace < 0:
         raise ValueError("--ball-trace cannot be negative")
+    if args.track_calibration and not (args.calibration or args.create_calibration):
+        raise ValueError("--track-calibration requires --calibration")
+    if args.temporal_min_inliers < 4:
+        raise ValueError("--temporal-min-inliers must be at least four")
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
@@ -542,6 +564,8 @@ def main() -> None:
     last_tracks: list[FrameTrack] = []
     ball_trace: list[BallPoint] = []
     ball_court_trace: list[CourtCoordinate] = []
+    temporal_calibrator: TemporalCourtCalibrator | None = None
+    temporal_result: TemporalCalibrationResult | None = None
     frame_index = 0
     progress = tqdm(total=max_frames, desc="Full pipeline")
     while True:
@@ -565,18 +589,41 @@ def main() -> None:
         last_tracks = current_tracks
         tracks_by_frame[frame_index] = current_tracks
         annotated = frame.copy()
+        frame_calibration = calibration
+        frame_estimate = estimate
+        frame_validation = validation
+        if args.track_calibration:
+            frame_calibration = None
+            frame_estimate = None
+            frame_validation = None
+            if frame_index == calibration.frame_index:
+                temporal_calibrator = TemporalCourtCalibrator(
+                    calibration,
+                    frame,
+                    min_inliers=args.temporal_min_inliers,
+                )
+                temporal_result = temporal_calibrator.initial_result()
+            elif frame_index > calibration.frame_index and temporal_calibrator:
+                temporal_result = temporal_calibrator.update(frame, frame_index)
+            if temporal_result and temporal_result.valid:
+                frame_calibration = temporal_result.calibration
+                frame_estimate = temporal_result.estimate
+                frame_validation = temporal_result.validation
         if args.draw_calibration_overlay:
-            assert (
-                calibration is not None
-                and estimate is not None
-                and validation is not None
-            )
-            annotated = draw_calibration_overlay(
-                annotated,
-                calibration,
-                estimate,
-                validation,
-            )
+            if frame_calibration and frame_estimate and frame_validation:
+                annotated = draw_calibration_overlay(
+                    annotated,
+                    frame_calibration,
+                    frame_estimate,
+                    frame_validation,
+                )
+            elif args.track_calibration:
+                _draw_temporal_status(
+                    annotated,
+                    temporal_result,
+                    frame_index,
+                    calibration,
+                )
         for track in current_tracks:
             annotated = draw_player(annotated, track)
         ball = ball_tracks_by_frame.get(frame_index)
@@ -586,13 +633,14 @@ def main() -> None:
         draw_ball(annotated, ball, ball_trace)
         source_writer.write(annotated)
 
-        if estimate is not None and spec is not None:
+        map_image = draw_court_map(calibration.court_type) if map_writer else None
+        if frame_estimate is not None and spec is not None:
             frame_points = [
                 replace(
                     project_player_detection(
                         track.detection,
                         track.track_id,
-                        estimate,
+                        frame_estimate,
                         spec,
                     ),
                     frame=frame_index,
@@ -602,7 +650,7 @@ def main() -> None:
             court_points.extend(frame_points)
             ball_coordinate = None
             if ball is not None:
-                ball_coordinate = project_ball_point(ball, estimate, spec)
+                ball_coordinate = project_ball_point(ball, frame_estimate, spec)
                 if ball_coordinate is not None:
                     court_points.append(ball_coordinate)
                     if ball_coordinate.in_bounds:
@@ -611,8 +659,7 @@ def main() -> None:
                             ball_court_trace = ball_court_trace[-args.ball_trace :]
                         else:
                             ball_court_trace = []
-            if map_writer is not None:
-                map_image = draw_court_map(calibration.court_type)
+            if map_image is not None:
                 for point in frame_points:
                     color = (0, 220, 255) if point.in_bounds else (0, 0, 255)
                     draw_projected_point(
@@ -639,10 +686,14 @@ def main() -> None:
                         "BALL",
                         (0, 0, 255),
                     )
-                assert court_map_writer is not None
-                court_map_writer.write(map_image)
-                map_image = cv2.resize(map_image, (map_width, height))
-                map_writer.write(cv2.hconcat((annotated, map_image)))
+        elif map_image is not None and args.track_calibration:
+            _draw_temporal_map_status(map_image, temporal_result)
+
+        if map_image is not None:
+            assert map_writer is not None and court_map_writer is not None
+            court_map_writer.write(map_image)
+            map_image = cv2.resize(map_image, (map_width, height))
+            map_writer.write(cv2.hconcat((annotated, map_image)))
 
         frame_index += 1
         progress.update(1)
@@ -667,6 +718,48 @@ def main() -> None:
     if map_writer is not None:
         print(f"Wrote court-map video: {output_dir / 'court_map_annotated.mp4'}")
         print(f"Wrote standalone court map: {output_dir / 'court_map.mp4'}")
+
+
+def _draw_temporal_status(
+    image,
+    result: TemporalCalibrationResult | None,
+    frame_index: int,
+    calibration: CalibrationRecord,
+) -> None:
+    if frame_index < calibration.frame_index:
+        text = "Temporal calibration starts at the selected calibration frame"
+    elif result is None:
+        text = "Temporal calibration is initializing"
+    else:
+        text = result.reason or "Temporal calibration unavailable"
+    cv2.rectangle(image, (0, 0), (image.shape[1], 34), (18, 18, 18), -1)
+    cv2.putText(
+        image,
+        text,
+        (12, 24),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.55,
+        (0, 0, 255),
+        2,
+        cv2.LINE_AA,
+    )
+
+
+def _draw_temporal_map_status(
+    image,
+    result: TemporalCalibrationResult | None,
+) -> None:
+    text = result.reason if result else "Awaiting calibration frame"
+    cv2.putText(
+        image,
+        text,
+        (22, image.shape[0] - 24),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 0, 255),
+        2,
+        cv2.LINE_AA,
+    )
 
 
 if __name__ == "__main__":
