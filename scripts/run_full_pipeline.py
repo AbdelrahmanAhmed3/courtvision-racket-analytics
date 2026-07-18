@@ -45,7 +45,10 @@ from courtvision.calibration.temporal import (  # noqa: E402
 )
 from courtvision.calibration.validation import validate_homography  # noqa: E402
 from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
-from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
+from courtvision.detectors.roboflow_detector import (  # noqa: E402
+    DEFAULT_CONFIDENCE,
+    RoboflowDetector,
+)
 from courtvision.detectors.tracknet_adapter import (  # noqa: E402
     BallPoint,
     DEFAULT_TRACKNET_REPO_URL,
@@ -56,6 +59,8 @@ from courtvision.detectors.tracknet_adapter import (  # noqa: E402
 )
 from courtvision.tracking.simple_tracker import (  # noqa: E402
     DEFAULT_IOU_THRESHOLD,
+    DEFAULT_MAX_MISSING_SECONDS,
+    DEFAULT_REASSOCIATION_DISTANCE_PX,
     SimpleIouTracker,
     TrackedDetection,
 )
@@ -129,8 +134,12 @@ def draw_ball(frame, ball: BallPoint | None, trace: list[BallPoint]) -> None:
 def tracks_from_detections(
     detections: list[Detection],
     tracker: SimpleIouTracker,
+    timestamp_seconds: float,
 ) -> list[FrameTrack]:
-    tracked = tracker.update(filter_player_detections(detections))
+    tracked = tracker.update(
+        filter_player_detections(detections),
+        timestamp_seconds=timestamp_seconds,
+    )
     return [frame_track_from_tracked(item) for item in tracked]
 
 
@@ -254,7 +263,16 @@ def parse_args() -> argparse.Namespace:
         help="Process only the first N seconds of the input video.",
     )
     parser.add_argument("--iou-threshold", type=float, default=DEFAULT_IOU_THRESHOLD)
-    parser.add_argument("--max-missing-frames", type=int, default=10)
+    parser.add_argument(
+        "--max-missing-seconds",
+        type=float,
+        default=DEFAULT_MAX_MISSING_SECONDS,
+    )
+    parser.add_argument(
+        "--reassociation-distance-px",
+        type=float,
+        default=DEFAULT_REASSOCIATION_DISTANCE_PX,
+    )
     parser.add_argument(
         "--tracknet-model-path",
         help="TrackNet weights path. Enables ball tracking and ball projection.",
@@ -284,7 +302,7 @@ def parse_args() -> argparse.Namespace:
         default=7,
         help="Number of visible ball positions to draw as a trail.",
     )
-    parser.add_argument("--confidence", type=float, default=None)
+    parser.add_argument("--confidence", type=float, default=DEFAULT_CONFIDENCE)
     parser.add_argument("--overlap", type=float, default=None)
     parser.add_argument(
         "--calibration",
@@ -556,7 +574,8 @@ def main() -> None:
         )
         tracker = SimpleIouTracker(
             iou_threshold=args.iou_threshold,
-            max_missing_frames=args.max_missing_frames,
+            max_missing_seconds=args.max_missing_seconds,
+            reassociation_distance_px=args.reassociation_distance_px,
         )
 
     tracks_by_frame: dict[int, list[FrameTrack]] = {}
@@ -582,6 +601,7 @@ def main() -> None:
             current_tracks = tracks_from_detections(
                 detector.predict_frame(frame, frame_index),
                 tracker,
+                timestamp_seconds=frame_index / fps,
             )
         else:
             current_tracks = last_tracks

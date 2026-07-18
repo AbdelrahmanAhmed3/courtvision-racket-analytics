@@ -144,6 +144,9 @@ def run_pipeline(
     tracknet_device: str,
     clone_tracknet: bool,
     track_calibration: bool,
+    confidence: float,
+    max_missing_seconds: float,
+    reassociation_distance_px: float,
 ) -> subprocess.CompletedProcess[str]:
     command = [
         sys.executable,
@@ -154,6 +157,12 @@ def run_pipeline(
         str(output_dir),
         "--model-id",
         model_id,
+        "--confidence",
+        str(confidence),
+        "--max-missing-seconds",
+        str(max_missing_seconds),
+        "--reassociation-distance-px",
+        str(reassociation_distance_px),
         "--max-seconds",
         str(seconds),
         "--calibration",
@@ -302,6 +311,27 @@ def main() -> None:
         )
         court_type = st.selectbox("Court type", ["tennis", "padel"])
         model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
+        confidence = st.slider(
+            "Player detection confidence",
+            min_value=0.05,
+            max_value=0.95,
+            value=0.30,
+            step=0.05,
+        )
+        max_missing_seconds = st.slider(
+            "Player ID recovery window (seconds)",
+            min_value=0.5,
+            max_value=10.0,
+            value=3.0,
+            step=0.5,
+        )
+        reassociation_distance_px = st.number_input(
+            "ID reassociation distance (pixels)",
+            min_value=50,
+            max_value=1000,
+            value=250,
+            step=25,
+        )
         track_calibration = st.checkbox(
             "Adapt calibration to camera movement",
             value=True,
@@ -477,6 +507,9 @@ def main() -> None:
                 tracknet_device,
                 clone_tracknet,
                 track_calibration,
+                confidence,
+                max_missing_seconds,
+                float(reassociation_distance_px),
             )
         if result.returncode != 0:
             st.error("The pipeline did not finish.")
