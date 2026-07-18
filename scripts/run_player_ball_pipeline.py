@@ -19,9 +19,14 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
-from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
+from courtvision.detectors.roboflow_detector import (  # noqa: E402
+    DEFAULT_CONFIDENCE,
+    RoboflowDetector,
+)
 from courtvision.tracking.simple_tracker import (  # noqa: E402
     DEFAULT_IOU_THRESHOLD,
+    DEFAULT_MAX_MISSING_SECONDS,
+    DEFAULT_REASSOCIATION_DISTANCE_PX,
     SimpleIouTracker,
     TrackedDetection,
 )
@@ -291,6 +296,7 @@ def run_player_tracking(
     detector: RoboflowDetector,
     frame_stride: int,
     tracker: SimpleIouTracker,
+    fps: float,
 ) -> dict[int, list[PlayerTrack]]:
     tracks_by_frame: dict[int, list[PlayerTrack]] = {}
     last_tracks: list[PlayerTrack] = []
@@ -300,7 +306,7 @@ def run_player_tracking(
             detections = filter_player_detections(
                 detector.predict_frame(frame, frame_index)
             )
-            tracked = tracker.update(detections)
+            tracked = tracker.update(detections, timestamp_seconds=frame_index / fps)
             last_tracks = [player_track_from_tracked(item) for item in tracked]
             tracks_by_frame[frame_index] = last_tracks
         else:
@@ -427,10 +433,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--roboflow-model-id", default=DEFAULT_ROBOFLOW_MODEL_ID)
     parser.add_argument("--roboflow-frame-stride", type=int, default=1)
-    parser.add_argument("--confidence", type=float, default=None)
+    parser.add_argument("--confidence", type=float, default=DEFAULT_CONFIDENCE)
     parser.add_argument("--overlap", type=float, default=None)
     parser.add_argument("--iou-threshold", type=float, default=DEFAULT_IOU_THRESHOLD)
-    parser.add_argument("--max-missing-frames", type=int, default=10)
+    parser.add_argument(
+        "--max-missing-seconds",
+        type=float,
+        default=DEFAULT_MAX_MISSING_SECONDS,
+    )
+    parser.add_argument(
+        "--reassociation-distance-px",
+        type=float,
+        default=DEFAULT_REASSOCIATION_DISTANCE_PX,
+    )
     parser.add_argument("--tracknet-model-path", required=True)
     parser.add_argument("--tracknet-dir", default=DEFAULT_TRACKNET_DIR)
     parser.add_argument("--tracknet-repo-url", default=DEFAULT_TRACKNET_REPO_URL)
@@ -475,13 +490,15 @@ def main() -> None:
     )
     player_tracker = SimpleIouTracker(
         iou_threshold=args.iou_threshold,
-        max_missing_frames=args.max_missing_frames,
+        max_missing_seconds=args.max_missing_seconds,
+        reassociation_distance_px=args.reassociation_distance_px,
     )
     player_tracks = run_player_tracking(
         frames=frames,
         detector=roboflow,
         frame_stride=args.roboflow_frame_stride,
         tracker=player_tracker,
+        fps=fps,
     )
 
     write_player_csv(output_dir / "player_tracks.csv", player_tracks)
