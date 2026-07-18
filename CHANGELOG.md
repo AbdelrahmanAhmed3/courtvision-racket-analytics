@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (planned for v4.0)
+
+- set Roboflow player detection confidence explicitly to `0.30`
+- replace frame-count track expiry with a three-second missing-player window
+- reassociate returning dormant tracks by a conservative center-distance gate
+- expose confidence, recovery time, and reassociation distance in the local app
+
 ## v3.0 - Temporal Court Calibration
 
 - track named manual court landmarks with sparse Lucas-Kanade optical flow

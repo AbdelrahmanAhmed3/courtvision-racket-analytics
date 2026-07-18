@@ -87,6 +87,13 @@ or tracking behavior, ball projection, analytics definitions, or published
 output schemas start a new major release (`v2.0`, `v3.0`, and so on). See
 [CHANGELOG.md](CHANGELOG.md) for the release history and full policy.
 
+## Player Identity Recovery
+
+Player detection uses an explicit Roboflow confidence threshold of `0.30`. The
+simple tracker retains a missing player for `3.0` seconds and can restore that
+ID when an unmatched detection returns near the last known player position.
+This is a time-based IoU-and-distance tracker, not appearance-based ReID.
+
 ## Project Layout
 
 ```text

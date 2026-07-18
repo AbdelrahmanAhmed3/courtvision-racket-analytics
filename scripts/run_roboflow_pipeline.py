@@ -18,9 +18,14 @@ from courtvision.detectors.base import (  # noqa: E402
     Detection,
     filter_player_detections,
 )
-from courtvision.detectors.roboflow_detector import RoboflowDetector  # noqa: E402
+from courtvision.detectors.roboflow_detector import (  # noqa: E402
+    DEFAULT_CONFIDENCE,
+    RoboflowDetector,
+)
 from courtvision.tracking.simple_tracker import (  # noqa: E402
     DEFAULT_IOU_THRESHOLD,
+    DEFAULT_MAX_MISSING_SECONDS,
+    DEFAULT_REASSOCIATION_DISTANCE_PX,
     SimpleIouTracker,
     TrackedDetection,
 )
@@ -68,9 +73,10 @@ def draw_pipeline_detection(frame, item: PipelineDetection):
 def tracked_items_from_detections(
     detections: list[Detection],
     tracker: SimpleIouTracker,
+    timestamp_seconds: float,
 ) -> list[PipelineDetection]:
     player_detections = filter_player_detections(detections)
-    tracked_players = tracker.update(player_detections)
+    tracked_players = tracker.update(player_detections, timestamp_seconds)
     return [
         *[
             pipeline_detection_from_tracked(tracked_player)
@@ -153,7 +159,11 @@ def run_video(
 
         if frame_index % frame_stride == 0:
             raw_detections = detector.predict_frame(frame, frame_index)
-            last_detections = tracked_items_from_detections(raw_detections, tracker)
+            last_detections = tracked_items_from_detections(
+                raw_detections,
+                tracker,
+                timestamp_seconds=frame_index / fps,
+            )
             all_detections.extend(last_detections)
 
         annotated = frame.copy()
@@ -181,8 +191,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--frame-stride", type=int, default=5)
     parser.add_argument("--iou-threshold", type=float, default=DEFAULT_IOU_THRESHOLD)
-    parser.add_argument("--max-missing-frames", type=int, default=10)
-    parser.add_argument("--confidence", type=float, default=None)
+    parser.add_argument(
+        "--max-missing-seconds",
+        type=float,
+        default=DEFAULT_MAX_MISSING_SECONDS,
+    )
+    parser.add_argument(
+        "--reassociation-distance-px",
+        type=float,
+        default=DEFAULT_REASSOCIATION_DISTANCE_PX,
+    )
+    parser.add_argument("--confidence", type=float, default=DEFAULT_CONFIDENCE)
     parser.add_argument("--overlap", type=float, default=None)
     return parser.parse_args()
 
@@ -197,7 +216,8 @@ def main() -> None:
     )
     tracker = SimpleIouTracker(
         iou_threshold=args.iou_threshold,
-        max_missing_frames=args.max_missing_frames,
+        max_missing_seconds=args.max_missing_seconds,
+        reassociation_distance_px=args.reassociation_distance_px,
     )
     detections = run_video(
         input_path=Path(args.input),

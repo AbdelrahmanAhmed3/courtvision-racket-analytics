@@ -10,6 +10,7 @@ from courtvision.detectors.base import Detection
 
 DEFAULT_API_URL = "https://detect.roboflow.com"
 DEFAULT_API_KEY_ENV = "ROBOFLOW_API_KEY"
+DEFAULT_CONFIDENCE = 0.3
 
 
 def roboflow_box_to_xyxy(prediction: dict) -> tuple[float, float, float, float]:
@@ -37,7 +38,7 @@ class RoboflowDetector:
         api_key_env: str = DEFAULT_API_KEY_ENV,
         api_url: str = DEFAULT_API_URL,
         model_name: str | None = None,
-        confidence: float | None = None,
+        confidence: float | None = DEFAULT_CONFIDENCE,
         overlap: float | None = None,
     ) -> None:
         self.model_id = model_id

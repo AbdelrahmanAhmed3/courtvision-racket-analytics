@@ -32,6 +32,7 @@ def test_tracked_items_assign_player_ids_and_drop_balls() -> None:
             make_detection("ball", 200, 200, 210, 210, frame=0),
         ],
         tracker,
+        timestamp_seconds=0.0,
     )
     second = tracked_items_from_detections(
         [
@@ -39,6 +40,7 @@ def test_tracked_items_assign_player_ids_and_drop_balls() -> None:
             make_detection("ball", 205, 205, 215, 215, frame=1),
         ],
         tracker,
+        timestamp_seconds=0.1,
     )
 
     assert len(first) == 1
