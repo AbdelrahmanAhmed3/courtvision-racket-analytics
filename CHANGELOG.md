@@ -6,6 +6,10 @@
 - replace frame-count track expiry with a three-second missing-player window
 - reassociate returning dormant tracks by a conservative center-distance gate
 - expose confidence, recovery time, and reassociation distance in the local app
+- retry temporary hosted-inference failures with backoff; send confidence and overlap to the hosted API
+- optionally keep only the most confident players (2 for tennis, 4 for padel)
+- add an experimental Kalman IoU tracker and `scripts/compare_trackers.py`; add `scipy` dependency
+- remove `--max-missing-frames` in favour of the time-based missing-player window
 
 ## v3.0 - Temporal Court Calibration
 
