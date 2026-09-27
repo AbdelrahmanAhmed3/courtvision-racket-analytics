@@ -94,6 +94,12 @@ simple tracker retains a missing player for `3.0` seconds and can restore that
 ID when an unmatched detection returns near the last known player position.
 This is a time-based IoU-and-distance tracker, not appearance-based ReID.
 
+An experimental constant-velocity Kalman tracker with Hungarian assignment is kept in
+the repository for comparison (`scripts/compare_trackers.py`). On the tested padel clip it
+created more tracks and potential ID switches than the simpler tracker. Court players move
+nonlinearly, are frequently occluded, and can return far from a stale prediction, so the
+measured result did not justify replacing the simpler default. See #5.
+
 ## Project Layout
 
 ```text
