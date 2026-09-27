@@ -190,6 +190,82 @@ def draw_projected_point(
     return image
 
 
+def draw_player_distance_totals(
+    image: np.ndarray,
+    distances_m: dict[int, float],
+) -> np.ndarray:
+    """Draw stable player-distance totals in the map's upper left and right."""
+    track_ids = sorted(distances_m)
+    split_index = (len(track_ids) + 1) // 2
+    for side, ids in enumerate((track_ids[:split_index], track_ids[split_index:])):
+        for row, track_id in enumerate(ids):
+            label = f"P{track_id}: {distances_m[track_id] / 1000:.2f} km"
+            text_size, _ = cv2.getTextSize(
+                label,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.52,
+                1,
+            )
+            x = 16 if side == 0 else image.shape[1] - 16 - text_size[0]
+            y = 60 + row * 28
+            cv2.putText(
+                image,
+                label,
+                (x, y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.52,
+                (18, 18, 18),
+                3,
+                cv2.LINE_AA,
+            )
+            cv2.putText(
+                image,
+                label,
+                (x, y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.52,
+                (235, 240, 235),
+                1,
+                cv2.LINE_AA,
+            )
+    return image
+
+
+def draw_shot_speed(
+    image: np.ndarray,
+    event_type: str,
+    hitter_id: int | None,
+    receiver_id: int | None,
+    speed_kmh: float,
+) -> np.ndarray:
+    """Draw the latest estimated player-to-player transit speed above the court."""
+    if hitter_id is not None and receiver_id is not None:
+        route = f"P{hitter_id} -> P{receiver_id}"
+        label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
+    elif hitter_id is not None:
+        route = f"P{hitter_id}"
+        label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
+    else:
+        route = "BALL"
+        label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
+    top = int(round(image.shape[0] * 0.115))
+    text_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.58, 2)
+    left = max(10, (image.shape[1] - text_size[0]) // 2 - 10)
+    right = min(image.shape[1] - 10, left + text_size[0] + 20)
+    cv2.rectangle(image, (left, top - 27), (right, top + 10), (20, 20, 20), -1)
+    cv2.putText(
+        image,
+        label,
+        (left + 10, top),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.58,
+        (0, 220, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    return image
+
+
 def _draw_world_line(
     image: np.ndarray,
     first: tuple[float, float],
