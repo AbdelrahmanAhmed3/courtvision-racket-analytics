@@ -1,3 +1,14 @@
+## Checks
+
+Run before every commit; CI runs the same on each pull request:
+
+```bash
+ruff check .
+pytest
+```
+
+Read `CONTEXT.md` for domain vocabulary and `docs/adr/` for past decisions.
+
 ## Agent skills
 
 ### Issue tracker
