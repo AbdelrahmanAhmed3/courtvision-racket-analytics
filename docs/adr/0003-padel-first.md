@@ -1,0 +1,3 @@
+# Padel first; tennis analytics come later
+
+The repository started as racket-sport analytics and already calibrates and projects both padel and tennis courts. We build ball events, movement stats and every trained model for padel first, and treat tennis as calibration and projection only until v5. Padel is the market the author can reach (clubs in Cairo, his own play at semi-pro amateur level), it has far fewer working open-source tools than tennis, and models trained for padel carry straight over to the Personal edition. Tennis analytics would double the event logic (no walls, singles, different court) for little extra learning.
