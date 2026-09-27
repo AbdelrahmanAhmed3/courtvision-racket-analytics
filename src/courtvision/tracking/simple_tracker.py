@@ -27,6 +27,15 @@ class TrackedDetection:
         )
 
 
+@dataclass(frozen=True)
+class TrackerUpdateStats:
+    """Matching events from the most recent update."""
+
+    iou_matches: int = 0
+    dormant_recoveries: int = 0
+    new_tracks: int = 0
+
+
 @dataclass
 class TrackState:
     track_id: int
@@ -74,6 +83,7 @@ class SimpleIouTracker:
         self._next_track_id = 1
         self._tracks: dict[int, TrackState] = {}
         self._last_timestamp_seconds: float | None = None
+        self.last_update_stats = TrackerUpdateStats()
 
     @property
     def tracks(self) -> list[TrackState]:
@@ -91,7 +101,9 @@ class SimpleIouTracker:
             raise ValueError("timestamp_seconds must be monotonic")
         self._expire_tracks(timestamp_seconds)
         matches = self._match_detections(detections)
-        matches.update(self._reassociate_dormant_tracks(detections, matches))
+        iou_matches = len(matches)
+        dormant_matches = self._reassociate_dormant_tracks(detections, matches)
+        matches.update(dormant_matches)
         matched_track_ids = set(matches.values())
         matched_detection_indexes = set(matches)
 
@@ -109,6 +121,7 @@ class SimpleIouTracker:
                 track.missing_seconds = timestamp_seconds - track.last_seen_seconds
 
         visible_track_ids = set(matched_track_ids)
+        new_tracks = 0
         for detection_index, detection in enumerate(detections):
             if detection_index in matched_detection_indexes:
                 continue
@@ -119,7 +132,13 @@ class SimpleIouTracker:
                 last_seen_seconds=timestamp_seconds,
             )
             visible_track_ids.add(track_id)
+            new_tracks += 1
         self._last_timestamp_seconds = timestamp_seconds
+        self.last_update_stats = TrackerUpdateStats(
+            iou_matches=iou_matches,
+            dormant_recoveries=len(dormant_matches),
+            new_tracks=new_tracks,
+        )
         return [
             self._tracks[track_id].to_tracked_detection()
             for track_id in sorted(visible_track_ids)
@@ -130,6 +149,7 @@ class SimpleIouTracker:
         self._next_track_id = 1
         self._tracks.clear()
         self._last_timestamp_seconds = None
+        self.last_update_stats = TrackerUpdateStats()
 
     def _expire_tracks(self, timestamp_seconds: float) -> None:
         for track_id, track in list(self._tracks.items()):
