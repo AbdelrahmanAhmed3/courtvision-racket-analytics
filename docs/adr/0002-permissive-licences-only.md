@@ -1,0 +1,14 @@
+# Permissive licences only: Apache-2.0 project, no AGPL, non-commercial or unlicensed dependencies
+
+CourtVision is released under Apache-2.0 so anyone, including companies and future clients, can use and build on it, and so a product can grow from it later. Every model, weight file, dataset and library it ships or downloads must therefore be under a permissive licence (Apache-2.0, MIT, BSD, CC BY). This rules out the most common choices in open-source sports-analytics projects, which is why this is written down.
+
+## Considered Options
+
+- **Ultralytics YOLO (detection, pose)**: rejected. AGPL-3.0 covers the code and the weights, including fine-tunes, and would force AGPL onto CourtVision. We use RF-DETR (Apache-2.0) for detection and rtmlib (Apache-2.0) for pose instead.
+- **Roboflow hosted inference**: kept only as an optional backend. It needs an API key and a network connection, so it cannot be the default.
+- **Existing tennis/padel repos and weights** (TrackNet by yastrebksv, TennisCourtDetector, padel_analytics): not reused. They are unlicensed (all rights reserved) or CC BY-NC-SA. Their published ideas may be reimplemented; their code, weights and data may not be copied.
+
+## Consequences
+
+- There are no public padel ball or padel court-keypoint weights under a usable licence, so CourtVision trains and publishes its own (planned for v4.1).
+- Clips downloaded from YouTube are never committed or re-hosted; the README credits the source channel and links to it.
