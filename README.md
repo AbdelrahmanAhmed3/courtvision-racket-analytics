@@ -1,5 +1,7 @@
 # CourtVision Racket Analytics
 
+[![CI](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml)
+
 Production-style computer vision pipeline for tennis/racket-sport video analytics.
 
 The project is designed for a hybrid workflow:
