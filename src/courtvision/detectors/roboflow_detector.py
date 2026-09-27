@@ -46,13 +46,17 @@ class RoboflowDetector:
         self.api_url = api_url
         self.confidence = confidence
         self.overlap = overlap
-        self.client = build_inference_client(api_url=api_url, api_key=self.api_key)
+        self.client = build_inference_client(
+            api_url=api_url,
+            api_key=self.api_key,
+            confidence=confidence,
+            overlap=overlap,
+        )
 
     def predict_frame(self, frame, frame_index: int) -> list[Detection]:
         response = self.client.infer(
             frame,
             model_id=self.model_id,
-            **self._inference_kwargs(),
         )
         return detections_from_response(
             response,
@@ -68,21 +72,12 @@ class RoboflowDetector:
         response = self.client.infer(
             str(image_path),
             model_id=self.model_id,
-            **self._inference_kwargs(),
         )
         return detections_from_response(
             response,
             frame_index=frame_index,
             model_name=self.model_name,
         )
-
-    def _inference_kwargs(self) -> dict[str, float]:
-        kwargs = {}
-        if self.confidence is not None:
-            kwargs["confidence"] = self.confidence
-        if self.overlap is not None:
-            kwargs["overlap"] = self.overlap
-        return kwargs
 
 
 def get_api_key(api_key_env: str = DEFAULT_API_KEY_ENV) -> str:
@@ -95,16 +90,30 @@ def get_api_key(api_key_env: str = DEFAULT_API_KEY_ENV) -> str:
     return api_key
 
 
-def build_inference_client(api_url: str, api_key: str) -> Any:
+def build_inference_client(
+    api_url: str,
+    api_key: str,
+    confidence: float | None = None,
+    overlap: float | None = None,
+) -> Any:
+    """Create a hosted client with the detector's thresholds applied server-side."""
     try:
-        from inference_sdk import InferenceHTTPClient
+        from inference_sdk import InferenceConfiguration, InferenceHTTPClient
     except ImportError as exc:
         raise ImportError(
             "Roboflow inference-sdk is not installed. Install it with "
             "`pip install -e '.[roboflow]'` or `pip install inference-sdk`."
         ) from exc
 
-    return InferenceHTTPClient(api_url=api_url, api_key=api_key)
+    client = InferenceHTTPClient(api_url=api_url, api_key=api_key)
+    thresholds = {}
+    if confidence is not None:
+        thresholds["confidence_threshold"] = confidence
+    if overlap is not None:
+        thresholds["iou_threshold"] = overlap
+    if thresholds:
+        client.configure(InferenceConfiguration(**thresholds))
+    return client
 
 
 def detections_from_response(
