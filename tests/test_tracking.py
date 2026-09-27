@@ -1,4 +1,6 @@
 from courtvision.detectors.base import Detection
+from courtvision.tracking import kalman_iou_tracker
+from courtvision.tracking.kalman_iou_tracker import KalmanIouTracker
 from courtvision.tracking.simple_tracker import SimpleIouTracker, iou
 
 
@@ -76,3 +78,63 @@ def test_tracker_removes_tracks_after_time_limit() -> None:
     tracker.update([], 1.1)
 
     assert tracker.tracks == []
+
+
+def test_kalman_tracker_predicts_motion_across_a_missed_detection() -> None:
+    tracker = KalmanIouTracker(
+        iou_threshold=0.3,
+        max_missing_seconds=3.0,
+        reassociation_distance_px=100.0,
+    )
+
+    first = tracker.update([make_detection(0, 0, 100, 100, frame=0)], 0.0)
+    tracker.update([make_detection(20, 0, 120, 100, frame=1)], 0.1)
+    tracker.update([], 0.2)
+    returned = tracker.update([make_detection(60, 0, 160, 100, frame=3)], 0.3)
+
+    assert first[0].track_id == 1
+    assert returned[0].track_id == 1
+    assert tracker.last_update_stats.dormant_recoveries == 1
+
+
+def test_kalman_tracker_expires_after_dormant_window() -> None:
+    tracker = KalmanIouTracker(max_missing_seconds=1.0)
+
+    tracker.update([make_detection(0, 0, 100, 100)], 0.0)
+    tracker.update([], 1.1)
+
+    assert tracker.tracks == []
+
+
+def test_kalman_tracker_uses_global_hungarian_assignment(monkeypatch) -> None:
+    tracker = KalmanIouTracker(iou_threshold=0.3)
+    tracker.update(
+        [
+            make_detection(0, 0, 100, 100),
+            make_detection(200, 0, 300, 100),
+        ],
+        0.0,
+    )
+
+    def controlled_iou(track_box, detection_box) -> float:
+        track_is_left = track_box[0] < 100
+        detection_is_left = detection_box[0] < 100
+        scores = {
+            (True, True): 0.9,
+            (True, False): 0.8,
+            (False, True): 0.85,
+            (False, False): 0.0,
+        }
+        return scores[(track_is_left, detection_is_left)]
+
+    monkeypatch.setattr(kalman_iou_tracker, "iou", controlled_iou)
+    tracks = tracker.update(
+        [
+            make_detection(10, 0, 110, 100),
+            make_detection(210, 0, 310, 100),
+        ],
+        0.1,
+    )
+
+    ids_by_detection_x1 = {track.detection.x1: track.track_id for track in tracks}
+    assert ids_by_detection_x1 == {10: 2, 210: 1}
