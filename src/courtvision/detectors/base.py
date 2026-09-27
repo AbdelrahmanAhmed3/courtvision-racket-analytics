@@ -45,10 +45,31 @@ def is_player_or_ball_class(class_name: str) -> bool:
     return is_player_class(class_name) or is_ball_class(class_name)
 
 
-def filter_player_detections(detections: list[Detection]) -> list[Detection]:
-    return [
+def filter_player_detections(
+    detections: list[Detection],
+    max_players: int | None = None,
+) -> list[Detection]:
+    """Keep player classes, optionally retaining the highest-confidence players."""
+    players = [
         detection for detection in detections if is_player_class(detection.class_name)
     ]
+    if max_players is None:
+        return players
+    if max_players < 1:
+        raise ValueError("max_players must be at least one")
+    return sorted(players, key=lambda detection: detection.confidence, reverse=True)[
+        :max_players
+    ]
+
+
+def expected_player_count(court_type: str) -> int:
+    """Return the player cap for the supported racket-sport court types."""
+    normalized = court_type.strip().lower()
+    if normalized == "tennis":
+        return 2
+    if normalized in {"padel", "paddle"}:
+        return 4
+    raise ValueError(f"Unsupported court type: {court_type}")
 
 
 def filter_player_ball_detections(detections: list[Detection]) -> list[Detection]:
