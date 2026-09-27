@@ -55,6 +55,10 @@ class KalmanTrackState:
 class KalmanIouTracker:
     """Time-aware constant-velocity tracker with global IoU assignment.
 
+    Experimental: kept for comparison with SimpleIouTracker. On the tested
+    padel clip it produced more tracks and ID switches, so it is not used by
+    any pipeline. See issue #5.
+
     State is ``[center_x, center_y, width, height, vx, vy, vw, vh]``. Each
     frame predicts every live or dormant track, then Hungarian assignment finds
     the lowest-cost one-to-one set of detection matches.
