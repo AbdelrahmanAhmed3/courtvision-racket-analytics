@@ -55,7 +55,12 @@ class RoboflowDetector:
         self.overlap = overlap
         self.max_retries = max_retries
         self.retry_backoff_seconds = retry_backoff_seconds
-        self.client = build_inference_client(api_url=api_url, api_key=self.api_key)
+        self.client = build_inference_client(
+            api_url=api_url,
+            api_key=self.api_key,
+            confidence=confidence,
+            overlap=overlap,
+        )
 
     def predict_frame(self, frame, frame_index: int) -> list[Detection]:
         response = infer_with_retries(
@@ -106,16 +111,30 @@ def get_api_key(api_key_env: str = DEFAULT_API_KEY_ENV) -> str:
     return api_key
 
 
-def build_inference_client(api_url: str, api_key: str) -> Any:
+def build_inference_client(
+    api_url: str,
+    api_key: str,
+    confidence: float | None = None,
+    overlap: float | None = None,
+) -> Any:
+    """Create a hosted client with the detector's thresholds applied server-side."""
     try:
-        from inference_sdk import InferenceHTTPClient
+        from inference_sdk import InferenceConfiguration, InferenceHTTPClient
     except ImportError as exc:
         raise ImportError(
             "Roboflow inference-sdk is not installed. Install it with "
             "`pip install -e '.[roboflow]'` or `pip install inference-sdk`."
         ) from exc
 
-    return InferenceHTTPClient(api_url=api_url, api_key=api_key)
+    client = InferenceHTTPClient(api_url=api_url, api_key=api_key)
+    thresholds = {}
+    if confidence is not None:
+        thresholds["confidence_threshold"] = confidence
+    if overlap is not None:
+        thresholds["iou_threshold"] = overlap
+    if thresholds:
+        client.configure(InferenceConfiguration(**thresholds))
+    return client
 
 
 def infer_with_retries(

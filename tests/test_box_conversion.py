@@ -7,6 +7,7 @@ from courtvision.detectors.base import (
     is_player_class,
 )
 from courtvision.detectors.roboflow_detector import (
+    build_inference_client,
     detections_from_response,
     filter_by_confidence,
     infer_with_retries,
@@ -137,3 +138,37 @@ def test_retries_temporary_hosted_inference_failure(monkeypatch) -> None:
 
     assert response == {"predictions": []}
     assert client.calls == 2
+
+
+def test_hosted_client_receives_confidence_and_overlap(monkeypatch) -> None:
+    import sys
+    import types
+
+    configured = {}
+
+    class InferenceConfiguration:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class InferenceHTTPClient:
+        def __init__(self, api_url, api_key):
+            pass
+
+        def configure(self, configuration):
+            configured.update(configuration.kwargs)
+            return self
+
+    fake_sdk = types.SimpleNamespace(
+        InferenceHTTPClient=InferenceHTTPClient,
+        InferenceConfiguration=InferenceConfiguration,
+    )
+    monkeypatch.setitem(sys.modules, "inference_sdk", fake_sdk)
+
+    build_inference_client(
+        api_url="https://example.test",
+        api_key="key",
+        confidence=0.3,
+        overlap=0.5,
+    )
+
+    assert configured == {"confidence_threshold": 0.3, "iou_threshold": 0.5}
