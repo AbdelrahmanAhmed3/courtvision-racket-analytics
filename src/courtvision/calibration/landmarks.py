@@ -20,6 +20,7 @@ TENNIS_LANDMARKS = (
     LandmarkDefinition("near_left_baseline_corner", (0.0, 1.0), required=True),
     LandmarkDefinition("left_net_point", (0.0, 0.5)),
     LandmarkDefinition("right_net_point", (1.0, 0.5)),
+    LandmarkDefinition("net_center", (0.5, 0.5)),
     LandmarkDefinition(
         "far_left_service_intersection",
         (_TENNIS_SINGLE_MARGIN, _TENNIS_SERVICE_Y),
@@ -36,6 +37,8 @@ TENNIS_LANDMARKS = (
         "near_right_service_intersection",
         (1.0 - _TENNIS_SINGLE_MARGIN, 1.0 - _TENNIS_SERVICE_Y),
     ),
+    LandmarkDefinition("far_service_center", (0.5, _TENNIS_SERVICE_Y)),
+    LandmarkDefinition("near_service_center", (0.5, 1.0 - _TENNIS_SERVICE_Y)),
 )
 
 PADEL_LANDMARKS = (
@@ -45,10 +48,13 @@ PADEL_LANDMARKS = (
     LandmarkDefinition("near_left_baseline_corner", (0.0, 1.0), required=True),
     LandmarkDefinition("left_net_point", (0.0, 0.5)),
     LandmarkDefinition("right_net_point", (1.0, 0.5)),
+    LandmarkDefinition("net_center", (0.5, 0.5)),
     LandmarkDefinition("far_left_service_intersection", (0.0, 0.15)),
     LandmarkDefinition("far_right_service_intersection", (1.0, 0.15)),
     LandmarkDefinition("near_left_service_intersection", (0.0, 0.85)),
     LandmarkDefinition("near_right_service_intersection", (1.0, 0.85)),
+    LandmarkDefinition("far_service_center", (0.5, 0.15)),
+    LandmarkDefinition("near_service_center", (0.5, 0.85)),
 )
 
 
