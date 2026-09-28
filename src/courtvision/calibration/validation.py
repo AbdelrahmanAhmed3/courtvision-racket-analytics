@@ -27,26 +27,35 @@ def validate_homography(estimate: HomographyEstimate) -> CalibrationValidation:
         name: float(error)
         for name, error in zip(estimate.landmark_names, errors, strict=True)
     }
-    mean_error = float(errors.mean())
-    max_error = float(errors.max())
     landmark_count = len(estimate.landmark_names)
     inlier_count = len(estimate.inlier_names)
+    inliers = np.asarray(
+        [name in estimate.inlier_names for name in estimate.landmark_names],
+        dtype=bool,
+    )
+    inlier_errors = errors[inliers]
+    mean_inlier_error = (
+        float(inlier_errors.mean()) if len(inlier_errors) else float("inf")
+    )
+    max_inlier_error = (
+        float(inlier_errors.max()) if len(inlier_errors) else float("inf")
+    )
 
     if landmark_count == 4:
         status = "warning"
-    elif inlier_count < 4 or max_error > 15:
+    elif inlier_count < 4:
         status = "bad"
-    elif mean_error <= 5 and max_error <= 8:
+    elif mean_inlier_error <= 5 and max_inlier_error <= 8:
         status = "good"
-    elif mean_error <= 15:
+    elif mean_inlier_error <= 15:
         status = "acceptable"
     else:
         status = "bad"
 
     return CalibrationValidation(
         status=status,
-        mean_reprojection_error_px=mean_error,
-        max_reprojection_error_px=max_error,
+        mean_reprojection_error_px=mean_inlier_error,
+        max_reprojection_error_px=max_inlier_error,
         per_landmark_error_px=per_landmark,
         inlier_count=inlier_count,
         landmark_count=landmark_count,

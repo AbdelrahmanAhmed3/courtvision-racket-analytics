@@ -2,6 +2,7 @@ import numpy as np
 
 from courtvision.calibration.homography import estimate_template_homography
 from courtvision.calibration.io import CalibrationRecord, LandmarkObservation
+from courtvision.calibration.landmarks import TENNIS_LANDMARKS
 from courtvision.calibration.validation import validate_homography
 
 
@@ -42,3 +43,35 @@ def test_named_landmark_homography_and_validation() -> None:
     assert validation.status == "good"
     assert validation.inlier_count == 6
     assert validation.mean_reprojection_error_px < 1e-4
+
+
+def test_tennis_calibration_corners_always_use_doubles_court_boundary() -> None:
+    corners = {
+        landmark.name: landmark.template
+        for landmark in TENNIS_LANDMARKS
+        if landmark.required
+    }
+
+    assert corners == {
+        "far_left_baseline_corner": (0.0, 0.0),
+        "far_right_baseline_corner": (1.0, 0.0),
+        "near_right_baseline_corner": (1.0, 1.0),
+        "near_left_baseline_corner": (0.0, 1.0),
+    }
+
+
+def test_validation_accepts_ransac_inliers_when_one_optional_point_is_wrong() -> None:
+    calibration = make_calibration()
+    calibration.landmarks["left_net_point"] = LandmarkObservation(
+        image=(30, 150),
+        template=(0.0, 0.5),
+        visible=True,
+        confidence=0.2,
+        source="model",
+    )
+
+    validation = validate_homography(estimate_template_homography(calibration))
+
+    assert validation.status == "good"
+    assert validation.inlier_count == 5
+    assert validation.per_landmark_error_px["left_net_point"] > 10
