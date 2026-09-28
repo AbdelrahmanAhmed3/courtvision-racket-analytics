@@ -67,6 +67,7 @@ def detect_shots(
             ball_points_by_frame,
             player_detections_by_frame,
             frame,
+            receive_frame,
             direction_window_frames,
             fps,
         )
@@ -206,19 +207,27 @@ def _find_first_bounce(
     ball_points_by_frame: dict[int, BallPoint],
     player_detections_by_frame: dict[int, list[tuple[int, Detection]]],
     impact_frame: int,
+    receive_frame: int,
     window: int,
     fps: float,
 ) -> int | None:
+    """First direction change away from players between the hit and the receive."""
     latest_frame = max(ball_points_by_frame, default=impact_frame)
     min_delay_frames = max(window + 1, round(0.12 * fps))
     max_search_frames = round(2.5 * fps)
     for frame in range(
         impact_frame + min_delay_frames,
-        min(latest_frame - window, impact_frame + max_search_frames) + 1,
+        min(
+            latest_frame - window,
+            impact_frame + max_search_frames,
+            receive_frame - 1,
+        )
+        + 1,
     ):
         if _nearest_player_at_impact(
             ball_points_by_frame.get(frame, BallPoint(frame, None, None)),
             player_detections_by_frame.get(frame, []),
+            minimum_distance_px=DEFAULT_CONTACT_DISTANCE_PX,
         ) is not None:
             continue
         if _has_direction_change(

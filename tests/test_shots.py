@@ -131,3 +131,24 @@ def test_skips_transit_when_player_contacts_are_missing() -> None:
     shots = detect_shots(ball_points, {}, coordinates, fps=10.0)
 
     assert shots == []
+
+
+def test_bounce_is_searched_only_before_the_receivers_contact() -> None:
+    track = [
+        (100, 0), (100, 15), (100, 30), (100, 45), (100, 60), (100, 75),
+        (100, 90), (100, 105), (120, 105), (140, 105), (160, 105),
+    ]
+    ball_points = {frame: BallPoint(frame, x, y) for frame, (x, y) in enumerate(track)}
+    hitter = Detection(0, "player", 0.9, 90, -10, 110, 10, "test")
+    receiver = Detection(5, "player", 0.9, 90, 70, 110, 80, "test")
+    player_detections = {0: [(1, hitter)], 5: [(2, receiver)]}
+    coordinates = {
+        frame: ball_coordinate(frame, point.x or 0.0, point.y or 0.0)
+        for frame, point in ball_points.items()
+    }
+
+    shots = detect_shots(ball_points, player_detections, coordinates, fps=10.0)
+
+    assert len(shots) == 1
+    assert shots[0].receive_frame == 5
+    assert shots[0].bounce_frame is None
