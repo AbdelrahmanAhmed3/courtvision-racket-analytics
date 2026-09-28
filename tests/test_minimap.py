@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from courtvision.visualization.minimap import get_court_spec, world_to_canvas
+import numpy as np
+
+from courtvision.visualization.minimap import (
+    draw_shot_speed,
+    get_court_spec,
+    world_to_canvas,
+)
 
 
 def test_player_behind_baseline_stays_inside_map_canvas() -> None:
@@ -34,3 +40,16 @@ def test_court_baseline_is_inset_from_extended_map_boundary() -> None:
 
     assert far_baseline_y > margin
     assert near_baseline_y < canvas_size[1] - margin
+
+
+def test_shot_speed_label_draws_on_map() -> None:
+    image = np.zeros((900, 500, 3), dtype=np.uint8)
+
+    draw_shot_speed(
+        image,
+        hitter_id=2,
+        receiver_id=3,
+        speed_kmh=84.5,
+    )
+
+    assert image.any()

@@ -233,7 +233,6 @@ def draw_player_distance_totals(
 
 def draw_shot_speed(
     image: np.ndarray,
-    event_type: str,
     hitter_id: int | None,
     receiver_id: int | None,
     speed_kmh: float,
@@ -241,13 +240,11 @@ def draw_shot_speed(
     """Draw the latest estimated player-to-player transit speed above the court."""
     if hitter_id is not None and receiver_id is not None:
         route = f"P{hitter_id} -> P{receiver_id}"
-        label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
     elif hitter_id is not None:
         route = f"P{hitter_id}"
-        label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
     else:
         route = "BALL"
-        label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
+    label = f"EST. {route} TRANSIT: {speed_kmh:.1f} km/h"
     top = int(round(image.shape[0] * 0.115))
     text_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.58, 2)
     left = max(10, (image.shape[1] - text_size[0]) // 2 - 10)

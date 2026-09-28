@@ -1,20 +1,27 @@
+"""Shots, bounces and ball speed from the ball track and tracked players.
+
+Experimental. Tuned on tennis broadcast clips; not yet adapted to padel.
+Known limits (see issue #8): thresholds are in pixels and frames, the ball is
+projected onto the floor even when it is in the air, glass rebounds count as
+bounces, the last shot of a rally has no receiver and is not reported, and
+exchanges shorter than 5 m (volleys at the net) are dropped.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import acos, hypot, isfinite
+from math import acos, degrees, hypot, isfinite
 
 from courtvision.analytics.court_coordinates import CourtCoordinate
 from courtvision.detectors.base import Detection
 from courtvision.detectors.tracknet_adapter import BallPoint
 
 DEFAULT_DIRECTION_WINDOW_FRAMES = 2
-DEFAULT_MIN_DIRECTION_CHANGE_DEGREES = 65.0
 DEFAULT_MIN_BOUNCE_CHANGE_DEGREES = 45.0
 # A 170 km/h serve can cross a 17 m court in roughly 0.36 seconds.  Keep this
 # guard below that so fast, valid serve contacts are not discarded.
 DEFAULT_MIN_SHOT_INTERVAL_SECONDS = 0.12
 DEFAULT_MAX_SPEED_KMH = 300.0
-DEFAULT_MIN_EVENT_TRAVEL_PX = 8.0
 DEFAULT_CONTACT_DISTANCE_PX = 90.0
 DEFAULT_CONTACT_GAP_FRAMES = 3
 DEFAULT_MIN_FLIGHT_DISTANCE_M = 5.0
@@ -132,16 +139,13 @@ def _is_cross_court_flight(
 def _nearest_player_at_impact(
     ball_point: BallPoint,
     players: list[tuple[int, Detection]],
-    excluded_track_id: int | None = None,
-    minimum_distance_px: float = 45.0,
+    minimum_distance_px: float = DEFAULT_CONTACT_DISTANCE_PX,
 ) -> int | None:
     if not ball_point.visible or ball_point.x is None or ball_point.y is None:
         return None
 
     nearest: tuple[float, int] | None = None
     for track_id, detection in players:
-        if track_id == excluded_track_id:
-            continue
         distance = _point_to_bbox_distance(ball_point.x, ball_point.y, detection)
         box_diagonal = hypot(detection.x2 - detection.x1, detection.y2 - detection.y1)
         max_distance = max(minimum_distance_px, box_diagonal * 0.45)
@@ -176,20 +180,6 @@ def _has_direction_change(
     return _vector_angle_degrees(incoming, outgoing) >= minimum_angle_degrees
 
 
-def _is_court_side_reversal(
-    incoming: tuple[float, float],
-    outgoing: tuple[float, float],
-) -> bool:
-    """Reject turns that do not reverse the ball between the near and far sides."""
-    incoming_length = hypot(*incoming)
-    outgoing_length = hypot(*outgoing)
-    return (
-        incoming_length >= DEFAULT_MIN_EVENT_TRAVEL_PX
-        and outgoing_length >= DEFAULT_MIN_EVENT_TRAVEL_PX
-        and incoming[1] * outgoing[1] < 0
-    )
-
-
 def _vector_angle_degrees(
     first: tuple[float, float], second: tuple[float, float]
 ) -> float:
@@ -200,7 +190,7 @@ def _vector_angle_degrees(
     cosine = (first[0] * second[0] + first[1] * second[1]) / (
         first_length * second_length
     )
-    return acos(max(-1.0, min(1.0, cosine))) * 180.0 / 3.141592653589793
+    return degrees(acos(max(-1.0, min(1.0, cosine))))
 
 
 def _find_first_bounce(
@@ -227,7 +217,6 @@ def _find_first_bounce(
         if _nearest_player_at_impact(
             ball_points_by_frame.get(frame, BallPoint(frame, None, None)),
             player_detections_by_frame.get(frame, []),
-            minimum_distance_px=DEFAULT_CONTACT_DISTANCE_PX,
         ) is not None:
             continue
         if _has_direction_change(
