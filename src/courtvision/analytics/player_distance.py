@@ -92,6 +92,9 @@ class PlayerDistanceTracker:
         )
         state.last_timestamp_seconds = timestamp_seconds
         if distance_m / delta_seconds > self.max_speed_mps:
+            # An implausible jump (ID swap, projection glitch): count no
+            # distance, but re-anchor so later movement is measured again.
+            state.smoothed_point_m = raw_point_m
             return
         state.total_distance_m += distance_m
         state.smoothed_point_m = smoothed_point

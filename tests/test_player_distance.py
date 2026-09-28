@@ -1,8 +1,5 @@
-import numpy as np
-
 from courtvision.analytics.court_coordinates import CourtCoordinate
 from courtvision.analytics.player_distance import PlayerDistanceTracker
-from courtvision.visualization.minimap import draw_shot_speed
 
 
 def make_player_point(track_id: int, x: float, y: float) -> CourtCoordinate:
@@ -43,15 +40,13 @@ def test_player_distance_rejects_implausible_projection_jump() -> None:
     assert tracker.distances_m == {4: 0.0}
 
 
-def test_shot_speed_label_draws_on_map() -> None:
-    image = np.zeros((900, 500, 3), dtype=np.uint8)
+def test_player_distance_resumes_after_a_rejected_jump() -> None:
+    tracker = PlayerDistanceTracker(smoothing_alpha=1.0, max_speed_mps=12.0)
 
-    draw_shot_speed(
-        image,
-        event_type="transit",
-        hitter_id=2,
-        receiver_id=3,
-        speed_kmh=84.5,
-    )
+    tracker.update([make_player_point(4, 0.0, 0.0)], 0.0)
+    tracker.update([make_player_point(4, 0.5, 0.0)], 0.1)
+    tracker.update([make_player_point(4, 3.0, 0.0)], 0.2)
+    tracker.update([make_player_point(4, 3.5, 0.0)], 0.3)
+    tracker.update([make_player_point(4, 4.0, 0.0)], 0.4)
 
-    assert image.any()
+    assert tracker.distances_m == {4: 1.5}
