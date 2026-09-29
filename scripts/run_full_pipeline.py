@@ -22,6 +22,8 @@ from courtvision.analytics.court_coordinates import (  # noqa: E402
     project_ball_point,
     project_player_detection,
 )
+from courtvision.analytics.player_distance import PlayerDistanceTracker  # noqa: E402
+from courtvision.analytics.shots import ShotEvent, detect_shots  # noqa: E402
 from courtvision.calibration.homography import (  # noqa: E402
     estimate_template_homography,
 )
@@ -44,7 +46,11 @@ from courtvision.calibration.temporal import (  # noqa: E402
     TemporalCourtCalibrator,
 )
 from courtvision.calibration.validation import validate_homography  # noqa: E402
-from courtvision.detectors.base import Detection, filter_player_detections  # noqa: E402
+from courtvision.detectors.base import (  # noqa: E402
+    Detection,
+    expected_player_count,
+    filter_player_detections,
+)
 from courtvision.detectors.roboflow_detector import (  # noqa: E402
     DEFAULT_CONFIDENCE,
     RoboflowDetector,
@@ -69,11 +75,14 @@ from courtvision.visualization.court_overlay import (  # noqa: E402
 )
 from courtvision.visualization.minimap import (  # noqa: E402
     draw_court_map,
+    draw_player_distance_totals,
     draw_projected_point,
+    draw_shot_speed,
     get_court_spec,
 )
 
 DEFAULT_MODEL_ID = "tennis-v4d0h/2"
+SHOT_SPEED_DISPLAY_SECONDS = 1.25
 
 
 @dataclass(frozen=True)
@@ -135,9 +144,10 @@ def tracks_from_detections(
     detections: list[Detection],
     tracker: SimpleIouTracker,
     timestamp_seconds: float,
+    max_players: int | None = None,
 ) -> list[FrameTrack]:
     tracked = tracker.update(
-        filter_player_detections(detections),
+        filter_player_detections(detections, max_players=max_players),
         timestamp_seconds=timestamp_seconds,
     )
     return [frame_track_from_tracked(item) for item in tracked]
@@ -243,6 +253,98 @@ def write_court_coordinates_csv(path: Path, points: list[CourtCoordinate]) -> No
                     f"{point.confidence:.6f}",
                 ]
             )
+
+
+def write_player_distances_csv(path: Path, distances_m: dict[int, float]) -> None:
+    with path.open("w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["track_id", "distance_m", "distance_km"])
+        for track_id, distance_m in sorted(distances_m.items()):
+            writer.writerow([track_id, f"{distance_m:.3f}", f"{distance_m / 1000:.5f}"])
+
+
+def write_shots_csv(path: Path, shots: list[ShotEvent]) -> None:
+    with path.open("w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            [
+                "frame",
+                "event_type",
+                "hitter_track_id",
+                "receiver_track_id",
+                "receive_frame",
+                "bounce_frame",
+                "court_plane_speed_kmh",
+                "segment_distance_m",
+                "segment_duration_seconds",
+            ]
+        )
+        for shot in shots:
+            writer.writerow(
+                [
+                    shot.frame,
+                    shot.event_type,
+                    "" if shot.hitter_track_id is None else shot.hitter_track_id,
+                    "" if shot.receiver_track_id is None else shot.receiver_track_id,
+                    shot.receive_frame,
+                    "" if shot.bounce_frame is None else shot.bounce_frame,
+                    f"{shot.court_plane_speed_kmh:.2f}",
+                    f"{shot.segment_distance_m:.3f}",
+                    f"{shot.segment_duration_seconds:.3f}",
+                ]
+            )
+
+
+def render_shot_speeds_on_map_video(
+    video_path: Path,
+    shots: list[ShotEvent],
+    fps: float,
+    panel_offset_x: int = 0,
+    panel_width: int | None = None,
+) -> None:
+    """Add timed shot-speed labels after future frames confirm each impact."""
+    if not shots:
+        return
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        raise ValueError(f"Could not open map video for shot labels: {video_path}")
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    output_path = video_path.with_name(f"{video_path.stem}_shots.mp4")
+    writer = cv2.VideoWriter(
+        str(output_path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        fps,
+        (width, height),
+    )
+    visible_frames = round(SHOT_SPEED_DISPLAY_SECONDS * fps)
+    frame_index = 0
+    try:
+        while True:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            active_shots = [
+                shot
+                for shot in shots
+                if shot.frame <= frame_index < shot.frame + visible_frames
+            ]
+            if active_shots:
+                active_shot = active_shots[-1]
+                right = panel_offset_x + (panel_width or width)
+                map_panel = frame[:, panel_offset_x:right]
+                draw_shot_speed(
+                    map_panel,
+                    active_shot.hitter_track_id,
+                    active_shot.receiver_track_id,
+                    active_shot.court_plane_speed_kmh,
+                )
+            writer.write(frame)
+            frame_index += 1
+    finally:
+        capture.release()
+        writer.release()
+    output_path.replace(video_path)
 
 
 def parse_args() -> argparse.Namespace:
@@ -491,6 +593,9 @@ def main() -> None:
             f"{validation.inlier_count}/{validation.landmark_count} inliers, "
             f"mean error {validation.mean_reprojection_error_px:.2f}px"
         )
+    max_player_count = (
+        expected_player_count(calibration.court_type) if calibration else None
+    )
 
     cap = cv2.VideoCapture(str(input_path))
     if not cap.isOpened():
@@ -583,6 +688,8 @@ def main() -> None:
     last_tracks: list[FrameTrack] = []
     ball_trace: list[BallPoint] = []
     ball_court_trace: list[CourtCoordinate] = []
+    ball_coordinates_by_frame: dict[int, CourtCoordinate] = {}
+    player_distance_tracker = PlayerDistanceTracker()
     temporal_calibrator: TemporalCourtCalibrator | None = None
     temporal_result: TemporalCalibrationResult | None = None
     frame_index = 0
@@ -602,6 +709,7 @@ def main() -> None:
                 detector.predict_frame(frame, frame_index),
                 tracker,
                 timestamp_seconds=frame_index / fps,
+                max_players=max_player_count,
             )
         else:
             current_tracks = last_tracks
@@ -668,11 +776,13 @@ def main() -> None:
                 for track in current_tracks
             ]
             court_points.extend(frame_points)
+            player_distance_tracker.update(frame_points, frame_index / fps)
             ball_coordinate = None
             if ball is not None:
                 ball_coordinate = project_ball_point(ball, frame_estimate, spec)
                 if ball_coordinate is not None:
                     court_points.append(ball_coordinate)
+                    ball_coordinates_by_frame[frame_index] = ball_coordinate
                     if ball_coordinate.in_bounds:
                         if args.ball_trace:
                             ball_court_trace.append(ball_coordinate)
@@ -711,6 +821,7 @@ def main() -> None:
 
         if map_image is not None:
             assert map_writer is not None and court_map_writer is not None
+            draw_player_distance_totals(map_image, player_distance_tracker.distances_m)
             court_map_writer.write(map_image)
             map_image = cv2.resize(map_image, (map_width, height))
             map_writer.write(cv2.hconcat((annotated, map_image)))
@@ -731,10 +842,41 @@ def main() -> None:
         write_court_coordinates_csv(
             output_dir / "tracks_with_court_coords.csv", court_points
         )
+        write_player_distances_csv(
+            output_dir / "player_distances.csv",
+            player_distance_tracker.distances_m,
+        )
+    shots = detect_shots(
+        ball_tracks_by_frame,
+        {
+            frame: [(track.track_id, track.detection) for track in tracks]
+            for frame, tracks in tracks_by_frame.items()
+        },
+        ball_coordinates_by_frame,
+        fps,
+    )
+    if ball_tracks_by_frame:
+        write_shots_csv(output_dir / "shots.csv", shots)
+        if shots and map_writer is not None:
+            render_shot_speeds_on_map_video(
+                output_dir / "court_map.mp4",
+                shots,
+                fps,
+            )
+            render_shot_speeds_on_map_video(
+                output_dir / "court_map_annotated.mp4",
+                shots,
+                fps,
+                panel_offset_x=width,
+                panel_width=map_width,
+            )
     print(f"Wrote detections: {output_dir / 'detections.csv'}")
     print(f"Wrote annotated video: {output_dir / 'annotated.mp4'}")
     if court_points:
         print(f"Wrote court coordinates: {output_dir / 'tracks_with_court_coords.csv'}")
+        print(f"Wrote player distances: {output_dir / 'player_distances.csv'}")
+    if ball_tracks_by_frame:
+        print(f"Wrote estimated shots: {output_dir / 'shots.csv'} ({len(shots)})")
     if map_writer is not None:
         print(f"Wrote court-map video: {output_dir / 'court_map_annotated.mp4'}")
         print(f"Wrote standalone court map: {output_dir / 'court_map.mp4'}")
