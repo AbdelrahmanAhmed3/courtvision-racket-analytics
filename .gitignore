@@ -37,3 +37,7 @@ tracknet-model/TrackNet/
 # Agent skills are installed per machine (Claude Code plugin / npx skills), not vendored
 .agents/
 skills-lock.json
+
+# Portfolio assets generated from CourtVision's standalone map renderer
+!docs/assets/
+!docs/assets/*.jpg

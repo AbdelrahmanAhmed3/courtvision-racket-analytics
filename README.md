@@ -1,52 +1,107 @@
-# CourtVision Racket Analytics
+# CourtVision: Tennis and Padel Video Analytics
 
 [![CI](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml)
 
-Production-style computer vision pipeline for tennis/racket-sport video analytics.
+CourtVision is a computer-vision research prototype that turns a broadcast tennis or
+padel video into tracked players, a TrackNet ball trajectory, and a synchronized
+top-down court view. It combines learned detectors with classical geometry and makes
+calibration quality visible instead of silently returning plausible-looking results.
 
-The project is designed for a hybrid workflow:
+The project was built as an end-to-end portfolio case study: model integration,
+multi-object tracking, homography estimation, optical flow, temporal analytics,
+interactive debugging, testing, and deployment-friendly command-line workflows.
 
-- Local development for package code, preprocessing, polygon logic, visualization, tests, and docs.
-- Kaggle GPU notebooks for heavier inference, training, and longer video runs.
+| Tennis ball projection | Padel player distance |
+| --- | --- |
+| ![Tennis court map with players and a TrackNet ball trail](docs/assets/tennis-ball-projection.jpg) | ![Padel court map with four tracked players and distance totals](docs/assets/padel-player-distance.jpg) |
+
+> **Project status:** Manual calibration and court projection are the trusted baseline.
+> Model-assisted calibration, ball-event detection, and shot-speed estimation are
+> experimental and expose warnings or fallbacks when their inputs are unreliable.
+
+## What It Demonstrates
+
+- A modular Python package with Roboflow and Ultralytics detector adapters.
+- Time-aware player identity persistence using IoU, spatial recovery, and a dormant
+  track window.
+- TrackNet integration for small, fast ball tracking on CPU, MPS, and CUDA.
+- Manual, classical-CV, and model-assisted court calibration for tennis and padel.
+- RANSAC homography validation with inlier and reprojection-error reporting.
+- Sparse Lucas-Kanade optical flow for adapting calibration to camera movement.
+- Court-space player distance, ball trajectories, and experimental shot analytics.
+- A Streamlit interface for video selection, calibration, threshold tuning, and
+  synchronized video/map playback.
+- Unit tests for geometry, calibration, tracking, masks, analytics, and model-response
+  conversion.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    V[Video] --> PD[Player detector]
+    V --> BT[TrackNet ball tracker]
+    PD --> PT[Time-aware IoU tracker]
+    V --> C[Manual / assisted calibration]
+    C --> H[RANSAC homography]
+    H --> OF[Optical-flow updates]
+    PT --> P[Image-to-court projection]
+    BT --> P
+    OF --> P
+    P --> M[Synchronized court map]
+    P --> A[Distance and shot analytics]
+```
+
+The calibration subsystem is deliberately hybrid. A human can click named court
+landmarks for the most reliable result. Auto and assisted modes can instead combine
+hosted keypoints with near-white line evidence, RANSAC-fitted intersections, and a
+padel surface-color boundary. All modes produce the same named-landmark format, so
+validation and projection do not depend on how the points were obtained.
+
+## Capability Status
+
+| Capability | Status | Notes |
+| --- | --- | --- |
+| Manual tennis/padel calibration | Validated baseline | Named points, RANSAC report, overlay |
+| Player detection | Working | Roboflow or Ultralytics adapters |
+| Player tracking | Working | Simple time-aware IoU tracker is the current default |
+| Ball tracking | Working with weights | TrackNet model is supplied separately |
+| Player/ball court projection | Working | Ball projection assumes the ball lies on the court plane |
+| Camera-motion compensation | Working with constraints | Optical flow; invalid frames are left unmapped |
+| Keypoint-assisted calibration | Experimental | Sensitive to model domain shift and court visibility |
+| Player distance | Working | Accumulated in calibrated court coordinates |
+| Shot events and speed | Experimental | 2D video estimate, not radar-equivalent speed |
 
 ## Quick Start
+
+Python 3.10 or newer is required.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -e ".[dev]"
+pip install -e ".[dev,ui,roboflow,media]"
+cp .env.example .env
 ```
 
-Run tests:
+Add your `ROBOFLOW_API_KEY` to `.env`, then start the local interface:
 
 ```bash
-pytest
-```
-
-## Local Web App
-
-Install the UI and Roboflow extras, then start the local app:
-
-```bash
-pip install -e ".[ui,roboflow]"
 streamlit run app.py
 ```
 
-Open the localhost URL printed by Streamlit. Choose a video from your computer,
-select its court type, click the eight prompted court landmarks in the browser,
-then run player tracking and court mapping. The app uses the local `.env` for
-`ROBOFLOW_API_KEY` and writes generated artifacts under `outputs/ui_runs/`.
-Completed runs show the tracked broadcast and the standalone court map side by
-side; their play, pause, and seek controls stay synchronized.
+The app writes generated artifacts under `outputs/ui_runs/`. Videos, model weights,
+credentials, and generated outputs are intentionally excluded from Git.
 
-When `tracknet-model/model_best.pt` exists, the app automatically enables the
-unified player-plus-ball projection option. It can clone the matching TrackNet
-source into `tracknet-model/TrackNet/` on the first run when the setup checkbox
-is enabled.
+### TrackNet Setup
 
-To include TrackNet ball tracking and project the ball to the court map, pass
-the TrackNet clone and weights to the full pipeline:
+Install PyTorch and place compatible TrackNet source and weights locally:
+
+```bash
+pip install -e ".[tracknet]"
+```
+
+The UI detects `tracknet-model/model_best.pt` when present. The CLI accepts explicit
+source and weight paths:
 
 ```bash
 python scripts/run_full_pipeline.py \
@@ -55,86 +110,12 @@ python scripts/run_full_pipeline.py \
   --calibration configs/calibrations/your_video.json \
   --draw-court-map \
   --tracknet-dir /path/to/TrackNet \
-  --tracknet-model-path /path/to/tracknet_weights.pth
+  --tracknet-model-path /path/to/model_best.pt
 ```
 
-TrackNet runs only when its weights are supplied. Ball points are recorded as
-`object_type=ball` alongside player rows in `tracks_with_court_coords.csv`.
-Install PyTorch for TrackNet runs with:
+## Calibration Workflows
 
-```bash
-pip install -e ".[tracknet]"
-```
-
-The ball center is projected onto the court plane. During high airborne shots,
-that is an approximation because a planar homography cannot represent height.
-
-## Moving Cameras
-
-Enable **Adapt calibration to camera movement** in the local web app, or pass
-`--track-calibration` to the full pipeline. Starting from the manually
-calibrated frame, CourtVision tracks the named court landmarks with sparse
-optical flow and uses RANSAC to estimate a fresh homography per frame. Frames
-before the selected calibration timestamp, or frames that fail validation after
-a cut or landmark drift, are deliberately left unmapped rather than projected
-with stale geometry.
-
-## Versioning
-
-CourtVision uses feature releases such as `v1.1`, `v1.2`, and `v1.3` for
-backwards-compatible additions. Changes to calibration/homography logic, model
-or tracking behavior, ball projection, analytics definitions, or published
-output schemas start a new major release (`v2.0`, `v3.0`, and so on). See
-[CHANGELOG.md](CHANGELOG.md) for the release history and full policy.
-
-## Player Identity Recovery
-
-Player detection uses an explicit Roboflow confidence threshold of `0.30`. The
-simple tracker retains a missing player for `3.0` seconds and can restore that
-ID when an unmatched detection returns near the last known player position.
-This is a time-based IoU-and-distance tracker, not appearance-based ReID.
-
-An experimental constant-velocity Kalman tracker with Hungarian assignment is kept in
-the repository for comparison (`scripts/compare_trackers.py`). On the tested padel clip it
-created more tracks and potential ID switches than the simpler tracker. Court players move
-nonlinearly, are frequently occluded, and can return far from a stale prediction, so the
-measured result did not justify replacing the simpler default. See #5.
-
-## Project Layout
-
-```text
-src/courtvision/      Reusable Python package
-scripts/              CLI entrypoints for local and Kaggle runs
-configs/              Demo configs and polygon files
-tests/                Small local tests
-reports/              Model comparison and failure analysis notes
-outputs/              Generated local outputs, ignored by Git
-data/                 Local raw/processed data, ignored by Git
-```
-
-## Secrets
-
-Copy `.env.example` to `.env` locally and set your own values. Never commit `.env`.
-
-## Court Calibration and Mapping
-
-CourtVision v1 uses named manual landmarks for reliable court calibration. The
-calibration is validated with RANSAC inliers and reprojection error before player
-tracks are projected into normalized and meter-space court coordinates.
-
-For an interactive local macOS run, open a native video picker, choose the
-court type and duration, then click the eight prompted landmarks in the OpenCV
-window:
-
-```bash
-python scripts/run_local_interactive.py
-```
-
-It writes a timestamped folder under `outputs/local_runs/` containing the saved
-calibration JSON, annotated video, court-map video, and CSV files. The launcher
-uses `ROBOFLOW_API_KEY` from the local `.env` file.
-
-Create a calibration locally with the OpenCV click tool:
+For a fixed or mildly moving camera, manual calibration is the dependable workflow:
 
 ```bash
 python scripts/calibrate_court.py \
@@ -144,53 +125,137 @@ python scripts/calibrate_court.py \
   --output configs/calibrations/your_video_frame_90.json
 ```
 
-For Kaggle, create the calibration directly from the notebook's input video.
-Run these cells before the pipeline command; `%run` is essential because it
-keeps the interactive Matplotlib canvas in the notebook kernel:
-
-```python
-%pip install -q ipympl
-%matplotlib widget
-```
-
-```python
-%run scripts/run_full_pipeline.py \
-  --input /kaggle/input/your-video/video.mp4 \
-  --output-dir /kaggle/working/outputs/courtvision_v1 \
-  --create-calibration \
-  --court-type tennis \
-  --calibration-frame 90 \
-  --calibration-backend matplotlib \
-  --draw-court-map \
-  --draw-calibration-overlay
-```
-
-Click the eight prompted landmarks in order. The pipeline saves
-`/kaggle/working/outputs/courtvision_v1/calibration.json`, validates it, then
-continues with tracking and projection in the same run.
-
-Validate the saved landmarks and render a court overlay:
+Validate it by projecting the complete court model back onto the source frame:
 
 ```bash
 python scripts/validate_calibration.py \
   --input data/raw/your_video.mp4 \
   --calibration configs/calibrations/your_video_frame_90.json \
-  --output outputs/calibration/your_video_frame_90_overlay.jpg
+  --output outputs/calibration/your_video_overlay.jpg
 ```
 
-Render existing tracked detections with a court map. This mode is Kaggle-safe and
-does not require a Roboflow API call:
+Enable **Adapt calibration to camera movement** in the UI, or pass
+`--track-calibration` to the full pipeline. Sparse optical flow follows stable image
+features from the calibrated frame, while RANSAC rejects inconsistent correspondences
+before estimating each new homography. A cut or failed validation leaves that frame
+unmapped rather than applying stale geometry.
+
+Auto and assisted calibration are available in the UI as inspectable experiments.
+Their debug views expose pixel masks, candidate lines, model points, refined points,
+confidence, and threshold sensitivity so a failed proposal can be diagnosed.
+
+## Running the Pipeline
+
+Run detection, tracking, calibration, projection, and visualization together:
 
 ```bash
 python scripts/run_full_pipeline.py \
-  --input /kaggle/input/your-video/video.mp4 \
-  --detections /kaggle/input/your-tracks/detections.csv \
-  --calibration /kaggle/input/your-calibration/calibration.json \
+  --input data/raw/your_video.mp4 \
+  --output-dir outputs/your_run \
+  --calibration configs/calibrations/your_video.json \
   --draw-court-map \
-  --draw-calibration-overlay \
-  --output-dir /kaggle/working/outputs/courtvision_v1
+  --draw-calibration-overlay
 ```
 
-Omit `--detections` to run Roboflow player detection and IoU tracking in the same
-pipeline. In that mode, set `ROBOFLOW_API_KEY` through `.env` locally or a Kaggle
-Secret.
+To reproduce visualization without another API request, provide saved detections:
+
+```bash
+python scripts/run_full_pipeline.py \
+  --input data/raw/your_video.mp4 \
+  --detections outputs/previous_run/detections.csv \
+  --calibration configs/calibrations/your_video.json \
+  --output-dir outputs/replay \
+  --draw-court-map
+```
+
+This separation makes GPU/Kaggle inference and local analysis interoperable. Run
+`python scripts/run_full_pipeline.py --help` for the complete set of options.
+
+## Outputs
+
+| Artifact | Purpose |
+| --- | --- |
+| `annotated.mp4` | Player IDs, ball trail, and calibration diagnostics |
+| `court_map.mp4` | Standalone synchronized top-down view |
+| `side_by_side.mp4` | Broadcast and map visualization together |
+| `detections.csv` | Detector output suitable for replay |
+| `tracks_with_court_coords.csv` | Image, normalized, and metric court coordinates |
+| `calibration.json` | Named landmarks and source metadata |
+| calibration report/overlay | Inliers, reprojection error, and visual alignment |
+
+## Evaluation and Engineering Decisions
+
+Saved manual-calibration examples currently report:
+
+| Example | RANSAC inliers | Mean error | Max error |
+| --- | ---: | ---: | ---: |
+| US Open tennis, frame 90 | 8/8 | 1.31 px | 1.70 px |
+| Qatar Major padel, frame 90 | 8/8 | 2.60 px | 3.43 px |
+
+These numbers measure consistency with the selected landmarks, not accuracy against a
+large labeled benchmark. A dataset-level evaluation is future work.
+
+An experimental constant-velocity Kalman tracker with Hungarian assignment is kept in
+the repository for comparison. On the tested padel clip it created more tracks and
+potential ID switches than the simpler tracker. Court players move nonlinearly, are
+frequently occluded, and can return far from a stale prediction, so the measured result
+did not justify replacing the simpler default.
+
+## Limitations
+
+- A homography maps one plane. Airborne ball positions are projected as if they were on
+  the floor, so they can be displaced on the map.
+- Shot speed is a 2D court-space, contact-to-contact estimate. It is not racket-exit
+  speed from radar and can be biased by missed ball frames or contact timing.
+- Hosted keypoint models can shift under unseen camera angles, resolutions, lighting,
+  glass reflections, and different court colors.
+- Padel color refinement requires a visible court-floor boundary. Off-frame boundaries
+  are rejected instead of invented.
+- Classical pixel and line thresholds are inspectable but remain scene-sensitive.
+- Optical flow can fail on broadcast cuts, heavy occlusion, blur, or parallax.
+- The default player tracker has no appearance-based re-identification.
+- Hosted Roboflow inference requires credentials and network access; the complete
+  pipeline is not yet a real-time or fully offline product.
+- Results have not yet been benchmarked across a diverse, labeled multi-camera dataset.
+
+## Future Work
+
+1. Build a labeled tennis/padel benchmark for landmark error, projection error, player
+   ID switches, ball recall, and event timing.
+2. Fine-tune or replace the court-keypoint models using varied camera angles and use
+   geometric refinement as a validator rather than a substitute for model quality.
+3. Add ByteTrack-style low-confidence recovery and appearance ReID, then compare them
+   against the simple tracker using labeled identities.
+4. Estimate 3D ball motion or learn a camera-aware correction for airborne projection
+   and radar-comparable speed.
+5. Classify serve, forehand, backhand, volley, smash, and lob from ball trajectory,
+   player pose, and a temporal action model.
+6. Segment points and attribute winners, forced errors, and unforced errors. This needs
+   outcome labels and player attribution; it is not reliably derivable from one motion
+   threshold.
+7. Package a rights-cleared sample clip, reproducible benchmark command, and container
+   for a one-command public demo.
+
+## Repository Layout
+
+```text
+app.py                    Streamlit calibration and analysis UI
+src/courtvision/          Reusable detection, tracking, geometry, and analytics code
+scripts/                  CLI pipelines and debugging tools
+configs/                  Example configurations and saved calibrations
+tests/                    Focused unit and integration-style tests
+reports/                  Roadmaps, experiments, and failure analysis
+docs/assets/              Repository-owned README visuals
+data/ and outputs/        Local media and generated artifacts, ignored by Git
+```
+
+## Portfolio Summary
+
+CourtVision demonstrates how learned models and classical computer vision can be
+combined in a failure-aware video analytics system. Its strongest result is not a
+single model score: it is the end-to-end engineering around coordinate systems,
+temporal state, validation, fallbacks, reproducible artifacts, and honest uncertainty.
+
+See [CHANGELOG.md](CHANGELOG.md) for release history and
+[reports/court_calibration_roadmap.md](reports/court_calibration_roadmap.md) for the
+calibration design history.
