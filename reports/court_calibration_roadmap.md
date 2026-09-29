@@ -101,9 +101,9 @@ validated calibration lines, tracked player IDs, and out-of-court markers.
 
 ## Phase 4 - Temporal and Model-Assisted Calibration
 
-Status: temporal optical-flow calibration complete; model landmarks pending
+Status: working prototype; dataset-level validation pending
 
-Completed temporal deliverables:
+Completed deliverables:
 
 - sparse Lucas-Kanade optical flow for the named manual landmarks
 - forward-backward consistency rejection for unstable tracks
@@ -111,13 +111,18 @@ Completed temporal deliverables:
 - validated homographies used for player and ball projection after the manual
   calibration frame
 - unmapped fallback on failed validation instead of stale projection
+- hosted keypoint providers that propose named tennis and padel landmarks
+- near-white pixel and RANSAC-line refinement for visible court intersections
+- padel surface-color refinement with off-frame boundary rejection
+- confidence, court-shape, reprojection, and threshold-sensitivity diagnostics
+- landmark-source audit showing model, line-refined, and color-refined points
+- manual and assisted correction fallbacks using the Phase 1 interaction
 
-Deliverables:
+Remaining validation:
 
-- `ModelLandmarkProvider` that proposes named court landmarks
-- confidence threshold and minimum-visible-landmarks checks
-- RANSAC inlier count, reprojection error, court-shape sanity, and temporal-stability checks
-- manual correction fallback using the Phase 1 tool
+- benchmark landmark and projection error across varied venues and camera angles
+- measure temporal stability and recovery after pans, zooms, occlusions, and cuts
+- fine-tune or replace keypoint models that show domain shift
 
 Success condition:
 
@@ -142,14 +147,23 @@ calibration is obtained. Manual correction remains the fallback.
 
 ## Phase 5 - Ball Projection and Analytics
 
-Deliverables:
+Status: projection and player distance complete; shot analytics experimental
+
+Completed deliverables:
 
 - a common ball-track interface backed initially by TrackNet
 - ball center projection through the calibrated image-to-court homography
 - ball coordinates and confidence in the same per-frame CSV as player tracks
 - minimap ball marker and trajectory trail for tennis and padel
-- analytics built only from validated court-space tracks: player speed,
-  distance, court coverage, ball speed, rally segments, and shot events
+- per-player distance accumulation in metric court coordinates
+- experimental contact-to-contact shot events and 2D ball-speed estimates
+
+Remaining deliverables:
+
+- labeled evaluation of contact timing and ball-speed error
+- robust player speed, court coverage, and rally segmentation
+- shot-type classification from trajectory, player pose, and temporal context
+- point outcomes and winner/forced-error/unforced-error attribution
 
 Success condition:
 
