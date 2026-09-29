@@ -10,6 +10,10 @@
 - optionally keep only the most confident players (2 for tennis, 4 for padel)
 - add an experimental Kalman IoU tracker and `scripts/compare_trackers.py`; add `scipy` dependency
 - remove `--max-missing-frames` in favour of the time-based missing-player window
+- per-player distance in court metres; experimental shots, bounces and court-plane ball speed (tuned on tennis)
+- experimental automatic calibration: RANSAC court lines, padel surface colour, and a hosted court-keypoint model with line refinement
+- `net_center` and service-centre landmarks for padel and tennis
+- full pipeline writes `player_distances.csv` and `shots.csv`; the app gains an automatic calibration lab
 
 ## v3.0 - Temporal Court Calibration
 
