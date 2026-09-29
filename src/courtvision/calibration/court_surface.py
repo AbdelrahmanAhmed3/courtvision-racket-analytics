@@ -1,4 +1,8 @@
-"""Model-seeded, full-frame court-surface color diagnostics."""
+"""Model-seeded, full-frame court-surface color diagnostics.
+
+Experimental, padel only: needs a model's corner proposal as a seed and assumes
+the baselines are roughly horizontal in the image. See docs/roadmap.md (v4.1).
+"""
 
 from __future__ import annotations
 

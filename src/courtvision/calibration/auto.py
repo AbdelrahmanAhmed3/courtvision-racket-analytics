@@ -1,4 +1,9 @@
-"""Automatic court-boundary proposals from near-white pixels and RANSAC lines."""
+"""Automatic court-boundary proposals from near-white pixels and RANSAC lines.
+
+Experimental: works on the near side of the court but is unreliable on the far
+side. The app uses it in its Assisted and Auto calibration modes; Manual
+remains the reliable path. See docs/roadmap.md (v4.1).
+"""
 
 from __future__ import annotations
 
