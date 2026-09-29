@@ -1,4 +1,8 @@
-"""Model-guided court-keypoint refinement from painted line intersections."""
+"""Model-guided court-keypoint refinement from painted line intersections.
+
+Experimental: for padel, corners and service points are moved to painted-line
+endpoints and may only widen the model's court. See docs/roadmap.md (v4.1).
+"""
 
 from __future__ import annotations
 

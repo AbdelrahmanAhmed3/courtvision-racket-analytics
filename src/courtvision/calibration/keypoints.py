@@ -1,4 +1,8 @@
-"""Roboflow court-keypoint proposals mapped into CourtVision landmarks."""
+"""Roboflow court-keypoint proposals mapped into CourtVision landmarks.
+
+Experimental: calls a hosted Roboflow model and needs ROBOFLOW_API_KEY; an
+optional backend under ADR 0002. See docs/roadmap.md (v4.1).
+"""
 
 from __future__ import annotations
 
