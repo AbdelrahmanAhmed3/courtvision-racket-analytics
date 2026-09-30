@@ -7,7 +7,7 @@ name = "courtvision-racket-analytics"
 version = "3.0.0"
 description = "Computer vision pipeline for tennis/racket-sport video analytics."
 readme = "README.md"
-license = "Apache-2.0"
+license = "AGPL-3.0-only"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.10"
 dependencies = [
