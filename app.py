@@ -478,7 +478,8 @@ def main() -> None:
             ["Manual", "Auto", "Assisted"],
             horizontal=True,
             help=(
-                "Auto accepts a validated model or line-based proposal. Assisted "
+                "Manual is the validated path. Auto and Assisted are experimental: "
+                "Auto accepts a validated model or line-based proposal; Assisted "
                 "starts from a proposal and lets you correct its landmarks."
             ),
         )
@@ -488,6 +489,10 @@ def main() -> None:
                 "Automatic proposal engine",
                 ["Keypoint model", "RANSAC court lines"],
                 horizontal=True,
+            )
+            st.caption(
+                "Experimental: automatic proposals are reliable on the near side "
+                "of the court but weak on the far side. Check every landmark."
             )
         calibration_geometry = st.radio(
             "Calibration mode",
@@ -1259,7 +1264,10 @@ def main() -> None:
         player_metric.metric("Player projections", counts["player"])
         ball_metric.metric("Ball projections", counts["ball"])
         if track_ball and (output_dir / "shots.csv").exists():
-            shot_metric.metric("Estimated shots", shot_count(output_dir / "shots.csv"))
+            shot_metric.metric(
+                "Estimated shots (experimental)",
+                shot_count(output_dir / "shots.csv"),
+            )
         if track_ball and counts["ball"] == 0:
             st.warning(
                 "TrackNet found no visible ball in this time range. Increase the run "
