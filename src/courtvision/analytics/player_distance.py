@@ -40,8 +40,7 @@ class PlayerDistanceTracker:
     @property
     def distances_m(self) -> dict[int, float]:
         return {
-            track_id: state.total_distance_m
-            for track_id, state in self._states.items()
+            track_id: state.total_distance_m for track_id, state in self._states.items()
         }
 
     def update(

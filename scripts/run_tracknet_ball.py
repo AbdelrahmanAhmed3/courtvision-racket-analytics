@@ -94,8 +94,7 @@ def parse_args() -> argparse.Namespace:
         "--input",
         default=DEFAULT_INPUT,
         help=(
-            "Input video path. Default points to the 15s clip downloaded "
-            "in this repo."
+            "Input video path. Default points to the 15s clip downloaded in this repo."
         ),
     )
     parser.add_argument(

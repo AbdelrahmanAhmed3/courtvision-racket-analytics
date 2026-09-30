@@ -381,9 +381,7 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Run setup")
-        uploaded_video = st.file_uploader(
-            "Video", type=["mp4", "mov", "avi", "mkv"]
-        )
+        uploaded_video = st.file_uploader("Video", type=["mp4", "mov", "avi", "mkv"])
         court_type = st.selectbox("Court type", ["tennis", "padel"])
         model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
         confidence = st.slider(
@@ -576,9 +574,7 @@ def main() -> None:
                 ransac_trials = st.slider(
                     "RANSAC trials per line", 100, 2_000, 700, 100
                 )
-                maximum_line_count = st.slider(
-                    "Maximum fitted lines", 4, 40, 20, 1
-                )
+                maximum_line_count = st.slider("Maximum fitted lines", 4, 40, 20, 1)
             crop_left, crop_right, crop_top, crop_bottom = 0, 100, 0, 100
             if st.checkbox("Advanced: limit search region manually", value=False):
                 st.caption(
@@ -740,9 +736,7 @@ def main() -> None:
         proposal = auto_debug.proposal
         if proposal is not None and calibration_input == "Auto":
             auto_landmark_names = [
-                name
-                for name in all_landmark_names
-                if name in proposal.landmarks
+                name for name in all_landmark_names if name in proposal.landmarks
             ]
             landmark_names = auto_landmark_names
             use_four_corner_fallback = len(landmark_names) < 6
@@ -956,8 +950,7 @@ def main() -> None:
                     )
                     row_column.metric(
                         "Selected ground rows",
-                        f"{surface_refinement.far_row} / "
-                        f"{surface_refinement.near_row}",
+                        f"{surface_refinement.far_row} / {surface_refinement.near_row}",
                     )
                     stability_column, change_column = st.columns(2)
                     stability_column.metric(
@@ -1050,8 +1043,7 @@ def main() -> None:
                     {
                         "#": list(range(1, len(audit_entries) + 1)),
                         "landmark": [
-                            display_landmark_name(entry.name)
-                            for entry in audit_entries
+                            display_landmark_name(entry.name) for entry in audit_entries
                         ],
                         "source": [entry.source for entry in audit_entries],
                         "model x,y": [

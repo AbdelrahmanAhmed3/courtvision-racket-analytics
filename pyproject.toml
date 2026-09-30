@@ -22,7 +22,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black",
     "pytest",
     "ruff",
 ]
@@ -48,13 +47,12 @@ ui = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.black]
-line-length = 88
-target-version = ["py310"]
-
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+
+[tool.ruff.format]
+# Black-compatible layout; line length and target version come from [tool.ruff].
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

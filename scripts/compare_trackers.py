@@ -177,9 +177,10 @@ def run_comparison(args: argparse.Namespace) -> dict[str, TrackerMetrics]:
 
     csv_path = output_dir / "track_comparison.csv"
     event_path = output_dir / "tracker_events.csv"
-    with csv_path.open("w", newline="") as output_file, event_path.open(
-        "w", newline=""
-    ) as event_file:
+    with (
+        csv_path.open("w", newline="") as output_file,
+        event_path.open("w", newline="") as event_file,
+    ):
         csv_writer = csv.writer(output_file)
         event_writer = csv.writer(event_file)
         csv_writer.writerow(
@@ -218,9 +219,7 @@ def run_comparison(args: argparse.Namespace) -> dict[str, TrackerMetrics]:
                     simple_metrics.initial_tracks = simple_stats.new_tracks
                 else:
                     simple_metrics.potential_id_switches += simple_stats.new_tracks
-                simple_metrics.recovered_tracks += (
-                    simple_stats.dormant_recoveries
-                )
+                simple_metrics.recovered_tracks += simple_stats.dormant_recoveries
                 write_tracker_events(
                     event_writer,
                     frame_index,
@@ -236,9 +235,7 @@ def run_comparison(args: argparse.Namespace) -> dict[str, TrackerMetrics]:
                     kalman_metrics.initial_tracks = kalman_stats.new_tracks
                 else:
                     kalman_metrics.potential_id_switches += kalman_stats.new_tracks
-                kalman_metrics.recovered_tracks += (
-                    kalman_stats.dormant_recoveries
-                )
+                kalman_metrics.recovered_tracks += kalman_stats.dormant_recoveries
                 write_tracker_events(
                     event_writer,
                     frame_index,

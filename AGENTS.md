@@ -4,6 +4,7 @@ Run before every commit; CI runs the same on each pull request:
 
 ```bash
 ruff check .
+ruff format --check .
 pytest
 ```
 

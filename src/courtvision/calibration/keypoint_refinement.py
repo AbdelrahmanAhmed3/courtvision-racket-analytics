@@ -581,14 +581,10 @@ def _refine_padel_horizontal_endpoints(
             original_point = np.asarray(original[landmark_name], dtype=np.float64)
             contracts_model_span = (
                 endpoint_index == 0 and endpoint[0] > original_point[0] + 3.0
-            ) or (
-                endpoint_index == 1 and endpoint[0] < original_point[0] - 3.0
-            )
+            ) or (endpoint_index == 1 and endpoint[0] < original_point[0] - 3.0)
             if contracts_model_span:
                 continue
-            distance = float(
-                np.linalg.norm(endpoint - original_point)
-            )
+            distance = float(np.linalg.norm(endpoint - original_point))
             if (
                 distance > maximum_shift
                 or not np.isfinite(endpoint).all()
@@ -616,12 +612,16 @@ def _padel_service_geometry_points(
     )
     transform = cv2.getPerspectiveTransform(template, image)
     service_y = 0.15 if line_name == "far_service" else 0.85
-    return cv2.perspectiveTransform(
-        np.asarray(((0.0, service_y), (1.0, service_y)), dtype=np.float32).reshape(
-            -1, 1, 2
-        ),
-        transform,
-    ).reshape(-1, 2).astype(np.float64)
+    return (
+        cv2.perspectiveTransform(
+            np.asarray(((0.0, service_y), (1.0, service_y)), dtype=np.float32).reshape(
+                -1, 1, 2
+            ),
+            transform,
+        )
+        .reshape(-1, 2)
+        .astype(np.float64)
+    )
 
 
 def _snap_line_evidence_to_expected_endpoints(
@@ -644,11 +644,14 @@ def _snap_line_evidence_to_expected_endpoints(
     pixels = np.column_stack((xs, ys)).astype(np.float64)
     projections = (pixels - first) @ unit
     expected_projections = (expected_points - first) @ unit
-    in_corridor = _point_line_distances(
-        pixels,
-        first,
-        second,
-    ) <= maximum_distance_px
+    in_corridor = (
+        _point_line_distances(
+            pixels,
+            first,
+            second,
+        )
+        <= maximum_distance_px
+    )
     evidence_projections = projections[in_corridor]
     if len(evidence_projections) < 20:
         return None
@@ -681,8 +684,7 @@ def _point_line_distances(
         return np.full(len(points), np.inf)
     relative = points - first
     return (
-        np.abs(direction[0] * relative[:, 1] - direction[1] * relative[:, 0])
-        / length
+        np.abs(direction[0] * relative[:, 1] - direction[1] * relative[:, 0]) / length
     )
 
 
@@ -697,14 +699,8 @@ def _line_intersection(
         return np.asarray((np.nan, np.nan), dtype=np.float64)
     determinant_first = x1 * y2 - y1 * x2
     determinant_second = x3 * y4 - y3 * x4
-    x = (
-        determinant_first * (x3 - x4)
-        - (x1 - x2) * determinant_second
-    ) / denominator
-    y = (
-        determinant_first * (y3 - y4)
-        - (y1 - y2) * determinant_second
-    ) / denominator
+    x = (determinant_first * (x3 - x4) - (x1 - x2) * determinant_second) / denominator
+    y = (determinant_first * (y3 - y4) - (y1 - y2) * determinant_second) / denominator
     return np.asarray((x, y), dtype=np.float64)
 
 

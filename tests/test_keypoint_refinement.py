@@ -68,8 +68,7 @@ def _synthetic_court() -> tuple[np.ndarray, dict[str, tuple[float, float]]]:
 def test_refines_shifted_model_points_to_painted_intersections() -> None:
     image, expected = _synthetic_court()
     model_points = {
-        name: (point[0] + 16.0, point[1] + 7.0)
-        for name, point in expected.items()
+        name: (point[0] + 16.0, point[1] + 7.0) for name, point in expected.items()
     }
 
     result = refine_keypoint_landmarks(image, model_points, "tennis")

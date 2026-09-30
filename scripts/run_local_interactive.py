@@ -25,8 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         help=(
-            "Optional output directory. "
-            "The default is a timestamped local run folder."
+            "Optional output directory. The default is a timestamped local run folder."
         ),
     )
     return parser.parse_args()
@@ -108,8 +107,12 @@ def main() -> None:
         video_path, court_type, duration, calibration_time = configuration
         frame_index = frame_index_at_seconds(video_path, calibration_time)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = Path(args.output_dir) if args.output_dir else (
-            REPO_ROOT / "outputs" / "local_runs" / f"{video_path.stem}_{timestamp}"
+        output_dir = (
+            Path(args.output_dir)
+            if args.output_dir
+            else (
+                REPO_ROOT / "outputs" / "local_runs" / f"{video_path.stem}_{timestamp}"
+            )
         )
         calibration_path = output_dir / "calibration.json"
 

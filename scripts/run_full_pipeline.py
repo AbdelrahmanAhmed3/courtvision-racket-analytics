@@ -452,8 +452,7 @@ def parse_args() -> argparse.Namespace:
         choices=["opencv", "matplotlib"],
         default="opencv",
         help=(
-            "Click UI for --create-calibration. "
-            "Use matplotlib from a Kaggle notebook."
+            "Click UI for --create-calibration. Use matplotlib from a Kaggle notebook."
         ),
     )
     parser.add_argument(

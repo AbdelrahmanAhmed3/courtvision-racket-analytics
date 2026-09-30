@@ -126,8 +126,10 @@ class TemporalCourtCalibrator:
             backward_points.reshape(-1, 2) - previous_points.reshape(-1, 2),
             axis=1,
         )
-        accepted = forward_ok & backward_ok & (
-            backward_error <= self._max_forward_backward_error_px
+        accepted = (
+            forward_ok
+            & backward_ok
+            & (backward_error <= self._max_forward_backward_error_px)
         )
         if forward_error is not None:
             accepted &= forward_error <= 25.0
