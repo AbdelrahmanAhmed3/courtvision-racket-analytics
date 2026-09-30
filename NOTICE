@@ -1,6 +1,9 @@
 CourtVision
 Copyright 2026 Abdelrahman Ahmed
 
-This product is licensed under the Apache License, Version 2.0 (see LICENSE).
-It bundles no third-party code, model weights or media. Components that are
-downloaded or called at runtime are listed under "Licence" in README.md.
+Licensed under the GNU Affero General Public License, version 3 only (see LICENSE).
+Commercial licences that remove the AGPL obligations are available from the
+copyright holder; contact @AbdelrahmanAhmed3 on GitHub.
+
+This repository bundles no third-party code, model weights or media. Components
+that are downloaded or called at runtime are listed under "Licence" in README.md.
