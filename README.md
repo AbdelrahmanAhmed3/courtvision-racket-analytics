@@ -230,6 +230,23 @@ edition with an LLM coaching report). Point outcomes, forced and unforced errors
 rebounds and 3D ball height are not planned yet. Design decisions are recorded in
 [docs/adr/](docs/adr/) and domain terms in [CONTEXT.md](CONTEXT.md).
 
+## Licence
+
+CourtVision is licensed under the [Apache License 2.0](LICENSE); see also [NOTICE](NOTICE).
+Only permissively licensed components may be bundled or downloaded by default
+([ADR 0002](docs/adr/0002-permissive-licences-only.md)).
+
+### Third-party components
+
+Nothing below is bundled in this repository. Each keeps its own licence.
+
+| Component | How it is used | Licence |
+| --- | --- | --- |
+| Python dependencies (NumPy, OpenCV, SciPy, pandas, and others) | Installed from PyPI | Their own permissive licences |
+| [yastrebksv/TrackNet](https://github.com/yastrebksv/TrackNet) | Cloned at runtime for ball tracking; weights supplied by the user | **None published** (all rights reserved); to be replaced, see [docs/roadmap.md](docs/roadmap.md) |
+| Roboflow hosted models (`tennis-v4d0h/2`, `padel-court-fmfv8/15`, `tennis-court-detection-onesd/10`) | Called through Roboflow's API with your own key; optional | Not verified |
+| Match footage | Never committed; clips are linked and credited to their source | Owned by the broadcaster |
+
 ## Repository Layout
 
 ```text
