@@ -232,7 +232,13 @@ rebounds and 3D ball height are not planned yet. Design decisions are recorded i
 
 ## Licence
 
-CourtVision is licensed under the [Apache License 2.0](LICENSE); see also [NOTICE](NOTICE).
+CourtVision is licensed under the [GNU Affero General Public License v3.0](LICENSE); see
+also [NOTICE](NOTICE). You may use, study and modify it, but if you distribute it or offer
+it as a network service, your whole product must be released under the AGPL too.
+Commercial licences without those obligations are available from the author
+([ADR 0004](docs/adr/0004-agpl-with-commercial-licence.md)). Contributions need a
+contributor licence agreement, so the project can keep offering both licences.
+
 Only permissively licensed components may be bundled or downloaded by default
 ([ADR 0002](docs/adr/0002-permissive-licences-only.md)).
 
