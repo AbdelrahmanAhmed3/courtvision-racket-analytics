@@ -179,9 +179,9 @@ class KalmanIouTracker:
             transition = np.eye(8)
             for coordinate in range(4):
                 transition[coordinate, coordinate + 4] = delta_seconds
-            process_noise = np.diag(
-                [4, 4, 2, 2, 25, 25, 9, 9]
-            ).astype(float) * max(delta_seconds, 0.001)
+            process_noise = np.diag([4, 4, 2, 2, 25, 25, 9, 9]).astype(float) * max(
+                delta_seconds, 0.001
+            )
             track.state = transition @ track.state
             track.state[2:4] = np.maximum(track.state[2:4], 1.0)
             track.covariance = (

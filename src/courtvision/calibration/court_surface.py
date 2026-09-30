@@ -86,9 +86,7 @@ class SurfaceBoundaryCandidates:
         return sum(scan.boundary == boundary for scan in self.scans)
 
     def endpoints(self, boundary: str) -> tuple[tuple[float, float], ...]:
-        return tuple(
-            scan.endpoint for scan in self.scans if scan.boundary == boundary
-        )
+        return tuple(scan.endpoint for scan in self.scans if scan.boundary == boundary)
 
 
 @dataclass(frozen=True)
@@ -507,8 +505,7 @@ def _find_surface_transition_row(
     start_x, end_x = x_interval
     supports = np.asarray(
         [
-            np.count_nonzero(mask[row, start_x : end_x + 1])
-            / (end_x - start_x + 1)
+            np.count_nonzero(mask[row, start_x : end_x + 1]) / (end_x - start_x + 1)
             for row in range(first_row, last_row + 1)
         ],
         dtype=np.float64,
@@ -531,8 +528,7 @@ def _find_surface_transition_row(
         candidates = [
             (start, end)
             for start, end in runs
-            if start >= gap_rows
-            and not supported[start - gap_rows : start].any()
+            if start >= gap_rows and not supported[start - gap_rows : start].any()
         ]
         if not candidates:
             raise ValueError("far court-color entry is not visible in the frame")

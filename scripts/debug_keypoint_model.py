@@ -354,9 +354,7 @@ def main() -> None:
                 },
                 "response_image_size": response_image_size(response),
                 "raw_keypoint_count": len(keypoints),
-                "canonical_landmarks": None
-                if proposal is None
-                else proposal.landmarks,
+                "canonical_landmarks": None if proposal is None else proposal.landmarks,
                 "canonical_confidences": None
                 if proposal is None
                 else proposal.landmark_confidences,

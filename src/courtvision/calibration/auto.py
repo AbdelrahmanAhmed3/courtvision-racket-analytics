@@ -149,9 +149,7 @@ def analyze_auto_calibration(
         score, quad, line_support, geometry_score, boundary_anchor = best
         required_confidence = minimum_confidence
         if boundary_anchor == "singles":
-            required_confidence = min(
-                minimum_confidence, MIN_SINGLES_ANCHOR_CONFIDENCE
-            )
+            required_confidence = min(minimum_confidence, MIN_SINGLES_ANCHOR_CONFIDENCE)
         if score >= required_confidence:
             proposal = AutoCalibrationProposal(
                 points=tuple((float(x), float(y)) for x, y in quad),
@@ -195,8 +193,7 @@ def draw_auto_proposal(
         )
     boundary_anchor = getattr(proposal, "boundary_anchor", "doubles")
     label = (
-        f"AUTO CONFIDENCE {proposal.confidence:.0%} "
-        f"({boundary_anchor.upper()} ANCHOR)"
+        f"AUTO CONFIDENCE {proposal.confidence:.0%} ({boundary_anchor.upper()} ANCHOR)"
     )
     cv2.putText(
         image,
@@ -274,8 +271,7 @@ def _ransac_lines(
     remaining = points
 
     while (
-        len(lines) < settings.maximum_line_count
-        and len(remaining) >= minimum_inliers
+        len(lines) < settings.maximum_line_count and len(remaining) >= minimum_inliers
     ):
         sample = remaining
         if len(sample) > 12_000:
@@ -290,10 +286,13 @@ def _ransac_lines(
             direction_length = np.linalg.norm(direction)
             if direction_length < minimum_length * 0.35:
                 continue
-            distances = np.abs(
-                direction[0] * (sample[:, 1] - first[1])
-                - direction[1] * (sample[:, 0] - first[0])
-            ) / direction_length
+            distances = (
+                np.abs(
+                    direction[0] * (sample[:, 1] - first[1])
+                    - direction[1] * (sample[:, 0] - first[0])
+                )
+                / direction_length
+            )
             inliers = distances <= settings.line_distance_px
             if inliers.sum() < minimum_inliers:
                 continue
@@ -347,10 +346,13 @@ def _line_inliers(
     length = np.linalg.norm(direction)
     if length < 1e-6:
         return np.zeros(len(points), dtype=bool)
-    distances = np.abs(
-        direction[0] * (points[:, 1] - first[1])
-        - direction[1] * (points[:, 0] - first[0])
-    ) / length
+    distances = (
+        np.abs(
+            direction[0] * (points[:, 1] - first[1])
+            - direction[1] * (points[:, 0] - first[0])
+        )
+        / length
+    )
     projections = (points - first) @ (direction / length)
     return (
         (distances <= distance_threshold)
@@ -396,18 +398,14 @@ def _sample_line_sets(
     hypotheses: set[tuple[int, int, int, int]] = set()
     attempts = 0
     maximum_attempts = RANSAC_HYPOTHESIS_TRIALS * 8
-    while (
-        len(hypotheses) < RANSAC_HYPOTHESIS_TRIALS
-        and attempts < maximum_attempts
-    ):
+    while len(hypotheses) < RANSAC_HYPOTHESIS_TRIALS and attempts < maximum_attempts:
         attempts += 1
         first, second = parallel_pairs[rng.integers(len(parallel_pairs))]
         crossing = [
             index
             for index, line in enumerate(lines)
             if index not in (first, second)
-            and _angle_distance(_line_angle(lines[first]), _line_angle(line))
-            >= 0.20
+            and _angle_distance(_line_angle(lines[first]), _line_angle(line)) >= 0.20
         ]
         if len(crossing) < 2:
             continue
@@ -505,9 +503,7 @@ def _observed_interior_landmarks(
     returned point is the intersection of those fitted image lines, not a
     template point projected from the four corners.
     """
-    template = np.asarray(
-        [[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float32
-    )
+    template = np.asarray([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float32)
     transform = cv2.getPerspectiveTransform(template, doubles_quad.astype(np.float32))
     landmarks: dict[str, tuple[float, float]] = {}
     for name in default_landmark_names(court_type)[4:]:
@@ -523,9 +519,7 @@ def _observed_interior_landmarks(
             continue
         point = _line_intersection(vertical, horizontal)
         expected = cv2.perspectiveTransform(
-            np.asarray([[template_x, template_y]], dtype=np.float32).reshape(
-                -1, 1, 2
-            ),
+            np.asarray([[template_x, template_y]], dtype=np.float32).reshape(-1, 1, 2),
             transform,
         ).reshape(2)
         if (
@@ -580,10 +574,13 @@ def _distance_to_infinite_line(points: np.ndarray, line: np.ndarray) -> np.ndarr
     length = np.linalg.norm(direction)
     if length < 1e-6:
         return np.full(len(points), np.inf)
-    return np.abs(
-        direction[0] * (points[:, 1] - first[1])
-        - direction[1] * (points[:, 0] - first[0])
-    ) / length
+    return (
+        np.abs(
+            direction[0] * (points[:, 1] - first[1])
+            - direction[1] * (points[:, 0] - first[0])
+        )
+        / length
+    )
 
 
 def _line_overlap_ratio(expected: np.ndarray, observed: np.ndarray) -> float:
@@ -615,15 +612,14 @@ def _score_quadrilateral(
     height_right = np.linalg.norm(observed_quad[2] - observed_quad[1])
     # Short inner boxes and service boxes often have strong line support too.
     # A usable full-court proposal needs a meaningful fraction of the frame.
-    if area_ratio < 0.16 or min(
-        top_width, bottom_width, height_left, height_right
-    ) < 40:
+    if (
+        area_ratio < 0.16
+        or min(top_width, bottom_width, height_left, height_right) < 40
+    ):
         return 0.0, 0.0
     samples = np.concatenate(
         [
-            _sample_edge(
-                observed_quad[index], observed_quad[(index + 1) % 4]
-            )
+            _sample_edge(observed_quad[index], observed_quad[(index + 1) % 4])
             for index in range(4)
         ]
     )
@@ -656,9 +652,7 @@ def _template_line_support(
     court_type: str,
     boundary_anchor: str,
 ) -> float:
-    template = np.asarray(
-        [[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float32
-    )
+    template = np.asarray([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float32)
     transform = cv2.getPerspectiveTransform(template, quad.astype(np.float32))
     normalized_court_type = court_type.strip().lower()
     lines = _court_template_lines(court_type)
@@ -700,10 +694,10 @@ def _template_line_support(
         < minimum_required_lines
     ):
         return 0.0
-    if boundary_anchor == "doubles" and normalized_court_type == "tennis" and max(
-        supports[8:]
-    ) < (
-        MIN_TENNIS_SINGLES_SUPPORT
+    if (
+        boundary_anchor == "doubles"
+        and normalized_court_type == "tennis"
+        and max(supports[8:]) < (MIN_TENNIS_SINGLES_SUPPORT)
     ):
         # If the proposed boundary is actually the singles court, the template's
         # predicted inner singles sidelines have no matching paint. Requiring one
@@ -711,8 +705,7 @@ def _template_line_support(
         # homography boundary.
         return 0.0
     return float(
-        0.35 * np.mean(required_supports)
-        + 0.65 * np.percentile(required_supports, 25)
+        0.35 * np.mean(required_supports) + 0.65 * np.percentile(required_supports, 25)
     )
 
 
@@ -776,8 +769,6 @@ def _line_intersection(first: np.ndarray, second: np.ndarray) -> tuple[float, fl
     determinant_first = x1 * y2 - y1 * x2
     determinant_second = x3 * y4 - y3 * x4
     return (
-        (determinant_first * (x3 - x4) - (x1 - x2) * determinant_second)
-        / denominator,
-        (determinant_first * (y3 - y4) - (y1 - y2) * determinant_second)
-        / denominator,
+        (determinant_first * (x3 - x4) - (x1 - x2) * determinant_second) / denominator,
+        (determinant_first * (y3 - y4) - (y1 - y2) * determinant_second) / denominator,
     )

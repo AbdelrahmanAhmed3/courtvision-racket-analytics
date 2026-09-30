@@ -96,7 +96,7 @@ def detect_shots(
 def _find_player_contact_events(
     ball_points_by_frame: dict[int, BallPoint],
     player_detections_by_frame: dict[int, list[tuple[int, Detection]]],
- ) -> list[tuple[int, int]]:
+) -> list[tuple[int, int]]:
     """Group consecutive near-player ball positions into player-contact events."""
     contacts: list[tuple[int, int]] = []
     current_track_id: int | None = None
@@ -214,10 +214,13 @@ def _find_first_bounce(
         )
         + 1,
     ):
-        if _nearest_player_at_impact(
-            ball_points_by_frame.get(frame, BallPoint(frame, None, None)),
-            player_detections_by_frame.get(frame, []),
-        ) is not None:
+        if (
+            _nearest_player_at_impact(
+                ball_points_by_frame.get(frame, BallPoint(frame, None, None)),
+                player_detections_by_frame.get(frame, []),
+            )
+            is not None
+        ):
             continue
         if _has_direction_change(
             ball_points_by_frame,
@@ -243,12 +246,7 @@ def _build_shot_event(
         return None
     start = ball_coordinates_by_frame.get(impact_frame)
     end = ball_coordinates_by_frame.get(receive_frame)
-    if (
-        start is None
-        or end is None
-        or not start.in_bounds
-        or not end.in_bounds
-    ):
+    if start is None or end is None or not start.in_bounds or not end.in_bounds:
         return None
     values = (start.court_x_m, start.court_y_m, end.court_x_m, end.court_y_m)
     if not all(isfinite(value) for value in values):

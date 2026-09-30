@@ -135,8 +135,17 @@ def test_skips_transit_when_player_contacts_are_missing() -> None:
 
 def test_bounce_is_searched_only_before_the_receivers_contact() -> None:
     track = [
-        (100, 0), (100, 15), (100, 30), (100, 45), (100, 60), (100, 75),
-        (100, 90), (100, 105), (120, 105), (140, 105), (160, 105),
+        (100, 0),
+        (100, 15),
+        (100, 30),
+        (100, 45),
+        (100, 60),
+        (100, 75),
+        (100, 90),
+        (100, 105),
+        (120, 105),
+        (140, 105),
+        (160, 105),
     ]
     ball_points = {frame: BallPoint(frame, x, y) for frame, (x, y) in enumerate(track)}
     hitter = Detection(0, "player", 0.9, 90, -10, 110, 10, "test")

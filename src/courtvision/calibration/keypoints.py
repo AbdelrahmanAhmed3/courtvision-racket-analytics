@@ -152,9 +152,7 @@ def landmark_audit_entries(
                 source=source,
                 original=initial,
                 final=final,
-                shift_px=float(
-                    np.linalg.norm(np.asarray(final) - np.asarray(initial))
-                ),
+                shift_px=float(np.linalg.norm(np.asarray(final) - np.asarray(initial))),
                 confirmed=confirmed,
             )
         )
