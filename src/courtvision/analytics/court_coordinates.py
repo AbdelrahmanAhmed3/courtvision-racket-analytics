@@ -8,7 +8,13 @@ from courtvision.calibration.homography import HomographyEstimate, project_image
 from courtvision.detectors.base import Detection
 from courtvision.detectors.tracknet_adapter import BallPoint
 from courtvision.geometry.homography import bottom_center
-from courtvision.visualization.minimap import CourtSpec
+from courtvision.visualization.minimap import PADEL_COURT, CourtSpec
+
+# How far outside the painted court (side, end) a player may stand, in metres.
+# Padel is enclosed by walls; tennis players often play several metres behind
+# the baseline.
+PADEL_MARGINS_M = (0.5, 0.5)
+TENNIS_MARGINS_M = (4.0, 7.0)
 
 
 @dataclass(frozen=True)
@@ -84,3 +90,41 @@ def project_ball_point(
         in_bounds=in_bounds,
         confidence=point.confidence,
     )
+
+
+def court_margins_m(spec: CourtSpec) -> tuple[float, float]:
+    """Return how far beyond the side and end lines players may stand."""
+    return PADEL_MARGINS_M if spec == PADEL_COURT else TENNIS_MARGINS_M
+
+
+def filter_detections_on_court(
+    detections: list[Detection],
+    estimate: HomographyEstimate,
+    spec: CourtSpec,
+) -> list[Detection]:
+    """Keep people whose feet project inside the court plus its margins.
+
+    Drops spectators, ball kids and people on neighbouring courts.
+    """
+    if not detections:
+        return []
+    side_margin_m, end_margin_m = court_margins_m(spec)
+    feet = np.asarray(
+        [
+            bottom_center(detection.x1, detection.y1, detection.x2, detection.y2)
+            for detection in detections
+        ],
+        dtype=float,
+    )
+    template_points = project_image_points(feet, estimate)
+    court_x_m = template_points[:, 0] * spec.width_m
+    court_y_m = template_points[:, 1] * spec.length_m
+    on_court = (
+        (court_x_m >= -side_margin_m)
+        & (court_x_m <= spec.width_m + side_margin_m)
+        & (court_y_m >= -end_margin_m)
+        & (court_y_m <= spec.length_m + end_margin_m)
+    )
+    return [
+        detection for detection, keep in zip(detections, on_court, strict=True) if keep
+    ]
