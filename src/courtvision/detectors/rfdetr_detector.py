@@ -18,7 +18,20 @@ PLAYER_COCO_CLASS = "person"
 RFDETR_SIZES = ("nano", "small", "medium", "base")
 
 
-def load_rfdetr_model(size: str = DEFAULT_SIZE) -> Any:
+def resolve_device(preferred: str = "auto") -> str:
+    """Pick CUDA, then Apple's GPU (MPS), then CPU, unless one is requested."""
+    if preferred != "auto":
+        return preferred
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
+def load_rfdetr_model(size: str = DEFAULT_SIZE, device: str = "auto") -> Any:
     """Load a COCO-pretrained RF-DETR model, keeping rfdetr an optional dependency."""
     if size not in RFDETR_SIZES:
         raise ValueError(f"size must be one of {', '.join(RFDETR_SIZES)}")
@@ -29,7 +42,7 @@ def load_rfdetr_model(size: str = DEFAULT_SIZE) -> Any:
             "RF-DETR is not installed. Install it with `pip install -e '.[local]'`."
         ) from exc
     model_class = getattr(rfdetr, f"RFDETR{size.capitalize()}")
-    return model_class()
+    return model_class(device=resolve_device(device))
 
 
 def coco_class_names() -> dict[int, str]:
@@ -46,6 +59,7 @@ class RFDetrDetector:
         self,
         size: str = DEFAULT_SIZE,
         confidence: float = DEFAULT_CONFIDENCE,
+        device: str = "auto",
         model: Any | None = None,
         class_names: dict[int, str] | None = None,
     ) -> None:
@@ -53,7 +67,7 @@ class RFDetrDetector:
             raise ValueError("confidence must be between zero and one")
         self.confidence = confidence
         self.model_name = f"rf-detr-{size}"
-        self.model = model if model is not None else load_rfdetr_model(size)
+        self.model = model if model is not None else load_rfdetr_model(size, device)
         self.class_names = (
             class_names if class_names is not None else coco_class_names()
         )

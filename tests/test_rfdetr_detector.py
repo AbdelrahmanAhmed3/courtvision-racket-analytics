@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from courtvision.detectors.rfdetr_detector import RFDetrDetector
+from courtvision.detectors.rfdetr_detector import RFDetrDetector, resolve_device
 
 COCO_NAMES = {1: "person", 37: "sports ball", 43: "tennis racket"}
 
@@ -57,3 +57,7 @@ def test_sends_rgb_frames_and_the_confidence_threshold() -> None:
     image, threshold = model.calls[0]
     assert threshold == 0.35
     assert image[0, 0].tolist() == [0, 0, 255]
+
+
+def test_an_explicit_device_is_used_as_given() -> None:
+    assert resolve_device("cpu") == "cpu"
