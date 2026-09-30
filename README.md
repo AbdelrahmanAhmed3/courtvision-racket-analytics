@@ -21,7 +21,7 @@ interactive debugging, testing, and deployment-friendly command-line workflows.
 
 ## What It Demonstrates
 
-- A modular Python package with Roboflow and Ultralytics detector adapters.
+- A modular Python package with a Roboflow detector adapter behind a common detector interface.
 - Time-aware player identity persistence using IoU, spatial recovery, and a dormant
   track window.
 - TrackNet integration for small, fast ball tracking on CPU, MPS, and CUDA.
@@ -62,12 +62,14 @@ validation and projection do not depend on how the points were obtained.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Manual tennis/padel calibration | Validated baseline | Named points, RANSAC report, overlay |
-| Player detection | Working | Roboflow or Ultralytics adapters |
+| Player detection | Working, hosted | Roboflow hosted model (needs `ROBOFLOW_API_KEY`); local detection is planned ([#4](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/4)) |
 | Player tracking | Working | Simple time-aware IoU tracker is the current default |
 | Ball tracking | Working with weights | TrackNet model is supplied separately |
 | Player/ball court projection | Working | Ball projection assumes the ball lies on the court plane |
 | Camera-motion compensation | Working with constraints | Optical flow; invalid frames are left unmapped |
-| Keypoint-assisted calibration | Experimental | Sensitive to model domain shift and court visibility |
+| Keypoint-assisted calibration | Experimental | Hosted model; sensitive to domain shift and court visibility |
+| Line-based (RANSAC) calibration | Experimental | Local; reliable on the near side, weak on the far side |
+| Padel surface-colour corners | Experimental | Needs a model's corners as a seed; breaks with shadows and same-colour surroundings |
 | Player distance | Working | Accumulated in calibrated court coordinates |
 | Shot events and speed | Experimental | 2D video estimate, not radar-equivalent speed |
 
@@ -176,12 +178,13 @@ This separation makes GPU/Kaggle inference and local analysis interoperable. Run
 | Artifact | Purpose |
 | --- | --- |
 | `annotated.mp4` | Player IDs, ball trail, and calibration diagnostics |
-| `court_map.mp4` | Standalone synchronized top-down view |
-| `side_by_side.mp4` | Broadcast and map visualization together |
-| `detections.csv` | Detector output suitable for replay |
+| `court_map.mp4` | Standalone synchronized top-down view (`--draw-court-map`) |
+| `court_map_annotated.mp4` | Broadcast and court map side by side |
+| `detections.csv` | Detector output suitable for replay with `--detections` |
 | `tracks_with_court_coords.csv` | Image, normalized, and metric court coordinates |
-| `calibration.json` | Named landmarks and source metadata |
-| calibration report/overlay | Inliers, reprojection error, and visual alignment |
+| `player_distances.csv` | Distance covered per player, in metres |
+| `shots.csv` | Experimental shots with hitter, receiver, bounce frame, and court-plane speed (needs ball tracking) |
+| `calibration.json` | Named landmarks and source metadata (written by `--create-calibration`) |
 
 ## Evaluation and Engineering Decisions
 
@@ -220,21 +223,12 @@ did not justify replacing the simpler default.
 
 ## Future Work
 
-1. Build a labeled tennis/padel benchmark for landmark error, projection error, player
-   ID switches, ball recall, and event timing.
-2. Fine-tune or replace the court-keypoint models using varied camera angles and use
-   geometric refinement as a validator rather than a substitute for model quality.
-3. Add ByteTrack-style low-confidence recovery and appearance ReID, then compare them
-   against the simple tracker using labeled identities.
-4. Estimate 3D ball motion or learn a camera-aware correction for airborne projection
-   and radar-comparable speed.
-5. Classify serve, forehand, backhand, volley, smash, and lob from ball trajectory,
-   player pose, and a temporal action model.
-6. Segment points and attribute winners, forced errors, and unforced errors. This needs
-   outcome labels and player attribution; it is not reliably derivable from one motion
-   threshold.
-7. Package a rights-cleared sample clip, reproducible benchmark command, and container
-   for a one-command public demo.
+The plan lives in [docs/roadmap.md](docs/roadmap.md): v4.0 (Showcase edition: local
+player detection, stable player identity, measured shots and rallies, movement stats),
+v4.1 (trained court-keypoint and padel ball models, shot types) and v5.0 (Personal
+edition with an LLM coaching report). Point outcomes, forced and unforced errors, wall
+rebounds and 3D ball height are not planned yet. Design decisions are recorded in
+[docs/adr/](docs/adr/) and domain terms in [CONTEXT.md](CONTEXT.md).
 
 ## Repository Layout
 
