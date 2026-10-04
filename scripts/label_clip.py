@@ -34,6 +34,7 @@ from courtvision.evaluation.session import KEY_HELP, LabelSession  # noqa: E402
 
 WINDOW = "CourtVision labelling"
 PANEL_WIDTH = 400
+MIN_WINDOW_HEIGHT = 640  # room for the whole side panel under short videos
 DRAG_THRESHOLD_PX = 5
 PLAYER_COLOURS = {
     1: (60, 200, 255),
@@ -157,7 +158,11 @@ def render(session: LabelSession, frame: np.ndarray, scale: float, playing: bool
             colour = (0, 255, 255) if event.kind == "bounce" else (255, 0, 255)
             cv2.circle(view, centre, 9, colour, 2)
 
-    panel = np.full((view.shape[0], PANEL_WIDTH, 3), 30, np.uint8)
+    height = max(view.shape[0], MIN_WINDOW_HEIGHT)
+    view = cv2.copyMakeBorder(
+        view, 0, height - view.shape[0], 0, 0, cv2.BORDER_CONSTANT, value=(30, 30, 30)
+    )
+    panel = np.full((height, PANEL_WIDTH, 3), 30, np.uint8)
     header = f"Frame {session.frame}/{session.labels.frame_count - 1}"
     y = _text(panel, header + ("   PLAYING" if playing else ""), 26, 0.7)
     y += 6
@@ -214,7 +219,7 @@ def main() -> None:
 
     def on_mouse(event, x, y, _flags, _param):
         point = (x / scale, y / scale)
-        if x >= labels.width * scale:
+        if x >= labels.width * scale or y >= labels.height * scale:
             return
         if event == cv2.EVENT_LBUTTONDOWN:
             mouse["down"] = point
