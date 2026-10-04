@@ -162,7 +162,7 @@ python scripts/run_full_pipeline.py \
   --draw-calibration-overlay
 ```
 
-To reproduce visualization without another API request, provide saved detections:
+To reproduce visualization without running detection again, provide saved detections:
 
 ```bash
 python scripts/run_full_pipeline.py \
