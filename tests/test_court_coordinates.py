@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from courtvision.analytics.court_coordinates import (
     court_margins_m,
@@ -7,7 +8,7 @@ from courtvision.analytics.court_coordinates import (
 )
 from courtvision.calibration.homography import HomographyEstimate
 from courtvision.detectors.base import Detection
-from courtvision.visualization.minimap import PADEL_COURT, TENNIS_COURT
+from courtvision.visualization.minimap import PADEL_COURT, TENNIS_COURT, CourtSpec
 
 
 def test_project_player_detection_uses_bbox_bottom_center() -> None:
@@ -83,5 +84,21 @@ def test_court_filter_keeps_tennis_players_well_behind_the_baseline() -> None:
     )
 
     assert kept == [behind_baseline]
-    assert court_margins_m(TENNIS_COURT) == (4.0, 7.0)
-    assert court_margins_m(PADEL_COURT) == (0.5, 0.5)
+
+
+def test_court_filter_padel_margin_boundary() -> None:
+    inside_margin = person_with_feet_at(1.04, 0.5)  # 0.4 m beyond the side line
+    outside_margin = person_with_feet_at(1.06, 0.5)  # 0.6 m beyond it
+
+    kept = filter_detections_on_court(
+        [inside_margin, outside_margin], identity_estimate(), PADEL_COURT
+    )
+
+    assert kept == [inside_margin]
+
+
+def test_court_margins_reject_unknown_court_types() -> None:
+    squash = CourtSpec("squash", 6.4, 9.75, 4.26)
+
+    with pytest.raises(ValueError, match="squash"):
+        court_margins_m(squash)
