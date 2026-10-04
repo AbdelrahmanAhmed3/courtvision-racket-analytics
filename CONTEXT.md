@@ -18,6 +18,14 @@ The edition for a fixed, low camera behind one back glass, where only the near-s
 A continuous piece of match video with no cuts, the unit CourtVision analyses in one run.
 _Avoid_: video (when meaning the analysed unit), footage
 
+**Source video**:
+A match recording as filmed or downloaded, which may contain camera cuts, replays and close-ups.
+_Avoid_: clip (when it has cuts)
+
+**Segment**:
+A stretch of a source video between two camera cuts. A segment that shows one rally from the main camera is a clip.
+_Avoid_: shot (a Shot is a strike of the ball), scene
+
 ## Court and calibration
 
 **Court type**:
