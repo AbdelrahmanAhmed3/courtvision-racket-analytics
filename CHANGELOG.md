@@ -2,7 +2,7 @@
 
 ## Unreleased (planned for v4.0)
 
-- detect players locally with RF-DETR (Apache-2.0 COCO weights; Nano by default) by default: `--detector rfdetr|roboflow`, `--rfdetr-size`, and a detector choice in the app; install with the `local` extra
+- detect players locally with RF-DETR (Apache-2.0 COCO weights, Nano by default) instead of the hosted API: `--detector rfdetr|roboflow`, `--rfdetr-size`, and a detector choice in the app; install with the `local` extra
 - drop people standing off the court before tracking (0.5 m margin for padel; 4 m sides and 7 m ends for tennis)
 - `scripts/benchmark_detector.py` (calibration or image-space court outline, speed, players kept, track IDs) and results on four clips in `reports/model_comparison.md`
 - remove the unused Ultralytics adapter and the `gpu` extra (AGPL, ADR 0002)
