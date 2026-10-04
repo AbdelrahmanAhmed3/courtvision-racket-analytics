@@ -25,7 +25,7 @@ yt-dlp -f "bv*[height=720][ext=mp4]" -o "data/raw/BEST-OF-AGUSTIN-TAPIA-RED-BULL
 
 ```bash
 pip install -e ".[local]"   # RF-DETR proposes player boxes
-python scripts/label_clip.py --input data/raw/<video>.mp4 --source-url <link>
+python scripts/label_clip.py --input data/raw/<video>.mp4 --source-url "<link>"
 ```
 
 The first run finds camera cuts and splits the video into **segments**. Labels save
