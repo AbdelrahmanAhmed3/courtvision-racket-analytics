@@ -1,0 +1,48 @@
+{
+  "clip": "YTDown.com_YouTube_What-a-Padel-point_Media_JPLR44dtY-M_002_720p.mp4",
+  "note": "Court floor traced by eye in image pixels, for evaluating player detection on clips that cannot be calibrated.",
+  "image_width": 1280,
+  "image_height": 720,
+  "polygon": [
+    [
+      0,
+      720
+    ],
+    [
+      0,
+      585
+    ],
+    [
+      340,
+      470
+    ],
+    [
+      450,
+      420
+    ],
+    [
+      460,
+      380
+    ],
+    [
+      830,
+      380
+    ],
+    [
+      845,
+      420
+    ],
+    [
+      950,
+      470
+    ],
+    [
+      1280,
+      575
+    ],
+    [
+      1280,
+      720
+    ]
+  ]
+}

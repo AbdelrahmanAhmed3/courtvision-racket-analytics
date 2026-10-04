@@ -64,8 +64,14 @@ from courtvision.calibration.keypoint_refinement import (  # noqa: E402
     draw_keypoint_refinement,
 )
 from courtvision.calibration.validation import validate_homography  # noqa: E402
+from courtvision.detectors.rfdetr_detector import (  # noqa: E402
+    DEFAULT_SIZE as DEFAULT_RFDETR_SIZE,
+)
+from courtvision.detectors.rfdetr_detector import RFDETR_SIZES  # noqa: E402
 
 DEFAULT_MODEL_ID = "tennis-v4d0h/2"
+LOCAL_DETECTOR = "RF-DETR (local)"
+HOSTED_DETECTOR = "Roboflow (hosted)"
 DEFAULT_TRACKNET_DIR = REPO_ROOT / "tracknet-model" / "TrackNet"
 DEFAULT_TRACKNET_WEIGHTS = REPO_ROOT / "tracknet-model" / "model_best.pt"
 AUTO_SEARCH_WINDOW_SECONDS = 6.0
@@ -202,7 +208,7 @@ def run_pipeline(
     video_path: Path,
     output_dir: Path,
     calibration_path: Path,
-    model_id: str,
+    detector_args: list[str],
     seconds: float,
     tracknet_dir: str | None,
     tracknet_model_path: str | None,
@@ -221,8 +227,7 @@ def run_pipeline(
         str(video_path),
         "--output-dir",
         str(output_dir),
-        "--model-id",
-        model_id,
+        *detector_args,
         "--confidence",
         str(confidence),
         "--max-missing-seconds",
@@ -383,7 +388,25 @@ def main() -> None:
         st.header("Run setup")
         uploaded_video = st.file_uploader("Video", type=["mp4", "mov", "avi", "mkv"])
         court_type = st.selectbox("Court type", ["tennis", "padel"])
-        model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
+        detector_choice = st.radio(
+            "Player detector",
+            [LOCAL_DETECTOR, HOSTED_DETECTOR],
+            help=(
+                "RF-DETR runs on this computer and needs no API key. Roboflow "
+                "sends frames to its hosted API and needs ROBOFLOW_API_KEY."
+            ),
+        )
+        if detector_choice == HOSTED_DETECTOR:
+            model_id = st.text_input("Roboflow model", value=DEFAULT_MODEL_ID)
+            detector_args = ["--detector", "roboflow", "--model-id", model_id]
+        else:
+            rfdetr_size = st.selectbox(
+                "RF-DETR size",
+                RFDETR_SIZES,
+                index=RFDETR_SIZES.index(DEFAULT_RFDETR_SIZE),
+                help="Larger models are more accurate and slower.",
+            )
+            detector_args = ["--detector", "rfdetr", "--rfdetr-size", rfdetr_size]
         confidence = st.slider(
             "Player detection confidence",
             min_value=0.05,
@@ -1234,7 +1257,7 @@ def main() -> None:
                 video_path,
                 output_dir,
                 calibration_path,
-                model_id,
+                detector_args,
                 run_seconds,
                 tracknet_dir,
                 tracknet_model_path,

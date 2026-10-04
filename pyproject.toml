@@ -25,8 +25,9 @@ dev = [
     "pytest",
     "ruff",
 ]
-gpu = [
-    "ultralytics",
+local = [
+    # rfdetr.assets.coco_classes is imported directly; recheck on a major upgrade.
+    "rfdetr>=1.11,<2",
 ]
 tracknet = [
     "torch",

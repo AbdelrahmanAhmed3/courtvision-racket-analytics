@@ -19,6 +19,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from courtvision.analytics.court_coordinates import (  # noqa: E402
     CourtCoordinate,
+    filter_detections_on_court,
     project_ball_point,
     project_player_detection,
 )
@@ -51,6 +52,10 @@ from courtvision.detectors.base import (  # noqa: E402
     expected_player_count,
     filter_player_detections,
 )
+from courtvision.detectors.rfdetr_detector import (  # noqa: E402
+    DEFAULT_SIZE as DEFAULT_RFDETR_SIZE,
+)
+from courtvision.detectors.rfdetr_detector import RFDETR_SIZES, RFDetrDetector  # noqa: E402
 from courtvision.detectors.roboflow_detector import (  # noqa: E402
     DEFAULT_CONFIDENCE,
     RoboflowDetector,
@@ -355,9 +360,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", required=True, help="Output directory.")
     parser.add_argument(
         "--detections",
-        help="Existing tracked detections CSV. Skips Roboflow inference when set.",
+        help="Existing tracked detections CSV. Skips player detection when set.",
     )
-    parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
+    parser.add_argument(
+        "--detector",
+        choices=("rfdetr", "roboflow"),
+        default="rfdetr",
+        help="rfdetr runs locally (needs the local extra); roboflow calls the "
+        "hosted API and needs ROBOFLOW_API_KEY.",
+    )
+    parser.add_argument(
+        "--rfdetr-size",
+        choices=RFDETR_SIZES,
+        default=DEFAULT_RFDETR_SIZE,
+        help="RF-DETR model size: larger is more accurate and slower.",
+    )
+    parser.add_argument(
+        "--model-id",
+        default=DEFAULT_MODEL_ID,
+        help="Roboflow model id, used with --detector roboflow.",
+    )
     parser.add_argument("--frame-stride", type=int, default=1)
     parser.add_argument(
         "--max-seconds",
@@ -671,11 +693,17 @@ def main() -> None:
     detector = None
     tracker = None
     if tracks_from_csv is None:
-        detector = RoboflowDetector(
-            model_id=args.model_id,
-            confidence=args.confidence,
-            overlap=args.overlap,
-        )
+        if args.detector == "roboflow":
+            detector = RoboflowDetector(
+                model_id=args.model_id,
+                confidence=args.confidence,
+                overlap=args.overlap,
+            )
+        else:
+            detector = RFDetrDetector(
+                size=args.rfdetr_size,
+                confidence=args.confidence,
+            )
         tracker = SimpleIouTracker(
             iou_threshold=args.iou_threshold,
             max_missing_seconds=args.max_missing_seconds,
@@ -691,6 +719,11 @@ def main() -> None:
     player_distance_tracker = PlayerDistanceTracker()
     temporal_calibrator: TemporalCourtCalibrator | None = None
     temporal_result: TemporalCalibrationResult | None = None
+    # Calibration used to drop people standing off the court. With a moving
+    # camera it is the previous frame's calibration, and None (no filtering)
+    # before the calibration frame or after a cut or failed validation, so stale
+    # geometry never drops real players.
+    court_filter_estimate = None if args.track_calibration else estimate
     frame_index = 0
     progress = tqdm(total=max_frames, desc="Full pipeline")
     while True:
@@ -704,8 +737,13 @@ def main() -> None:
             current_tracks = tracks_from_csv.get(frame_index, [])
         elif frame_index % args.frame_stride == 0:
             assert detector is not None and tracker is not None
+            detections = detector.predict_frame(frame, frame_index)
+            if court_filter_estimate is not None and spec is not None:
+                detections = filter_detections_on_court(
+                    detections, court_filter_estimate, spec
+                )
             current_tracks = tracks_from_detections(
-                detector.predict_frame(frame, frame_index),
+                detections,
                 tracker,
                 timestamp_seconds=frame_index / fps,
                 max_players=max_player_count,
@@ -736,6 +774,7 @@ def main() -> None:
                 frame_calibration = temporal_result.calibration
                 frame_estimate = temporal_result.estimate
                 frame_validation = temporal_result.validation
+            court_filter_estimate = frame_estimate
         if args.draw_calibration_overlay:
             if frame_calibration and frame_estimate and frame_validation:
                 annotated = draw_calibration_overlay(

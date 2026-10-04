@@ -1,0 +1,40 @@
+{
+  "clip": "The best point in padel history-UNBELIVABLE.mp4",
+  "note": "Court floor traced by eye in image pixels, for evaluating player detection on clips that cannot be calibrated.",
+  "image_width": 854,
+  "image_height": 480,
+  "polygon": [
+    [
+      0,
+      479
+    ],
+    [
+      0,
+      380
+    ],
+    [
+      130,
+      230
+    ],
+    [
+      195,
+      110
+    ],
+    [
+      655,
+      110
+    ],
+    [
+      720,
+      230
+    ],
+    [
+      853,
+      380
+    ],
+    [
+      853,
+      479
+    ]
+  ]
+}

@@ -21,7 +21,8 @@ interactive debugging, testing, and deployment-friendly command-line workflows.
 
 ## What It Demonstrates
 
-- A modular Python package with a Roboflow detector adapter behind a common detector interface.
+- Local player detection with RF-DETR (no API key), with hosted Roboflow as an optional
+  backend behind the same detector interface.
 - Time-aware player identity persistence using IoU, spatial recovery, and a dormant
   track window.
 - TrackNet integration for small, fast ball tracking on CPU, MPS, and CUDA.
@@ -62,7 +63,7 @@ validation and projection do not depend on how the points were obtained.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Manual tennis/padel calibration | Validated baseline | Named points, RANSAC report, overlay |
-| Player detection | Working, hosted | Roboflow hosted model (needs `ROBOFLOW_API_KEY`); local detection is planned ([#4](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/4)) |
+| Player detection | Working | RF-DETR Nano runs locally by default (20–25 FPS on an Apple M4, see [reports/model_comparison.md](reports/model_comparison.md)); people off the court are dropped; hosted Roboflow is optional |
 | Player tracking | Working | Simple time-aware IoU tracker is the current default |
 | Ball tracking | Working with weights | TrackNet model is supplied separately |
 | Player/ball court projection | Working | Ball projection assumes the ball lies on the court plane |
@@ -81,11 +82,13 @@ Python 3.10 or newer is required.
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -e ".[dev,ui,roboflow,media]"
-cp .env.example .env
+pip install -e ".[dev,ui,local,media]"
 ```
 
-Add your `ROBOFLOW_API_KEY` to `.env`, then start the local interface:
+The first run downloads the RF-DETR weights (about 370 MB for the default Nano model, cached in
+`~/.roboflow/models`). No API key is needed. Hosted Roboflow detection and the
+keypoint-model calibration are optional: install the `roboflow` extra and put your
+`ROBOFLOW_API_KEY` in `.env` (copy `.env.example`). Then start the local interface:
 
 ```bash
 streamlit run app.py
@@ -159,7 +162,7 @@ python scripts/run_full_pipeline.py \
   --draw-calibration-overlay
 ```
 
-To reproduce visualization without another API request, provide saved detections:
+To reproduce visualization without running detection again, provide saved detections:
 
 ```bash
 python scripts/run_full_pipeline.py \
@@ -217,8 +220,8 @@ did not justify replacing the simpler default.
 - Classical pixel and line thresholds are inspectable but remain scene-sensitive.
 - Optical flow can fail on broadcast cuts, heavy occlusion, blur, or parallax.
 - The default player tracker has no appearance-based re-identification.
-- Hosted Roboflow inference requires credentials and network access; the complete
-  pipeline is not yet a real-time or fully offline product.
+- Player detection runs offline, but ball tracking still depends on TrackNet weights
+  supplied separately, and the pipeline is not yet real-time.
 - Results have not yet been benchmarked across a diverse, labeled multi-camera dataset.
 
 ## Future Work
@@ -249,8 +252,9 @@ Nothing below is bundled in this repository. Each keeps its own licence.
 | Component | How it is used | Licence |
 | --- | --- | --- |
 | Python dependencies (NumPy, OpenCV, SciPy, pandas, and others) | Installed from PyPI | Their own permissive licences |
+| [RF-DETR](https://github.com/roboflow/rf-detr) and its COCO weights (Nano, Small, Medium, Base) | Installed with the `local` extra; weights downloaded on first use | Apache-2.0 |
 | [yastrebksv/TrackNet](https://github.com/yastrebksv/TrackNet) | Cloned at runtime for ball tracking; weights supplied by the user | **None published** (all rights reserved); to be replaced, see [docs/roadmap.md](docs/roadmap.md) |
-| Roboflow hosted models (`tennis-v4d0h/2`, `padel-court-fmfv8/15`, `tennis-court-detection-onesd/10`) | Called through Roboflow's API with your own key; optional | Not verified |
+| Roboflow hosted models (`tennis-v4d0h/2`, `padel-court-fmfv8/15`, `tennis-court-detection-onesd/10`) | Optional; called through Roboflow's API with your own key | Not verified |
 | Match footage | Never committed; clips are linked and credited to their source | Owned by the broadcaster |
 
 ## Repository Layout
