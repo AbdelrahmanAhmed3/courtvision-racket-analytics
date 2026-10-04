@@ -53,7 +53,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--input", required=True, help="Clip to label.")
     parser.add_argument("--labels", help="Labels JSON (default: evaluation/labels/).")
-    parser.add_argument("--source-url", default="", help="Where the video came from (quote URLs in zsh).")
+    parser.add_argument(
+        "--source-url",
+        default="",
+        help="Where the video came from (quote URLs in zsh).",
+    )
     parser.add_argument("--box-interval", type=int, default=25)
     parser.add_argument("--max-width", type=int, default=1400, help="Window width.")
     parser.add_argument("--rfdetr-size", default="nano")
