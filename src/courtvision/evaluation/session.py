@@ -11,9 +11,9 @@ from dataclasses import dataclass
 
 from courtvision.evaluation.labels import (
     BallEvent,
-    ClipLabels,
     PlayerBox,
     Segment,
+    VideoLabels,
 )
 
 MAX_UNDO = 50
@@ -26,14 +26,14 @@ KEY_HELP = (
     ("g", "next frame that needs boxes"),
     ("space", "play / pause"),
     ("l / o", "label / skip this segment"),
-    ("c", "cut: new segment starts here"),
+    ("c / m", "cut here / merge with previous segment"),
     ("r / e", "rally starts / ends here"),
     ("1-4", "impact by player (or assign box)"),
     ("b / w", "bounce / wall rebound, then click ball"),
-    ("click box", "select it; drag to draw a box"),
+    ("click box", "select; drag: draw or resize selected"),
     ("x", "delete selected box or this frame's events"),
     ("y", "boxes done; unassigned ones removed"),
-    ("u", "undo"),
+    ("u / esc", "undo / cancel"),
     ("q", "save and quit"),
 )
 
@@ -45,14 +45,14 @@ class ChecklistItem:
 
 
 class LabelSession:
-    def __init__(self, labels: ClipLabels, frame: int = 0) -> None:
+    def __init__(self, labels: VideoLabels, frame: int = 0) -> None:
         self.labels = labels
         self.frame = 0
         self.pending: str | None = None  # "bounce" or "wall_rebound" awaiting a click
         self.selected: int | None = None  # index into this frame's boxes
         self.message = ""
         self.dirty = False
-        self._undo: list[ClipLabels] = []
+        self._undo: list[VideoLabels] = []
         self.go_to(frame)
 
     # Navigation -----------------------------------------------------------
@@ -109,6 +109,7 @@ class LabelSession:
             "l": lambda: self._set_status("label"),
             "o": lambda: self._set_status("skip"),
             "c": self._cut,
+            "m": self._merge_with_previous,
             "r": self._rally_start,
             "e": self._rally_end,
             "b": lambda: self._await_click("bounce"),
@@ -128,7 +129,10 @@ class LabelSession:
         if self.pending is not None:
             self._edit()
             self.segment.events.append(BallEvent(self.pending, self.frame, x=x, y=y))
-            self.message = f"{self.pending.replace('_', ' ')} at frame {self.frame}"
+            self.message = (
+                f"{self.pending.replace('_', ' ')} at frame {self.frame}"
+                + self._outside_rally()
+            )
             self.pending = None
             return
         inside = [index for index, box in enumerate(self.boxes()) if box.contains(x, y)]
@@ -149,6 +153,11 @@ class LabelSession:
         if right - left < MIN_BOX_SIZE_PX or bottom - top < MIN_BOX_SIZE_PX:
             return
         self._edit()
+        if self.selected is not None:
+            box = self.boxes()[self.selected]
+            box.x1, box.y1, box.x2, box.y2 = left, top, right, bottom
+            self.message = "Box resized"
+            return
         self.segment.boxes.setdefault(self.frame, []).append(
             PlayerBox(left, top, right, bottom)
         )
@@ -262,31 +271,54 @@ class LabelSession:
             self.message = "A segment already starts here"
             return
         self._edit()
-        tail = Segment(self.frame, segment.end, status=segment.status)
-        tail.events = [event for event in segment.events if event.frame >= self.frame]
-        tail.boxes = {f: b for f, b in segment.boxes.items() if f >= self.frame}
-        segment.events = [event for event in segment.events if event.frame < self.frame]
-        segment.boxes = {f: b for f, b in segment.boxes.items() if f < self.frame}
-        segment.end = self.frame
-        position = self.labels.segments.index(segment) + 1
-        self.labels.segments.insert(position, tail)
+        tail = segment.split_at(self.frame)
+        self.labels.segments.insert(self.labels.segments.index(segment) + 1, tail)
         self.message = f"New segment starts at frame {self.frame}"
 
-    def _rally_start(self) -> None:
+    def _merge_with_previous(self) -> None:
+        index = self.labels.segments.index(self.segment)
+        if index == 0:
+            self.message = "This is the first segment"
+            return
         self._edit()
-        self.segment.rally_start = self.frame
+        current = self.labels.segments.pop(index)
+        self.labels.segments[index - 1].absorb(current)
+        self.message = "Merged with the previous segment"
+
+    def _rally_start(self) -> None:
+        segment = self.segment
+        if not self._labelling():
+            return
+        if segment.rally_end is not None and self.frame > segment.rally_end:
+            self.message = "The rally cannot start after it ends"
+            return
+        self._edit()
+        segment.rally_start = self.frame
 
     def _rally_end(self) -> None:
         segment = self.segment
+        if not self._labelling():
+            return
         if segment.rally_start is not None and self.frame < segment.rally_start:
             self.message = "The rally cannot end before it starts"
             return
         self._edit()
         segment.rally_end = self.frame
 
-    def _await_click(self, kind: str) -> None:
+    def _labelling(self) -> bool:
         if self.segment.status != "label":
             self.message = "Mark the segment for labelling first (l)"
+            return False
+        return True
+
+    def _outside_rally(self) -> str:
+        segment = self.segment
+        before = segment.rally_start is not None and self.frame < segment.rally_start
+        after = segment.rally_end is not None and self.frame > segment.rally_end
+        return " (outside the rally!)" if before or after else ""
+
+    def _await_click(self, kind: str) -> None:
+        if not self._labelling():
             return
         self.pending = kind
         self.message = f"Click the ball for the {kind.replace('_', ' ')}"
@@ -301,8 +333,7 @@ class LabelSession:
             self.message = f"Box assigned to player {player}"
             self.selected = None
             return
-        if self.segment.status != "label":
-            self.message = "Mark the segment for labelling first (l)"
+        if not self._labelling():
             return
         self._edit()
         segment = self.segment
@@ -312,7 +343,9 @@ class LabelSession:
             if not (event.kind == "impact" and event.frame == self.frame)
         ]
         segment.events.append(BallEvent("impact", self.frame, player=player))
-        self.message = f"Impact by player {player} at frame {self.frame}"
+        self.message = (
+            f"Impact by player {player} at frame {self.frame}" + self._outside_rally()
+        )
 
     def _delete(self) -> None:
         if self.selected is not None:
@@ -334,6 +367,9 @@ class LabelSession:
         """Finish this box frame; boxes left without a player are removed."""
         if not self.is_box_frame():
             self.message = "This is not a box frame"
+            return
+        if self.frame in self.segment.reviewed_box_frames:
+            self.message = "Boxes on this frame are already done"
             return
         self._edit()
         boxes = self.boxes()

@@ -25,7 +25,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from courtvision.evaluation.cuts import detect_cuts  # noqa: E402
 from courtvision.evaluation.labels import (  # noqa: E402
-    ClipLabels,
+    VideoLabels,
     load_labels,
     save_labels,
     segments_from_cuts,
@@ -85,7 +85,7 @@ class FrameReader:
         return frame
 
 
-def create_labels(args: argparse.Namespace) -> ClipLabels:
+def create_labels(args: argparse.Namespace) -> VideoLabels:
     capture = cv2.VideoCapture(args.input)
     fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -105,8 +105,8 @@ def create_labels(args: argparse.Namespace) -> ClipLabels:
     cuts = detect_cuts(frames())
     capture.release()
     print(f"{frame_count} frames, {len(cuts)} cuts")
-    return ClipLabels(
-        clip=Path(args.input).name,
+    return VideoLabels(
+        video=Path(args.input).name,
         source_url=args.source_url,
         fps=fps,
         width=width,
@@ -154,9 +154,8 @@ def render(session: LabelSession, frame: np.ndarray, scale: float, playing: bool
             cv2.circle(view, centre, 9, colour, 2)
 
     panel = np.full((view.shape[0], PANEL_WIDTH, 3), 30, np.uint8)
-    y = _text(panel, f"Frame {session.frame}/{session.labels.frame_count - 1}", 26, 0.7)
-    if playing:
-        y = _text(panel, "PLAYING (space to pause)", y, 0.5, (0, 200, 255))
+    header = f"Frame {session.frame}/{session.labels.frame_count - 1}"
+    y = _text(panel, header + ("   PLAYING" if playing else ""), 26, 0.7)
     y += 6
     colours = {True: (120, 220, 120), False: (60, 170, 255), None: (220, 220, 220)}
     for item in session.checklist():
@@ -167,7 +166,7 @@ def render(session: LabelSession, frame: np.ndarray, scale: float, playing: bool
         y = _text(panel, line, y + 4, 0.45, (0, 220, 255))
     y = _timeline(panel, session, y + 12)
     for key, meaning in KEY_HELP:
-        y = _text(panel, f"{key:>9}  {meaning}", y, 0.38, (170, 170, 170))
+        y = _text(panel, f"{key:>9}  {meaning}", y, 0.36, (170, 170, 170))
     return np.hstack([view, panel])
 
 
@@ -248,9 +247,8 @@ def main() -> None:
                 else:
                     session.go_to(session.frame + 1)
             continue
-        key = KEY_CODES.get(
-            code, chr(code & 0xFF).lower() if 0 <= code & 0xFF < 128 else ""
-        )
+        # Only plain ASCII keys; arrows and other special keys are ignored.
+        key = KEY_CODES.get(code, chr(code).lower() if 0 <= code < 128 else "")
         if key == "space":
             playing = not playing
         elif key == "q":
