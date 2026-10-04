@@ -39,10 +39,13 @@ For each segment:
    `c` on the first frame after it; if a segment was split where there is no cut,
    press `m` to merge it with the previous one.
 2. **Rally start** (`r`): the frame of the serve's impact. **Rally end** (`e`): the
-   frame the ball is dead (second bounce, net, out, or play visibly stops).
+   frame the ball is dead (second bounce, net, out, or play visibly stops). The
+   server's bounce before serving is not labelled: it comes before the rally starts.
+   On the serve's frame press `r`, then the server's number.
 3. **Impacts** (`1`-`4`): on the frame where the racket meets the ball, press the
    hitter's number. Use the closest frame if the contact falls between two.
-4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor.
+4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor,
+   including the serve's bounce in the service box.
    **Wall rebounds** (`w`, then click): the frame it touches glass or mesh. Click
    where the ball is in the image. Positions are image pixels; court positions come
    later, once a segment can be calibrated.
