@@ -719,8 +719,10 @@ def main() -> None:
     player_distance_tracker = PlayerDistanceTracker()
     temporal_calibrator: TemporalCourtCalibrator | None = None
     temporal_result: TemporalCalibrationResult | None = None
-    # The latest calibration seen, used to drop people standing off the court.
-    # With a moving camera it lags one frame behind the detections.
+    # Calibration used to drop people standing off the court. With a moving
+    # camera it is the previous frame's calibration, and None (no filtering)
+    # before the calibration frame or after a cut or failed validation, so stale
+    # geometry never drops real players.
     court_filter_estimate = None if args.track_calibration else estimate
     frame_index = 0
     progress = tqdm(total=max_frames, desc="Full pipeline")
@@ -772,7 +774,7 @@ def main() -> None:
                 frame_calibration = temporal_result.calibration
                 frame_estimate = temporal_result.estimate
                 frame_validation = temporal_result.validation
-                court_filter_estimate = frame_estimate
+            court_filter_estimate = frame_estimate
         if args.draw_calibration_overlay:
             if frame_calibration and frame_estimate and frame_validation:
                 annotated = draw_calibration_overlay(
