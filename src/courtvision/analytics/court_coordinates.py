@@ -8,13 +8,12 @@ from courtvision.calibration.homography import HomographyEstimate, project_image
 from courtvision.detectors.base import Detection
 from courtvision.detectors.tracknet_adapter import BallPoint
 from courtvision.geometry.homography import bottom_center
-from courtvision.visualization.minimap import PADEL_COURT, CourtSpec
+from courtvision.visualization.minimap import CourtSpec
 
 # How far outside the painted court (side, end) a player may stand, in metres.
 # Padel is enclosed by walls; tennis players often play several metres behind
 # the baseline.
-PADEL_MARGINS_M = (0.5, 0.5)
-TENNIS_MARGINS_M = (4.0, 7.0)
+COURT_MARGINS_M = {"padel": (0.5, 0.5), "tennis": (4.0, 7.0)}
 
 
 @dataclass(frozen=True)
@@ -94,7 +93,10 @@ def project_ball_point(
 
 def court_margins_m(spec: CourtSpec) -> tuple[float, float]:
     """Return how far beyond the side and end lines players may stand."""
-    return PADEL_MARGINS_M if spec == PADEL_COURT else TENNIS_MARGINS_M
+    try:
+        return COURT_MARGINS_M[spec.name]
+    except KeyError:
+        raise ValueError(f"No court margins defined for {spec.name!r}") from None
 
 
 def filter_detections_on_court(
