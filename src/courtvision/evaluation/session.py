@@ -18,6 +18,8 @@ from courtvision.evaluation.labels import (
 
 MAX_UNDO = 50
 MIN_BOX_SIZE_PX = 6
+# A copied player takes over a proposed box overlapping its old box this much.
+COPY_MIN_IOU = 0.3
 
 KEY_HELP = (
     ("a / d", "previous / next frame"),
@@ -32,6 +34,7 @@ KEY_HELP = (
     ("b / w", "bounce / wall rebound, then click ball"),
     ("click box", "select; drag: draw or resize selected"),
     ("x", "delete selected box or this frame's events"),
+    ("p", "copy players from previous box frame"),
     ("y", "boxes done; unassigned ones removed"),
     ("u / esc", "undo / cancel"),
     ("q", "save and quit"),
@@ -115,6 +118,7 @@ class LabelSession:
             "b": lambda: self._await_click("bounce"),
             "w": lambda: self._await_click("wall_rebound"),
             "x": self._delete,
+            "p": self._copy_previous_players,
             "y": self._boxes_done,
             "u": self._undo_last,
             "esc": self._cancel,
@@ -363,6 +367,41 @@ class LabelSession:
         ]
         self.message = "Events on this frame deleted"
 
+    def _copy_previous_players(self) -> None:
+        """Give this frame's boxes the players from the last finished box frame.
+
+        Each previous player takes the proposed box that overlaps its old box
+        most; a player with no overlapping proposal gets its old box copied.
+        """
+        if not self.is_box_frame():
+            self.message = "This is not a box frame"
+            return
+        segment = self.segment
+        earlier = [frame for frame in segment.reviewed_box_frames if frame < self.frame]
+        if not earlier:
+            self.message = "No earlier finished box frame in this segment"
+            return
+        source = max(earlier)
+        self._edit()
+        boxes = segment.boxes.setdefault(self.frame, [])
+        for box in boxes:
+            box.player = None
+        matched = copied = 0
+        for old in (box for box in segment.boxes[source] if box.player is not None):
+            free = [box for box in boxes if box.player is None]
+            best = max(free, key=lambda box: _iou(box, old), default=None)
+            if best is not None and _iou(best, old) >= COPY_MIN_IOU:
+                best.player = old.player
+                matched += 1
+            else:
+                boxes.append(PlayerBox(old.x1, old.y1, old.x2, old.y2, old.player))
+                copied += 1
+        self.selected = None
+        self.message = (
+            f"Players from frame {source}: {matched} matched, {copied} copied as-is."
+            " Check, then y"
+        )
+
     def _boxes_done(self) -> None:
         """Finish this box frame; boxes left without a player are removed."""
         if not self.is_box_frame():
@@ -382,6 +421,15 @@ class LabelSession:
 
 def _area(box: PlayerBox) -> float:
     return (box.x2 - box.x1) * (box.y2 - box.y1)
+
+
+def _iou(first: PlayerBox, second: PlayerBox) -> float:
+    width = min(first.x2, second.x2) - max(first.x1, second.x1)
+    height = min(first.y2, second.y2) - max(first.y1, second.y1)
+    if width <= 0 or height <= 0:
+        return 0.0
+    overlap = width * height
+    return overlap / (_area(first) + _area(second) - overlap)
 
 
 def _describe(event: BallEvent) -> str:
