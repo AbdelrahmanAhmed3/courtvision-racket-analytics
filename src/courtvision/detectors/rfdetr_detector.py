@@ -12,7 +12,7 @@ import numpy as np
 
 from courtvision.detectors.base import Detection
 
-DEFAULT_SIZE = "small"
+DEFAULT_SIZE = "nano"
 DEFAULT_CONFIDENCE = 0.3
 PLAYER_COCO_CLASS = "person"
 RFDETR_SIZES = ("nano", "small", "medium", "base")
