@@ -53,6 +53,9 @@ For each segment:
    jumps to the next one that is not done): RF-DETR proposes boxes. Click a player's
    box and press their number. If a box is loose or cut off, keep it selected and
    drag a tighter one to resize it; drag with nothing selected to draw a missing box.
+   On later box frames, `p` copies the players from the previous finished box frame
+   onto the new proposals (and copies a box as-is if the detector missed a player);
+   check them, fix any mistake, then press `y`.
    Press `y` when every player you can see is assigned: boxes left without a player
    (crowd, officials, ball kids) are removed. Box a player even when they are outside
    the court. Do not box a player you cannot see.

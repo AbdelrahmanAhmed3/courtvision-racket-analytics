@@ -309,3 +309,34 @@ def test_saving_leaves_no_temporary_file(tmp_path) -> None:
     save_labels(make_labels(), tmp_path / "labels.json")
 
     assert [path.name for path in tmp_path.iterdir()] == ["labels.json"]
+
+
+def test_copying_players_from_the_previous_box_frame() -> None:
+    session = labelled_session(frame=25)
+    session.prefill([(0, 0, 40, 90), (200, 0, 240, 90)])
+    session.click(10, 10)
+    session.key("1")
+    session.click(210, 10)
+    session.key("3")
+    session.key("y")
+    session.go_to(50)
+    # Player 1 moved a little; player 3 was missed by the detector.
+    session.prefill([(5, 2, 45, 92), (600, 0, 640, 90)])
+
+    session.key("p")
+
+    assert session.boxes() == [
+        PlayerBox(5, 2, 45, 92, player=1),
+        PlayerBox(600, 0, 640, 90, player=None),
+        PlayerBox(200, 0, 240, 90, player=3),
+    ]
+    assert 50 not in session.segment.reviewed_box_frames  # you still confirm with y
+
+
+def test_copying_needs_an_earlier_finished_box_frame() -> None:
+    session = labelled_session(frame=25)
+    session.prefill([(0, 0, 40, 90)])
+
+    session.key("p")
+
+    assert "No earlier" in session.message
