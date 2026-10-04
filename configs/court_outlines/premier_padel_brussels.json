@@ -1,0 +1,24 @@
+{
+  "clip": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-'OUT-THE-COURT'-PADEL-POINTS-2025-clip-0m00s-0m31s.mp4 (frames 545-825)",
+  "note": "Court floor traced by eye in image pixels, for evaluating player detection on clips that cannot be calibrated.",
+  "image_width": 1724,
+  "image_height": 970,
+  "polygon": [
+    [
+      512,
+      300
+    ],
+    [
+      1226,
+      300
+    ],
+    [
+      1550,
+      880
+    ],
+    [
+      160,
+      880
+    ]
+  ]
+}
