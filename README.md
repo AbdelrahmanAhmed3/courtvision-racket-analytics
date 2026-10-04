@@ -63,7 +63,7 @@ validation and projection do not depend on how the points were obtained.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Manual tennis/padel calibration | Validated baseline | Named points, RANSAC report, overlay |
-| Player detection | Working | RF-DETR runs locally by default (~16 FPS on an Apple M4, see [reports/model_comparison.md](reports/model_comparison.md)); people off the court are dropped; hosted Roboflow is optional |
+| Player detection | Working | RF-DETR Nano runs locally by default (20–25 FPS on an Apple M4, see [reports/model_comparison.md](reports/model_comparison.md)); people off the court are dropped; hosted Roboflow is optional |
 | Player tracking | Working | Simple time-aware IoU tracker is the current default |
 | Ball tracking | Working with weights | TrackNet model is supplied separately |
 | Player/ball court projection | Working | Ball projection assumes the ball lies on the court plane |
@@ -85,7 +85,7 @@ python -m pip install --upgrade pip
 pip install -e ".[dev,ui,local,media]"
 ```
 
-The first run downloads the RF-DETR weights (about 390 MB for the default Small model, cached in
+The first run downloads the RF-DETR weights (about 370 MB for the default Nano model, cached in
 `~/.roboflow/models`). No API key is needed. Hosted Roboflow detection and the
 keypoint-model calibration are optional: install the `roboflow` extra and put your
 `ROBOFLOW_API_KEY` in `.env` (copy `.env.example`). Then start the local interface:
