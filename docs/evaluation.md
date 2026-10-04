@@ -32,6 +32,14 @@ The first run finds camera cuts and splits the video into **segments**. Labels s
 after every change; run the same command again to continue. The side panel shows a
 checklist for the current segment and frame, and every key.
 
+Label each rally in **two passes**:
+
+- **Events pass, frame by frame.** Play with `space`, pause near each shot, then step
+  with `a` / `d` to the exact frame of each impact, bounce and wall rebound. Never
+  place events while jumping between box frames with `g`: box frames are a second
+  apart, and an impact even a few frames off cannot be scored.
+- **Boxes pass.** `g` to the next box frame, `p` to copy the players, check, `y`.
+
 For each segment:
 
 1. **Label or skip** it (`l` / `o`). Label segments that show one rally from the
@@ -41,7 +49,8 @@ For each segment:
 2. **Rally start** (`r`): the frame of the serve's impact. **Rally end** (`e`): the
    frame the ball is dead (second bounce, net, out, or play visibly stops). The
    server's bounce before serving is not labelled: it comes before the rally starts.
-   On the serve's frame press `r`, then the server's number.
+   On the serve's frame press `r`, then the server's number. If the segment starts
+   after the serve, press `r` on its first frame.
 3. **Impacts** (`1`-`4`): on the frame where the racket meets the ball, press the
    hitter's number. Use the closest frame if the contact falls between two.
 4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor,
