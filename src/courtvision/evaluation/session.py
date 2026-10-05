@@ -58,6 +58,7 @@ class LabelSession:
         self.message = ""
         self.dirty = False
         self._undo: list[VideoLabels] = []
+        self._armed: tuple[str, int] | None = None  # a mark waiting to be moved
         self.go_to(frame)
 
     # Navigation -----------------------------------------------------------
@@ -109,6 +110,8 @@ class LabelSession:
     # Input ----------------------------------------------------------------
     def key(self, key: str) -> None:
         self.message = ""
+        if key not in {"r", "e"}:
+            self._armed = None
         actions = {
             "a": lambda: self.go_to(self.frame - 1),
             "d": lambda: self.go_to(self.frame + 1),
@@ -324,6 +327,8 @@ class LabelSession:
         if segment.rally_end is not None and self.frame > segment.rally_end:
             self.message = "The rally cannot start after it ends"
             return
+        if not self._may_move("start", segment.rally_start):
+            return
         self._edit()
         segment.rally_start = self.frame
 
@@ -334,8 +339,23 @@ class LabelSession:
         if segment.rally_start is not None and self.frame < segment.rally_start:
             self.message = "The rally cannot end before it starts"
             return
+        if not self._may_move("end", segment.rally_end):
+            return
         self._edit()
         segment.rally_end = self.frame
+
+    def _may_move(self, mark: str, current: int | None) -> bool:
+        """A rally mark that is set moves only on a second press, so r and e,
+        neighbours on the keyboard, cannot move one by a slip."""
+        if current in (None, self.frame) or self._armed == (mark, self.frame):
+            self._armed = None
+            return True
+        self._armed = (mark, self.frame)
+        key = "r" if mark == "start" else "e"
+        self.message = (
+            f"The rally {mark}s at frame {current}: press {key} again to move"
+        )
+        return False
 
     def _labelling(self) -> bool:
         if self.segment.status != "label":

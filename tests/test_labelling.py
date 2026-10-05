@@ -428,3 +428,24 @@ def test_drawing_on_a_finished_box_frame_reopens_it() -> None:
     session.key("2")
     session.key("y")
     assert [box.player for box in session.boxes()] == [1, 2]
+
+
+def test_moving_a_rally_mark_takes_a_second_press() -> None:
+    session = labelled_session(frame=10)
+    session.key("r")
+    session.go_to(50)
+
+    session.key("r")  # meant e: the start must not move
+    assert session.segment.rally_start == 10
+    assert "press r again" in session.message
+    session.key("e")
+    assert session.segment.rally_end == 50
+
+    session.go_to(5)
+    session.key("r")
+    session.key("d")  # another key in between cancels the move
+    session.key("a")
+    session.key("r")
+    assert session.segment.rally_start == 10
+    session.key("r")
+    assert session.segment.rally_start == 5
