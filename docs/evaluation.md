@@ -45,19 +45,23 @@ For each segment:
 1. **Label or skip** it (`l` / `o`). Label segments that show one rally from the
    main camera. Skip replays, close-ups and crowd views. If a cut was missed, press
    `c` on the first frame after it; if a segment was split where there is no cut,
-   press `m` to merge it with the previous one.
+   press `m` to merge it with the previous one. A segment holds one rally: if it
+   shows two points, press `c` between them.
 2. **Rally start** (`r`): the frame of the serve's impact. **Rally end** (`e`): the
    frame the ball is dead (second bounce, net, out, or play visibly stops). The
    server's bounce before serving is not labelled: it comes before the rally starts.
    On the serve's frame press `r`, then the server's number. If the segment starts
-   after the serve, press `r` on its first frame.
+   after the serve, press `r` on its first frame. After a fault, the rally starts at
+   the second serve; do not label the first.
 3. **Impacts** (`1`-`4`): on the frame where the racket meets the ball, press the
    hitter's number. Use the closest frame if the contact falls between two.
 4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor,
    including the serve's bounce in the service box.
-   **Wall rebounds** (`w`, then click): the frame it touches glass or mesh. Click
-   where the ball is in the image. Positions are image pixels; court positions come
-   later, once a segment can be calibrated.
+   **Wall rebounds** (`w`, then click): the frame it touches glass or mesh, whether
+   play goes on or the point ends there. Label what happens, not whether it was
+   legal. The net, a player's body and a ball leaving over the walls are not wall
+   rebounds. Click where the ball is in the image. Positions are image pixels; court
+   positions come later, once a segment can be calibrated.
 5. **Player boxes** on every 25th frame of the rally (one per second at 25 fps; `g`
    jumps to the next one that is not done): RF-DETR proposes boxes. Click a player's
    box and press their number. If a box is loose or cut off, keep it selected and
