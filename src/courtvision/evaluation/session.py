@@ -167,6 +167,7 @@ class LabelSession:
         )
         self.selected = len(self.boxes()) - 1
         self.message = "New box: press 1-4 to assign the player"
+        self._reopen_if_unassigned()
 
     # Side panel -----------------------------------------------------------
     def checklist(self) -> list[ChecklistItem]:
@@ -336,6 +337,7 @@ class LabelSession:
             self.boxes()[self.selected].player = player
             self.message = f"Box assigned to player {player}"
             self.selected = None
+            self._reopen_if_unassigned()
             return
         if not self._labelling():
             return
@@ -401,6 +403,14 @@ class LabelSession:
             f"Players from frame {source}: {matched} matched, {copied} copied as-is."
             " Check, then y"
         )
+        self._reopen_if_unassigned()
+
+    def _reopen_if_unassigned(self) -> None:
+        """A finished box frame has a player on every box; reopen it if not."""
+        reviewed = self.segment.reviewed_box_frames
+        if self.frame in reviewed and any(box.player is None for box in self.boxes()):
+            reviewed.remove(self.frame)
+            self.message += " (box frame reopened: press y when done)"
 
     def _boxes_done(self) -> None:
         """Finish this box frame; boxes left without a player are removed."""
