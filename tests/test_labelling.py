@@ -358,6 +358,9 @@ def test_a_team_hitting_twice_is_a_problem() -> None:
         session.go_to(frame)
         session.key(str(player))
     session.key("e")
+    session.go_to(20)
+    session.key("b")  # the serve bounces before the return
+    session.click(600, 400)
     assert problems_in(session) == [(25, "Boxes not done"), (50, "Boxes not done")]
 
     session.go_to(50)
@@ -449,3 +452,22 @@ def test_moving_a_rally_mark_takes_a_second_press() -> None:
     assert session.segment.rally_start == 10
     session.key("r")
     assert session.segment.rally_start == 5
+
+
+def test_bounce_rules_catch_impossible_rallies() -> None:
+    session = labelled_session(frame=10)
+    session.key("r")
+    session.key("1")  # the serve
+    session.go_to(20)
+    session.key("3")  # returned before it bounced
+    for frame in (30, 34):  # two bounces, then play goes on
+        session.go_to(frame)
+        session.key("b")
+        session.click(600, 400)
+    session.go_to(40)
+    session.key("2")
+
+    texts = {(frame, text.split(" ")[0]) for frame, text in problems_in(session)}
+
+    assert (20, "The") in texts  # the serve was returned before it bounced
+    assert (34, "Second") in texts

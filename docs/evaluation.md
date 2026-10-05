@@ -88,6 +88,9 @@ python scripts/check_labels.py evaluation/labels/*.json
 
 - **A team hits twice in a row.** Never legal, so an impact was missed or a player
   number is wrong.
+- **Two bounces between impacts.** The second bounce ends the point, so if play goes
+  on, one of them is not a bounce.
+- **A serve returned before it bounced**, which is never legal.
 - **An event outside the rally**, or a rally that starts mid-segment but not on the
   serve's impact.
 - A rally with no start or end, box frames not done, a segment not reviewed.

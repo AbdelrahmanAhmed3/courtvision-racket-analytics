@@ -64,6 +64,20 @@ def find_problems(labels: VideoLabels, segment: Segment) -> list[Problem]:
                     "a team hit twice. Missed impact or wrong player?",
                 )
             )
+        between = [e for e in events if first.frame < e.frame < second.frame]
+        bounces = [event for event in between if event.kind == "bounce"]
+        if serve_expected and first.frame == start and not bounces:
+            problems.append(
+                Problem(second.frame, "The serve was returned before it bounced")
+            )
+        if len(bounces) >= 2:
+            problems.append(
+                Problem(
+                    bounces[1].frame,
+                    f"Second bounce after frame {bounces[0].frame} ends the point, "
+                    "but play goes on. Not a bounce?",
+                )
+            )
     for frame in labels.box_frames(segment):
         if frame not in segment.reviewed_box_frames:
             problems.append(Problem(frame, "Boxes not done"))
