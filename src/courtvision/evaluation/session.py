@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass
 
+from courtvision.evaluation.checks import describe, find_all_problems, find_problems
 from courtvision.evaluation.labels import (
     BallEvent,
     PlayerBox,
@@ -36,6 +37,7 @@ KEY_HELP = (
     ("x", "delete selected box or this frame's events"),
     ("p", "copy players from previous box frame"),
     ("y", "boxes done; unassigned ones removed"),
+    ("n", "next problem (labels breaking a rule)"),
     ("u / esc", "undo / cancel"),
     ("q", "save and quit"),
 )
@@ -80,6 +82,12 @@ class LabelSession:
         later = [frame for frame in due if frame > self.frame]
         return (later or due or [None])[0]
 
+    def next_problem_frame(self) -> int | None:
+        """The next frame with a problem (see checks.py), wrapping."""
+        frames = sorted({problem.frame for problem in find_all_problems(self.labels)})
+        later = [frame for frame in frames if frame > self.frame]
+        return (later or frames or [None])[0]
+
     # Boxes ----------------------------------------------------------------
     def is_box_frame(self) -> bool:
         segment = self.segment
@@ -120,6 +128,7 @@ class LabelSession:
             "x": self._delete,
             "p": self._copy_previous_players,
             "y": self._boxes_done,
+            "n": self._go_to_next_problem,
             "u": self._undo_last,
             "esc": self._cancel,
         }
@@ -196,7 +205,7 @@ class LabelSession:
             ChecklistItem(
                 "This frame: "
                 + (
-                    ", ".join(_describe(event) for event in events_here)
+                    ", ".join(describe(event) for event in events_here)
                     if events_here
                     else "no events"
                 ),
@@ -229,6 +238,17 @@ class LabelSession:
                     self.frame in segment.reviewed_box_frames,
                 )
             )
+        problems = find_problems(self.labels, segment)
+        items.append(
+            ChecklistItem(
+                f"Problems in this segment: {len(problems)} (n)", not problems
+            )
+        )
+        items += [
+            ChecklistItem(f"Here: {problem.text}", False)
+            for problem in problems
+            if problem.frame == self.frame
+        ]
         return items
 
     # Actions --------------------------------------------------------------
@@ -258,6 +278,13 @@ class LabelSession:
         index = self.labels.segments.index(self.segment)
         if index + 1 < len(self.labels.segments):
             self.go_to(self.labels.segments[index + 1].start)
+
+    def _go_to_next_problem(self) -> None:
+        frame = self.next_problem_frame()
+        if frame is None:
+            self.message = "No problems found"
+        else:
+            self.go_to(frame)
 
     def _go_to_next_box_frame(self) -> None:
         frame = self.next_box_frame()
@@ -440,9 +467,3 @@ def _iou(first: PlayerBox, second: PlayerBox) -> float:
         return 0.0
     overlap = width * height
     return overlap / (_area(first) + _area(second) - overlap)
-
-
-def _describe(event: BallEvent) -> str:
-    if event.kind == "impact":
-        return f"impact by P{event.player}"
-    return event.kind.replace("_", " ")
