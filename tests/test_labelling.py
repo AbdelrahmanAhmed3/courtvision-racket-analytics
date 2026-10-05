@@ -342,6 +342,79 @@ def test_copying_needs_an_earlier_finished_box_frame() -> None:
     assert "No earlier" in session.message
 
 
+def problems_in(session: LabelSession) -> list[tuple[int, str]]:
+    from courtvision.evaluation.checks import find_problems
+
+    return [
+        (problem.frame, problem.text)
+        for problem in find_problems(session.labels, session.segment)
+    ]
+
+
+def test_a_team_hitting_twice_is_a_problem() -> None:
+    session = labelled_session(frame=10)
+    session.key("r")
+    for frame, player in [(10, 1), (30, 3), (50, 2), (70, 4)]:
+        session.go_to(frame)
+        session.key(str(player))
+    session.key("e")
+    assert problems_in(session) == [(25, "Boxes not done"), (50, "Boxes not done")]
+
+    session.go_to(50)
+    session.key("1")  # P1 and P2 are a team, so this is fine
+    session.go_to(60)
+    session.key("2")  # but now the near team hits twice: 50 then 60
+
+    assert any(
+        frame == 60 and "a team hit twice" in text
+        for frame, text in problems_in(session)
+    )
+
+
+def test_rally_mistakes_are_problems() -> None:
+    session = labelled_session(frame=20)
+    assert {text for _, text in problems_in(session)} >= {
+        "No rally start (r)",
+        "No rally end (e)",
+    }
+
+    session.key("r")  # mid-segment, but there is no serve on this frame
+    session.go_to(15)
+    session.key("3")
+
+    texts = {text for _, text in problems_in(session)}
+    assert "The rally starts mid-segment but not on an impact (serve)" in texts
+    assert "impact by P3 is outside the rally" in texts
+
+
+def test_only_unreviewed_segments_need_a_decision() -> None:
+    from courtvision.evaluation.checks import find_problems
+
+    labels = make_labels()
+    first, second = labels.segments
+    second.status = "skip"
+
+    assert [problem.text for problem in find_problems(labels, first)] == [
+        "Segment not reviewed: label (l) or skip (o)"
+    ]
+    assert find_problems(labels, second) == []
+
+
+def test_n_goes_to_the_next_problem() -> None:
+    session = labelled_session(frame=10)
+    session.key("r")
+    session.go_to(90)
+    session.key("e")
+    session.go_to(26)
+
+    session.key("n")
+    assert session.frame == 50  # boxes not done
+
+    session.go_to(95)
+    session.key("n")
+    assert session.frame == 100  # segment 2 is not reviewed
+
+
 def test_drawing_on_a_finished_box_frame_reopens_it() -> None:
     session = labelled_session(frame=25)
     session.prefill([(0, 0, 40, 90)])

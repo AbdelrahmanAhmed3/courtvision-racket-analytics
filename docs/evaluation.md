@@ -72,6 +72,23 @@ For each segment:
    The boxes start as RF-DETR proposals, so accepting them unchanged favours RF-DETR
    when comparing detectors (#6). Tighten any box that does not fit the player.
 
+### Checking labels
+
+The rules of padel catch many labelling mistakes. Press `n` to jump to the next
+frame that breaks one; the side panel says what is wrong there. To list them all:
+
+```bash
+python scripts/check_labels.py evaluation/labels/*.json
+```
+
+- **A team hits twice in a row.** Never legal, so an impact was missed or a player
+  number is wrong.
+- **An event outside the rally**, or a rally that starts mid-segment but not on the
+  serve's impact.
+- A rally with no start or end, box frames not done, a segment not reviewed.
+
+The checks point at frames worth a second look; they cannot prove labels right.
+
 ### Player numbers
 
 Numbers are per segment. At the rally start, the team **nearer the camera** is 1
