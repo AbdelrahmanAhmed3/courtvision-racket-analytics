@@ -340,3 +340,18 @@ def test_copying_needs_an_earlier_finished_box_frame() -> None:
     session.key("p")
 
     assert "No earlier" in session.message
+
+
+def test_drawing_on_a_finished_box_frame_reopens_it() -> None:
+    session = labelled_session(frame=25)
+    session.prefill([(0, 0, 40, 90)])
+    session.click(10, 10)
+    session.key("1")
+    session.key("y")
+
+    session.drag(200, 0, 240, 90)  # a missed player, drawn after y
+
+    assert 25 not in session.segment.reviewed_box_frames
+    session.key("2")
+    session.key("y")
+    assert [box.player for box in session.boxes()] == [1, 2]
