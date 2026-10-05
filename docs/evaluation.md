@@ -52,7 +52,8 @@ For each segment:
    server's bounce before serving is not labelled: it comes before the rally starts.
    On the serve's frame press `r`, then the server's number. If the segment starts
    after the serve, press `r` on its first frame. After a fault, the rally starts at
-   the second serve; do not label the first.
+   the second serve; do not label the first. To move a start or end that is already
+   set, press `r` or `e` twice: one press never moves it, so a slip cannot.
 3. **Impacts** (`1`-`4`): on the frame where the racket meets the ball, press the
    hitter's number. Use the closest frame if the contact falls between two.
 4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor,
