@@ -104,6 +104,29 @@ and 2, the far team is 3 and 4; within each team, the player on the **left of th
 image** gets the lower number. Then follow the **same person** for the whole
 segment, even if partners swap sides.
 
+## Scoring predictions
+
+```bash
+python scripts/score_events.py --labels evaluation/labels/<video>.json \
+    --predictions predictions.json
+```
+
+Predictions are JSON, `{"events": [{"kind": "impact", "frame": 512}, ...]}`, with
+kinds `impact`, `bounce` or `wall_rebound`. The script prints, per kind:
+
+- **Precision**: the share of predictions that match a labelled event.
+- **Recall**: the share of labelled events that a prediction matches.
+- **Mean error**: predicted minus labelled frame over the matches; above zero means
+  late.
+
+A prediction matches a labelled event of the same kind at most `--tolerance` frames
+away (default 2, 0.08 s at 25 fps). Each labelled event takes **at most one**
+prediction, so three predictions for one impact are one hit and two false alarms.
+Pairs are chosen all at once (the Hungarian algorithm), because taking the nearest
+prediction for each label in turn can use up the only one a later label could have
+matched. Only labelled rallies count, widened by the tolerance; predictions anywhere
+else are ignored.
+
 ## File format
 
 Schema version 1, produced by `courtvision.evaluation.labels` (field order in saved
