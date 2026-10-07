@@ -41,6 +41,8 @@ def find_problems(labels: VideoLabels, segment: Segment) -> list[Problem]:
         problems.append(Problem(segment.start, "No rally start (r)"))
     if end is None:
         problems.append(Problem(segment.end - 1, "No rally end (e)"))
+    if segment.court_points is None:
+        problems.append(Problem(start or segment.start, "No court marked (k)"))
     events = sorted(segment.events, key=lambda event: event.frame)
     for event in events:
         before = start is not None and event.frame < start
