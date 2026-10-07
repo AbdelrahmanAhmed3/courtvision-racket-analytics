@@ -350,6 +350,24 @@
     125,
     150,
     175
+   ],
+   "court_points": [
+    [
+     372.48,
+     249.6
+    ],
+    [
+     898.56,
+     252.16
+    ],
+    [
+     1067.52,
+     526.08
+    ],
+    [
+     209.92,
+     522.24
+    ]
    ]
   },
   {
@@ -360,7 +378,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 335,
@@ -370,7 +389,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 462,
@@ -1033,6 +1053,24 @@
     825,
     850,
     875
+   ],
+   "court_points": [
+    [
+     364.8,
+     262.4
+    ],
+    [
+     917.76,
+     264.96
+    ],
+    [
+     1071.36,
+     541.44
+    ],
+    [
+     202.24,
+     541.44
+    ]
    ]
   },
   {
@@ -1043,7 +1081,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 1291,
@@ -2228,6 +2267,24 @@
     1950,
     1975,
     1300
+   ],
+   "court_points": [
+    [
+     394.24,
+     252.16
+    ],
+    [
+     922.88,
+     250.88
+    ],
+    [
+     1081.6,
+     520.96
+    ],
+    [
+     240.64,
+     519.68
+    ]
    ]
   },
   {
@@ -2238,7 +2295,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 2138,
@@ -2248,7 +2306,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 2620,
@@ -2258,7 +2317,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 2695,
@@ -3229,6 +3289,24 @@
     3200,
     3250,
     2850
+   ],
+   "court_points": [
+    [
+     385.28,
+     262.4
+    ],
+    [
+     894.72,
+     262.4
+    ],
+    [
+     1061.12,
+     528.64
+    ],
+    [
+     226.56,
+     524.8
+    ]
    ]
   },
   {
@@ -3239,7 +3317,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 3502,
@@ -3249,7 +3328,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 3890,
@@ -3739,6 +3819,24 @@
     3975,
     4025,
     4050
+   ],
+   "court_points": [
+    [
+     385.28,
+     229.12
+    ],
+    [
+     894.72,
+     232.96
+    ],
+    [
+     1058.56,
+     505.6
+    ],
+    [
+     217.6,
+     497.92
+    ]
    ]
   },
   {
@@ -3749,7 +3847,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4289,
@@ -3759,7 +3858,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4333,
@@ -3769,7 +3869,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4372,
@@ -3779,7 +3880,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4442,
@@ -3789,7 +3891,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4511,
@@ -3799,7 +3902,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4761,
@@ -3809,7 +3913,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 4909,
@@ -3819,7 +3924,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 5173,
@@ -3829,7 +3935,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 5241,
@@ -4271,6 +4378,24 @@
     5425,
     5500,
     5525
+   ],
+   "court_points": [
+    [
+     368.64,
+     248.32
+    ],
+    [
+     913.92,
+     250.88
+    ],
+    [
+     1080.32,
+     528.64
+    ],
+    [
+     202.24,
+     527.36
+    ]
    ]
   },
   {
@@ -4281,7 +4406,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 5657,
@@ -4291,7 +4417,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 5765,
@@ -4301,7 +4428,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 5827,
@@ -4311,7 +4439,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 5962,
@@ -4321,7 +4450,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 6228,
@@ -4915,6 +5045,24 @@
     6300,
     6575,
     6325
+   ],
+   "court_points": [
+    [
+     368.64,
+     249.6
+    ],
+    [
+     911.36,
+     249.6
+    ],
+    [
+     1080.32,
+     528.64
+    ],
+    [
+     200.96,
+     527.36
+    ]
    ]
   },
   {
@@ -4925,7 +5073,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 6742,
@@ -4935,7 +5084,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 6913,
@@ -4945,7 +5095,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 7079,
@@ -5539,6 +5690,24 @@
     7425,
     7450,
     7200
+   ],
+   "court_points": [
+    [
+     382.72,
+     272.64
+    ],
+    [
+     899.84,
+     271.36
+    ],
+    [
+     1050.88,
+     531.2
+    ],
+    [
+     232.96,
+     532.48
+    ]
    ]
   },
   {
@@ -5549,7 +5718,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 7530,
@@ -5559,7 +5729,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 7571,
@@ -5569,7 +5740,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 7640,
@@ -5579,7 +5751,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 8046,
@@ -7024,6 +7197,24 @@
     8675,
     8825,
     8100
+   ],
+   "court_points": [
+    [
+     389.12,
+     263.68
+    ],
+    [
+     897.28,
+     262.4
+    ],
+    [
+     1061.12,
+     526.08
+    ],
+    [
+     229.12,
+     523.52
+    ]
    ]
   },
   {
@@ -7034,7 +7225,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9024,
@@ -7044,7 +7236,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9100,
@@ -7054,7 +7247,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9145,
@@ -7064,7 +7258,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9259,
@@ -7074,7 +7269,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9330,
@@ -7084,7 +7280,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9376,
@@ -7094,7 +7291,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 9882,
@@ -7104,7 +7302,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 10098,
@@ -7114,7 +7313,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 10189,
@@ -7124,7 +7324,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 10386,
@@ -7134,7 +7335,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 10777,
@@ -7351,6 +7553,24 @@
     10850,
     10875,
     10900
+   ],
+   "court_points": [
+    [
+     371.2,
+     244.48
+    ],
+    [
+     906.24,
+     243.2
+    ],
+    [
+     1070.08,
+     515.84
+    ],
+    [
+     208.64,
+     518.4
+    ]
    ]
   },
   {
@@ -7361,7 +7581,8 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   },
   {
    "start": 11021,
@@ -7371,8 +7592,9 @@
    "rally_end": null,
    "events": [],
    "boxes": {},
-   "reviewed_box_frames": []
+   "reviewed_box_frames": [],
+   "court_points": null
   }
  ],
- "schema_version": 1
+ "schema_version": 2
 }
