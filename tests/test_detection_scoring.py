@@ -49,6 +49,13 @@ def test_detections_are_scored_as_the_pipeline_keeps_them() -> None:
     assert (everything.hits, everything.predicted, everything.labelled) == (1, 3, 2)
 
 
+def test_ball_and_court_boxes_are_not_player_detections() -> None:
+    labels = make_labels()
+    court = Detection(25, "court", 0.9, 400, 250, 880, 420, "test")
+
+    assert score_detections(labels, [court], as_the_pipeline=False).predicted == 0
+
+
 def test_only_the_four_most_confident_players_are_kept() -> None:
     labels = make_labels()
     on_court = [

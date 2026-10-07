@@ -18,7 +18,11 @@ from pathlib import Path
 import numpy as np
 
 from courtvision.analytics.court_coordinates import filter_detections_on_court
-from courtvision.detectors.base import Detection, expected_player_count
+from courtvision.detectors.base import (
+    Detection,
+    expected_player_count,
+    is_player_class,
+)
 from courtvision.evaluation.court import court_estimate
 from courtvision.evaluation.labels import PlayerBox, Segment, VideoLabels
 from courtvision.evaluation.scoring import Score, pair_one_to_one
@@ -75,11 +79,13 @@ def score_detections(
     """Precision and recall over every finished box frame of labelled segments.
 
     Every labelled player counts towards recall, including players outside the
-    court, whom the pipeline's court filter drops.
+    court, whom the pipeline's court filter drops. Only person or player classes
+    count as detections; a model's ball or court boxes are ignored.
     """
     by_frame: dict[int, list[Detection]] = defaultdict(list)
     for detection in detections:
-        by_frame[detection.frame].append(detection)
+        if is_player_class(detection.class_name):
+            by_frame[detection.frame].append(detection)
     hits = detected = labelled = 0
     for segment in labels.segments:
         if segment.status != "label":
