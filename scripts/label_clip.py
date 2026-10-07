@@ -23,6 +23,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from courtvision.evaluation.court import court_lines  # noqa: E402
 from courtvision.evaluation.cuts import detect_cuts  # noqa: E402
 from courtvision.evaluation.labels import (  # noqa: E402
     VideoLabels,
@@ -47,6 +48,7 @@ STATUS_COLOURS = {
     "skip": (90, 90, 90),
     "unreviewed": (40, 160, 230),
 }
+COURT_COLOUR = (255, 255, 0)
 KEY_CODES = {27: "esc", 32: "space"}
 
 
@@ -144,6 +146,7 @@ class BoxProposer:
 
 def render(session: LabelSession, frame: np.ndarray, scale: float, playing: bool):
     view = cv2.resize(frame, None, fx=scale, fy=scale)
+    _draw_court(view, session, scale)
     for index, box in enumerate(session.boxes()):
         colour = PLAYER_COLOURS.get(box.player, (180, 180, 180))
         thickness = 4 if index == session.selected else 2
@@ -177,6 +180,20 @@ def render(session: LabelSession, frame: np.ndarray, scale: float, playing: bool
     for key, meaning in KEY_HELP:
         y = _text(panel, f"{key:>9}  {meaning}", y, 0.36, (170, 170, 170))
     return np.hstack([view, panel])
+
+
+def _draw_court(view: np.ndarray, session: LabelSession, scale: float) -> None:
+    """The court drawn from its four points, or the points clicked so far."""
+    if session.court_clicks is not None:
+        for x, y in session.court_clicks:
+            cv2.circle(view, (int(x * scale), int(y * scale)), 6, COURT_COLOUR, -1)
+        return
+    points = session.segment.court_points
+    if points is None:
+        return
+    for line in court_lines(points):
+        start, end = (line * scale).astype(np.int32)
+        cv2.line(view, tuple(start), tuple(end), COURT_COLOUR, 1, cv2.LINE_AA)
 
 
 def _text(panel, text, y, size, colour=(235, 235, 235)) -> int:

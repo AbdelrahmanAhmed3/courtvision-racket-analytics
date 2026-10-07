@@ -2,9 +2,9 @@
 
 A source video is split into segments at camera cuts. Each labelled segment holds
 one rally: its start and end frames, every impact (with the hitter), every bounce
-and wall rebound (with the ball's image position), and player boxes with
-identities on every ``box_interval``-th frame. See docs/evaluation.md for the
-file format.
+and wall rebound (with the ball's image position), player boxes with identities
+on every ``box_interval``-th frame, and where the court is in the image. See
+docs/evaluation.md for the file format.
 """
 
 from __future__ import annotations
@@ -14,7 +14,8 @@ import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2 added court points; version 1 files load without them
+READABLE_SCHEMA_VERSIONS = (1, 2)
 PLAYER_IDS = (1, 2, 3, 4)
 EVENT_KINDS = ("impact", "bounce", "wall_rebound")
 SEGMENT_STATUSES = ("unreviewed", "label", "skip")
@@ -67,10 +68,16 @@ class Segment:
     events: list[BallEvent] = field(default_factory=list)
     boxes: dict[int, list[PlayerBox]] = field(default_factory=dict)
     reviewed_box_frames: list[int] = field(default_factory=list)
+    # Where the service lines meet the side walls, in image pixels: far left, far
+    # right, near right, near left (see courtvision.evaluation.court).
+    court_points: list[list[float]] | None = None
 
     def __post_init__(self) -> None:
         if self.status not in SEGMENT_STATUSES:
             raise ValueError(f"Unknown segment status: {self.status}")
+        points = self.court_points
+        if points is not None and [len(point) for point in points] != [2] * 4:
+            raise ValueError("Court points must be four (x, y) points")
 
     def contains(self, frame: int) -> bool:
         return self.start <= frame < self.end
@@ -79,7 +86,8 @@ class Segment:
         """Shorten this segment to end at ``frame``; return the part after it.
 
         Every label moves with the frame it belongs to, so a rally split by the
-        cut leaves its start on this segment and its end on the new one.
+        cut leaves its start on this segment and its end on the new one. Court
+        points stay here: after a cut the camera, and so the court, differ.
         """
         if not self.start < frame < self.end:
             raise ValueError(f"Frame {frame} is not inside segment {self.start}")
@@ -105,6 +113,8 @@ class Segment:
             self.status = later.status
         if self.rally_start is None:
             self.rally_start = later.rally_start
+        if self.court_points is None:
+            self.court_points = later.court_points
         if later.rally_end is not None:
             self.rally_end = later.rally_end
         self.events += later.events
@@ -171,7 +181,7 @@ def save_labels(labels: VideoLabels, path: str | Path) -> None:
 
 def load_labels(path: str | Path) -> VideoLabels:
     data = json.loads(Path(path).read_text())
-    if data.get("schema_version") != SCHEMA_VERSION:
+    if data.get("schema_version") not in READABLE_SCHEMA_VERSIONS:
         raise ValueError(f"Unsupported labels schema: {data.get('schema_version')}")
     segments = [
         Segment(
@@ -186,6 +196,7 @@ def load_labels(path: str | Path) -> VideoLabels:
                 for frame, boxes in item["boxes"].items()
             },
             reviewed_box_frames=list(item["reviewed_box_frames"]),
+            court_points=item.get("court_points"),
         )
         for item in data["segments"]
     ]
@@ -195,4 +206,5 @@ def load_labels(path: str | Path) -> VideoLabels:
     if unknown:
         raise ValueError(f"Unknown fields in labels file: {sorted(unknown)}")
     fields = {key: value for key, value in data.items() if key != "segments"}
+    fields["schema_version"] = SCHEMA_VERSION  # saved in the current schema
     return VideoLabels(**fields, segments=segments)
