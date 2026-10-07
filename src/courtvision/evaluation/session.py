@@ -10,6 +10,7 @@ import copy
 from dataclasses import dataclass
 
 from courtvision.evaluation.checks import describe, find_all_problems, find_problems
+from courtvision.evaluation.court import POINT_NAMES
 from courtvision.evaluation.labels import (
     BallEvent,
     PlayerBox,
@@ -33,6 +34,7 @@ KEY_HELP = (
     ("r / e", "rally starts / ends here"),
     ("1-4", "impact by player (or assign box)"),
     ("b / w", "bounce / wall rebound, then click ball"),
+    ("k", "court: click 4 service line ends"),
     ("click box", "select; drag: draw or resize selected"),
     ("x", "delete selected box or this frame's events"),
     ("p", "copy players from previous box frame"),
@@ -54,6 +56,7 @@ class LabelSession:
         self.labels = labels
         self.frame = 0
         self.pending: str | None = None  # "bounce" or "wall_rebound" awaiting a click
+        self.court_clicks: list[list[float]] | None = None  # while marking the court
         self.selected: int | None = None  # index into this frame's boxes
         self.message = ""
         self.dirty = False
@@ -70,6 +73,7 @@ class LabelSession:
         self.frame = max(0, min(frame, self.labels.frame_count - 1))
         self.selected = None
         self.pending = None
+        self.court_clicks = None
 
     def next_box_frame(self) -> int | None:
         """The next labelled-segment frame whose boxes are not done, wrapping."""
@@ -128,6 +132,7 @@ class LabelSession:
             "e": self._rally_end,
             "b": lambda: self._await_click("bounce"),
             "w": lambda: self._await_click("wall_rebound"),
+            "k": self._start_court,
             "x": self._delete,
             "p": self._copy_previous_players,
             "y": self._boxes_done,
@@ -142,6 +147,9 @@ class LabelSession:
 
     def click(self, x: float, y: float) -> None:
         self.message = ""
+        if self.court_clicks is not None:
+            self._add_court_point(x, y)
+            return
         if self.pending is not None:
             self._edit()
             self.segment.events.append(BallEvent(self.pending, self.frame, x=x, y=y))
@@ -198,6 +206,7 @@ class LabelSession:
         items += [
             ChecklistItem("Rally start marked (r)", segment.rally_start is not None),
             ChecklistItem("Rally end marked (e)", segment.rally_end is not None),
+            ChecklistItem("Court marked (k)", segment.court_points is not None),
             ChecklistItem(
                 f"Impacts {len(impacts)}, bounces "
                 f"{sum(event.kind == 'bounce' for event in segment.events)}, "
@@ -272,6 +281,26 @@ class LabelSession:
     def _cancel(self) -> None:
         self.pending = None
         self.selected = None
+        self.court_clicks = None
+
+    def _start_court(self) -> None:
+        """Mark the court: four clicks replace the points, esc keeps the old."""
+        if not self._labelling():
+            return
+        self.pending = None
+        self.court_clicks = []
+        self.message = _court_prompt(0)
+
+    def _add_court_point(self, x: float, y: float) -> None:
+        clicks = self.court_clicks
+        clicks.append([x, y])
+        if len(clicks) < len(POINT_NAMES):
+            self.message = _court_prompt(len(clicks))
+            return
+        self._edit()
+        self.segment.court_points = clicks
+        self.court_clicks = None
+        self.message = "Court saved: check the drawn baselines, net and centre line"
 
     def _previous_segment(self) -> None:
         index = self.labels.segments.index(self.segment)
@@ -487,3 +516,7 @@ def _iou(first: PlayerBox, second: PlayerBox) -> float:
         return 0.0
     overlap = width * height
     return overlap / (_area(first) + _area(second) - overlap)
+
+
+def _court_prompt(index: int) -> str:
+    return f"Click the {POINT_NAMES[index]}, where it meets the wall ({index + 1}/4)"

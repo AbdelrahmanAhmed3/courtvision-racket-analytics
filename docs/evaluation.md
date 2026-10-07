@@ -76,6 +76,15 @@ For each segment:
 
    The boxes start as RF-DETR proposals, so accepting them unchanged favours RF-DETR
    when comparing detectors (#6). Tighten any box that does not fit the player.
+6. **Court** (`k`, then 4 clicks), on any frame of the segment: click where each
+   service line meets the side wall, in order: far left, far right, near right, near
+   left. The tool then draws the court from those points. Check the drawing: the far
+   baseline on the bottom of the far glass, the net line where the net meets the
+   floor, the centre line on the painted one. If they are off, press `k` and click
+   again; `esc` keeps the old points. Service line ends are used because they are
+   painted and sharp, while boards and glass often hide the near floor corners. The
+   drawn near baseline is the least reliable part: a camera lens bends straight
+   lines, which four points cannot model.
 
 ### Checking labels
 
@@ -136,12 +145,13 @@ impacts or two bounces, which are at least 8 and 14 frames apart.
 
 ## File format
 
-Schema version 1, produced by `courtvision.evaluation.labels` (field order in saved
-files may differ; coordinates are floats):
+Schema version 2, produced by `courtvision.evaluation.labels` (field order in saved
+files may differ; coordinates are floats). Version 1 files, without court points,
+still load and are saved as version 2.
 
 ```jsonc
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "video": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4",
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
@@ -157,7 +167,10 @@ files may differ; coordinates are floats):
         {"kind": "wall_rebound", "frame": 545, "player": null, "x": 980.0, "y": 300.0}
       ],
       "boxes": {"525": [{"x1": 430.0, "y1": 245.0, "x2": 485.0, "y2": 358.0, "player": 1}]},
-      "reviewed_box_frames": [525]          // box frames whose boxes are final
+      "reviewed_box_frames": [525],         // box frames whose boxes are final
+      // where the service lines meet the side walls: far left, far right,
+      // near right, near left
+      "court_points": [[378.0, 230.0], [897.0, 230.0], [1140.0, 500.0], [135.0, 500.0]]
     }
   ]
 }
