@@ -361,6 +361,7 @@ def test_a_team_hitting_twice_is_a_problem() -> None:
     session.go_to(20)
     session.key("b")  # the serve bounces before the return
     session.click(600, 400)
+    mark_court(session)
     assert problems_in(session) == [(25, "Boxes not done"), (50, "Boxes not done")]
 
     session.go_to(50)
@@ -542,3 +543,13 @@ def test_a_cut_leaves_the_court_on_the_first_part() -> None:
     assert (first.court_points, second.court_points) == (COURT_POINTS, None)
     session.key("m")
     assert session.segment.court_points == COURT_POINTS
+
+
+def test_a_labelled_segment_needs_its_court() -> None:
+    session = labelled_session(frame=10)
+    session.key("r")
+    assert (10, "No court marked (k)") in problems_in(session)
+
+    mark_court(session)
+
+    assert (10, "No court marked (k)") not in problems_in(session)
