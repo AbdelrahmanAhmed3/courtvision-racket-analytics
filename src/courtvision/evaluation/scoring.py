@@ -55,13 +55,19 @@ def match_frames(
     if not labelled or not predicted:
         return []
     errors = np.abs(np.subtract.outer(labelled, predicted))
-    allowed = errors <= tolerance
-    # One more pair always outweighs any total error of the allowed pairs.
-    forbidden_cost = tolerance * min(len(labelled), len(predicted)) + 1
-    cost = np.where(allowed, errors, forbidden_cost)
-    rows, columns = linear_sum_assignment(cost)
+    pairs = pair_one_to_one(errors, errors <= tolerance)
+    return [(labelled[row], predicted[column]) for row, column in pairs]
+
+
+def pair_one_to_one(cost: np.ndarray, allowed: np.ndarray) -> list[tuple[int, int]]:
+    """Row and column indexes of the most allowed pairs, then the lowest total cost."""
+    if cost.size == 0:
+        return []
+    # One more pair always outweighs any total cost of the allowed pairs.
+    forbidden_cost = cost[allowed].max(initial=0) * min(cost.shape) + 1
+    rows, columns = linear_sum_assignment(np.where(allowed, cost, forbidden_cost))
     return [
-        (labelled[row], predicted[column])
+        (int(row), int(column))
         for row, column in zip(rows, columns, strict=True)
         if allowed[row, column]
     ]

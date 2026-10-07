@@ -143,6 +143,26 @@ are at most twice the tolerance apart. In the Tapia labels at ±2 frames, that i
 pairs of wall rebounds (the ball touching two walls in a corner) and never two
 impacts or two bounces, which are at least 8 and 14 frames apart.
 
+## Scoring player detection
+
+```bash
+python scripts/score_detectors.py --labels evaluation/labels/<video>.json \
+    --video data/raw/<video>.mp4 --detector rfdetr --size nano
+python scripts/score_detectors.py --labels evaluation/labels/<video>.json \
+    --video data/raw/<video>.mp4 --detector roboflow --model-id <project>/<version>
+```
+
+The detector runs on every finished box frame, and its detections are cached in
+`outputs/detections/`. A detection is a hit when it overlaps a labelled box by
+`--min-iou` (default 0.5), one labelled box per detection. Two rows are printed:
+
+- **As the pipeline keeps them**: people whose feet are on the segment's court plus
+  0.5 m, the four most confident. Crowd and officials are never false alarms, so
+  detectors that find everyone are not punished for it.
+- **All people found**: every detection, to show what the filter removes.
+
+Every labelled player counts towards recall, including players outside the court.
+
 ## File format
 
 Schema version 2, produced by `courtvision.evaluation.labels` (field order in saved
