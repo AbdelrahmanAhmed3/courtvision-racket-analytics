@@ -127,6 +127,13 @@ prediction for each label in turn can use up the only one a later label could ha
 matched. Only labelled rallies count, widened by the tolerance; predictions anywhere
 else are ignored.
 
+The pairing gives predictions the benefit of the doubt: a false alarm next to a
+missed event counts as a hit, because frames alone cannot say which event a
+prediction was meant for. This can only happen when two labelled events of one kind
+are at most twice the tolerance apart. In the Tapia labels at ±2 frames, that is 3
+pairs of wall rebounds (the ball touching two walls in a corner) and never two
+impacts or two bounces, which are at least 8 and 14 frames apart.
+
 ## File format
 
 Schema version 1, produced by `courtvision.evaluation.labels` (field order in saved
