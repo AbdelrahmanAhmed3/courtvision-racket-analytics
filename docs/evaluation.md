@@ -121,7 +121,10 @@ python scripts/score_events.py --labels evaluation/labels/<video>.json \
 ```
 
 Predictions are JSON, `{"events": [{"kind": "impact", "frame": 512}, ...]}`, with
-kinds `impact`, `bounce` or `wall_rebound`. The script prints, per kind:
+kinds `impact`, `bounce` or `wall_rebound`. To produce them from today's shot code
+(`analytics/shots.py`) on every labelled rally, run
+`scripts/predict_shot_events.py` with the same `--labels` and `--video`; results are
+in `reports/ball_events.md`. The scoring script prints, per kind:
 
 - **Precision**: the share of predictions that match a labelled event.
 - **Recall**: the share of labelled events that a prediction matches.
