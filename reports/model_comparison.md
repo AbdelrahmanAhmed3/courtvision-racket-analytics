@@ -50,7 +50,6 @@ python scripts/benchmark_detector.py --input "data/raw/<close-up clip>.mp4" \
 
 ### Not measured yet
 
-- Comparison with the hosted Roboflow model (#6).
 - Whether reflections in the padel glass are filtered: none were seen in these clips.
 
 ## Player detection against hand labels (2026-10-07)
@@ -59,12 +58,23 @@ python scripts/benchmark_detector.py --input "data/raw/<close-up clip>.mp4" \
 labelled rallies in the Agustin Tapia compilation, 5 tournaments (#34, #36). A
 detection is a hit when it overlaps a labelled box by IoU ≥ 0.5, one to one. "As the
 pipeline keeps them": people whose feet are on the hand-marked court plus 0.5 m, the
-four most confident. `scripts/score_detectors.py`, confidence 0.3.
+four most confident. `scripts/score_detectors.py`, confidence 0.3. The hosted model
+is `tennis-v4d0h/2`, the app's default Roboflow player model, trained on tennis;
+only its `player` boxes count.
 
 | Model | Precision (pipeline) | Recall (pipeline) | Recall (all people found) | People found per frame |
 | --- | --- | --- | --- | --- |
 | RF-DETR Nano | 1.00 (633/633) | 0.97 (633/651) | 0.98 (639/651) | 8.9 |
 | RF-DETR Small | 1.00 (636/639) | 0.98 (636/651) | 0.98 (639/651) | 11.9 |
+| Roboflow `tennis-v4d0h/2` (hosted) | 0.97 (539/555) | 0.83 (539/651) | 0.83 (539/651) | 3.7 |
+
+Recall (pipeline) at other overlap thresholds:
+
+| Model | IoU ≥ 0.3 | IoU ≥ 0.5 | IoU ≥ 0.7 |
+| --- | --- | --- | --- |
+| RF-DETR Nano | 0.97 | 0.97 | 0.97 |
+| RF-DETR Small | 0.98 | 0.98 | 0.95 |
+| Roboflow `tennis-v4d0h/2` | 0.84 | 0.83 | 0.75 |
 
 ### Findings
 
@@ -81,6 +91,16 @@ four most confident. `scripts/score_detectors.py`, confidence 0.3.
   player running outside the court, blurred, behind the glass and mesh.
 - **Small is not clearly better.** It finds 3 more players out of 651, while running
   about 1.6× slower (see above). Nano stays the default.
-- **The labels favour Nano.** Boxes started as Nano's proposals and were corrected by
-  hand where they did not fit, so Nano's IoU is flattered. The comparison with a
-  model whose boxes were never proposed (Roboflow) must keep this in mind.
+- **The labels favour Nano, measurably.** Boxes started as Nano's proposals and were
+  corrected by hand where they did not fit: Nano still matches 632 of its 633 boxes at
+  IoU ≥ 0.7. Compare other models at a loose threshold too.
+- **The hosted tennis model misses players outright, not by box shape.** It keeps
+  only 555 boxes for 651 players, so its recall cannot pass 0.85 at any threshold,
+  and at IoU ≥ 0.3 it is 0.84. Its misses are not near or far players (0.83 for
+  both) but whole courts: recall is 0.40 on the Brussels segment (red surround,
+  sun stripes on the floor) and 0.52 on the second Valladolid camera, while RF-DETR
+  stays at 0.91 or more on every segment. A tennis-trained model does not carry over
+  to padel's courts; COCO's `person` does.
+- **It finds almost no one but players** (3.7 per frame, precision 0.87 before the
+  court filter), which is what it was trained for. With the court filter, RF-DETR
+  needs no such training.
