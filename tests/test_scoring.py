@@ -7,6 +7,8 @@ from courtvision.evaluation.scoring import (
     PredictedEvent,
     load_predictions,
     match_frames,
+    predictions_from_shots,
+    save_predictions,
     score_events,
 )
 
@@ -80,3 +82,22 @@ def make_labels() -> VideoLabels:
     ]
     skipped.status = "skip"
     return labels
+
+
+def test_shots_become_impacts_and_bounces(tmp_path) -> None:
+    from courtvision.analytics.shots import ShotEvent
+
+    def shot(frame, receive_frame, bounce_frame):
+        return ShotEvent("transit", frame, 1, 3, receive_frame, bounce_frame, 0, 0, 0)
+
+    predictions = predictions_from_shots([shot(10, 40, 30), shot(40, 70, None)])
+
+    assert predictions == [
+        PredictedEvent("impact", 10),
+        PredictedEvent("impact", 40),  # the receiver's impact starts the next shot
+        PredictedEvent("impact", 70),
+        PredictedEvent("bounce", 30),
+    ]
+    path = tmp_path / "predictions.json"
+    save_predictions(path, predictions)
+    assert load_predictions(path) == predictions

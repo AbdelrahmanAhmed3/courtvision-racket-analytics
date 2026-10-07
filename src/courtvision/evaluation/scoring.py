@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+from courtvision.analytics.shots import ShotEvent
 from courtvision.evaluation.labels import EVENT_KINDS, VideoLabels
 
 DEFAULT_TOLERANCE_FRAMES = 2
@@ -110,6 +111,27 @@ def score_events(
             frame_errors += [guess - label for label, guess in pairs]
         scores[kind] = Score(hits, predicted, labelled, tuple(frame_errors))
     return scores
+
+
+def predictions_from_shots(shots: Sequence[ShotEvent]) -> list[PredictedEvent]:
+    """Impacts and bounces that ``analytics.shots.detect_shots`` reports.
+
+    Each shot holds the hitter's impact, the receiver's impact and the first
+    bounce between them; consecutive shots share an impact, which counts once.
+    The shot code reports no wall rebounds.
+    """
+    impacts = {shot.frame for shot in shots} | {shot.receive_frame for shot in shots}
+    bounces = {shot.bounce_frame for shot in shots if shot.bounce_frame is not None}
+    return [PredictedEvent("impact", frame) for frame in sorted(impacts)] + [
+        PredictedEvent("bounce", frame) for frame in sorted(bounces)
+    ]
+
+
+def save_predictions(path: str | Path, predictions: Sequence[PredictedEvent]) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    events = [{"kind": event.kind, "frame": event.frame} for event in predictions]
+    path.write_text(json.dumps({"events": events}, indent=1) + "\n")
 
 
 def load_predictions(path: str | Path) -> list[PredictedEvent]:
