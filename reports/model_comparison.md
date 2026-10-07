@@ -50,6 +50,37 @@ python scripts/benchmark_detector.py --input "data/raw/<close-up clip>.mp4" \
 
 ### Not measured yet
 
-- Precision and recall against labelled players, and comparison with the hosted
-  Roboflow model (#6).
+- Comparison with the hosted Roboflow model (#6).
 - Whether reflections in the padel glass are filtered: none were seen in these clips.
+
+## Player detection against hand labels (2026-10-07)
+
+651 hand-labelled player boxes on 165 frames: one frame per second of the 10
+labelled rallies in the Agustin Tapia compilation, 5 tournaments (#34, #36). A
+detection is a hit when it overlaps a labelled box by IoU ≥ 0.5, one to one. "As the
+pipeline keeps them": people whose feet are on the hand-marked court plus 0.5 m, the
+four most confident. `scripts/score_detectors.py`, confidence 0.3.
+
+| Model | Precision (pipeline) | Recall (pipeline) | Recall (all people found) | People found per frame |
+| --- | --- | --- | --- | --- |
+| RF-DETR Nano | 1.00 (633/633) | 0.97 (633/651) | 0.98 (639/651) | 8.9 |
+| RF-DETR Small | 1.00 (636/639) | 0.98 (636/651) | 0.98 (639/651) | 11.9 |
+
+### Findings
+
+- **What the pipeline keeps is almost always a player.** Without the court filter,
+  precision is 0.43 (Nano) and 0.33 (Small): most people found are crowd and
+  officials, and the filter removes them all.
+- **The court filter drops the out-of-court shots this video is about.** Of Nano's 18
+  missed players, 6 were found but dropped by the filter. Five of them stood 3–4 m
+  outside a side wall, having run out through the door to play the ball (for
+  example frame 3250). The sixth projects 0.9 m behind the far baseline, where a
+  player at the glass cannot be: feet in the air or a slightly wrong court. A 0.5 m
+  margin assumes padel players stay inside the walls; these points break that.
+- **12 players were never found.** Those checked by eye (frames 150 and 175) are a
+  player running outside the court, blurred, behind the glass and mesh.
+- **Small is not clearly better.** It finds 3 more players out of 651, while running
+  about 1.6× slower (see above). Nano stays the default.
+- **The labels favour Nano.** Boxes started as Nano's proposals and were corrected by
+  hand where they did not fit, so Nano's IoU is flattered. The comparison with a
+  model whose boxes were never proposed (Roboflow) must keep this in mind.
