@@ -84,3 +84,47 @@ not scored above), 210 match no impact within ±2 frames:
 
 Each cause is a next step for #8: one impact per hit, telling a hit from a bounce
 next to a player, and dropping reflections and single wrong positions.
+
+## A small classifier on the candidates (2026-10-19)
+
+`scripts/train_event_classifier.py`, part of #8. Instead of hand-written rules, a
+small model decides what happened at each **candidate**: an impact, a bounce, a
+wall rebound or nothing. Candidates are every tracklet end, the middle of every gap
+of up to 10 frames between two tracklets, and every turn of 30° or more inside a
+tracklet (`analytics/ball_track.event_candidates`). They cover 91 of 138 impacts,
+47 of 67 bounces and 34 of 47 wall rebounds within ±2 frames, which caps recall at
+about 0.66.
+
+Each candidate gets 14 numbers from the ball track, the player boxes and the court:
+speed and vertical movement before and after, the angle it turns, frames hidden,
+distance to the nearest player and where in their box, position along the court,
+and whether the ball reaches the other half soon after. The label is the nearest
+labelled event within 2 frames, or none. A model trained on rallies 1, 3, 5, 7, 9
+predicts 2, 4, 6, 8, 10 and the other way round, so no rally is scored by a model
+that saw it.
+
+| Method | Impact P / R | Bounce P / R | Wall rebound P / R |
+| --- | --- | --- | --- |
+| Today's shot code | 0.14 / 0.07 | 0.12 / 0.01 | – |
+| Rule: tracklet ends near a player | 0.25 / **0.44** | – | – |
+| Logistic regression | 0.33 / 0.28 | 0.28 / **0.34** | 0.19 / **0.47** |
+| Boosted trees | **0.47** / 0.27 | **0.38** / 0.22 | 0.14 / 0.13 |
+
+All at ±2 frames.
+
+- **More precise, but it finds fewer impacts.** Boosted trees are right on 47 % of
+  their impacts (the rule: 25 %) but find 27 % (the rule: 44 %). For impacts alone,
+  neither is clearly better (F1 0.34 vs 0.32).
+- **The first real bounce and wall-rebound detection.** Today's shot code finds 1 %
+  of bounces and no wall rebounds.
+- **Its main mistake is answering "nothing".** Of the 100 candidates that are
+  impacts, boosted trees call 45 nothing and only 6 a bounce: with 5 rallies to
+  learn from, the most common answer is the safest. Hits and bounces are rarely
+  confused.
+- **What it relies on:** the ball's vertical movement before and after, the
+  distance to the nearest player and where in their box the ball is, then the
+  position along the court. Whether the ball crosses the net soon after barely
+  helps, probably because a ball in the air projects to the wrong place on the
+  floor.
+- **More labels are the next lever.** Each half trains on about 250 candidates, 50 of
+  them impacts. The candidates' 0.66 ceiling is the other.
