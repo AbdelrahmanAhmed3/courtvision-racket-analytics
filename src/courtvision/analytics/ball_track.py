@@ -16,7 +16,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from math import dist
+from math import acos, degrees, dist, hypot
 
 from courtvision.analytics.shots import nearest_player_to_ball
 from courtvision.detectors.base import Detection
@@ -31,6 +31,10 @@ DEFAULT_MAX_GAP_FRAMES = 2
 DEFAULT_MIN_TRACKLET_POINTS = 3
 # Candidates this close together are one impact (the ends before and after it).
 DEFAULT_MERGE_FRAMES = 3
+# A gap between two tracklets this short is one event, hidden from TrackNet.
+DEFAULT_MAX_HIDDEN_FRAMES = 10
+# Bounces and wall rebounds often happen inside a tracklet, as a sharp turn.
+DEFAULT_TURN_DEGREES = 30.0
 
 
 @dataclass(frozen=True)
@@ -80,6 +84,53 @@ def detect_impacts(
             if track_id is not None:
                 candidates.append((end.frame, track_id))
     return _merge(sorted(set(candidates)), merge_frames)
+
+
+def event_candidates(
+    ball_points: Iterable[BallPoint],
+    min_tracklet_points: int = DEFAULT_MIN_TRACKLET_POINTS,
+    max_hidden_frames: int = DEFAULT_MAX_HIDDEN_FRAMES,
+    turn_degrees: float = DEFAULT_TURN_DEGREES,
+) -> list[int]:
+    """Frames where an impact, bounce or wall rebound may have happened.
+
+    Where one tracklet ends and the next starts at most ``max_hidden_frames``
+    later, the event is one candidate in the middle of the gap. Other tracklet
+    ends are candidates too, and so is every turn of ``turn_degrees`` or more
+    inside a tracklet. Candidates at most 2 frames apart count once.
+    """
+    tracklets = [
+        t for t in split_into_tracklets(ball_points) if len(t) >= min_tracklet_points
+    ]
+    frames = []
+    for index, tracklet in enumerate(tracklets):
+        before = tracklets[index - 1] if index else None
+        after = tracklets[index + 1] if index + 1 < len(tracklets) else None
+        if not before or tracklet[0].frame - before[-1].frame > max_hidden_frames:
+            frames.append(tracklet[0].frame)
+        if after and after[0].frame - tracklet[-1].frame <= max_hidden_frames:
+            frames.append(round((tracklet[-1].frame + after[0].frame) / 2))
+        else:
+            frames.append(tracklet[-1].frame)
+        for a, b, c in zip(tracklet, tracklet[1:], tracklet[2:], strict=False):
+            incoming = (b.x - a.x, b.y - a.y)
+            outgoing = (c.x - b.x, c.y - b.y)
+            if turn_angle(incoming, outgoing) >= turn_degrees:
+                frames.append(b.frame)
+    candidates: list[int] = []
+    for frame in sorted(set(frames)):
+        if not candidates or frame - candidates[-1] > 2:
+            candidates.append(frame)
+    return candidates
+
+
+def turn_angle(incoming: tuple[float, float], outgoing: tuple[float, float]) -> float:
+    """Degrees between two directions; 0 when either has no length."""
+    lengths = hypot(*incoming) * hypot(*outgoing)
+    if lengths < 1e-9:
+        return 0.0
+    cosine = (incoming[0] * outgoing[0] + incoming[1] * outgoing[1]) / lengths
+    return degrees(acos(max(-1.0, min(1.0, cosine))))
 
 
 def _merge(candidates: list[tuple[int, int]], within: int) -> list[Impact]:
