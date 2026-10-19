@@ -88,6 +88,7 @@ def detect_impacts(
 
 def event_candidates(
     ball_points: Iterable[BallPoint],
+    players_by_frame: Mapping[int, Sequence[tuple[int, Detection]]] | None = None,
     min_tracklet_points: int = DEFAULT_MIN_TRACKLET_POINTS,
     max_hidden_frames: int = DEFAULT_MAX_HIDDEN_FRAMES,
     turn_degrees: float = DEFAULT_TURN_DEGREES,
@@ -95,10 +96,15 @@ def event_candidates(
     """Frames where an impact, bounce or wall rebound may have happened.
 
     Where one tracklet ends and the next starts at most ``max_hidden_frames``
-    later, the event is one candidate in the middle of the gap. Other tracklet
-    ends are candidates too, and so is every turn of ``turn_degrees`` or more
-    inside a tracklet. Candidates at most 2 frames apart count once.
+    later, the event is one candidate where the two paths meet, which for a
+    hit is where the racket is. A tracklet start with nothing just before it
+    is a candidate too: TrackNet often finds the ball only a few frames after a
+    hit, so with ``players_by_frame`` its path is followed back to the frame
+    where it passes closest to a player (and an end with nothing after it,
+    forward). Every turn of ``turn_degrees`` or more inside a tracklet is a
+    candidate. Candidates at most 2 frames apart count once.
     """
+    players_by_frame = players_by_frame or {}
     tracklets = [
         t for t in split_into_tracklets(ball_points) if len(t) >= min_tracklet_points
     ]
@@ -107,11 +113,11 @@ def event_candidates(
         before = tracklets[index - 1] if index else None
         after = tracklets[index + 1] if index + 1 < len(tracklets) else None
         if not before or tracklet[0].frame - before[-1].frame > max_hidden_frames:
-            frames.append(tracklet[0].frame)
+            frames.append(_closest_to_player(tracklet[:4], -1, players_by_frame))
         if after and after[0].frame - tracklet[-1].frame <= max_hidden_frames:
-            frames.append(round((tracklet[-1].frame + after[0].frame) / 2))
+            frames.append(meeting_frame(tracklet, after))
         else:
-            frames.append(tracklet[-1].frame)
+            frames.append(_closest_to_player(tracklet[-4:], 1, players_by_frame))
         for a, b, c in zip(tracklet, tracklet[1:], tracklet[2:], strict=False):
             incoming = (b.x - a.x, b.y - a.y)
             outgoing = (c.x - b.x, c.y - b.y)
@@ -122,6 +128,71 @@ def event_candidates(
         if not candidates or frame - candidates[-1] > 2:
             candidates.append(frame)
     return candidates
+
+
+def meeting_frame(before: Sequence[BallPoint], after: Sequence[BallPoint]) -> int:
+    """The frame in the gap where the paths before and after come closest.
+
+    Each path is extended at the speed of its last (or first) few positions;
+    the event happened where the incoming ball meets the outgoing one.
+    """
+    end, start = before[-1], after[0]
+    incoming = _velocity(before[-4:])
+    outgoing = _velocity(after[:4])
+
+    def apart(frame: int) -> float:
+        coming = (
+            end.x + incoming[0] * (frame - end.frame),
+            end.y + incoming[1] * (frame - end.frame),
+        )
+        going = (
+            start.x + outgoing[0] * (frame - start.frame),
+            start.y + outgoing[1] * (frame - start.frame),
+        )
+        return dist(coming, going)
+
+    return min(range(end.frame, start.frame + 1), key=apart)
+
+
+def _closest_to_player(
+    points: Sequence[BallPoint],
+    direction: int,
+    players_by_frame: Mapping[int, Sequence[tuple[int, Detection]]],
+    max_frames: int = 6,
+) -> int:
+    """Follow a tracklet's path back (-1) or forward (+1) to the nearest player.
+
+    Returns the frame where the extended path is closest to a player's box, if
+    it comes within hitting distance; otherwise the tracklet's own first (or
+    last) frame.
+    """
+    anchor = points[0] if direction < 0 else points[-1]
+    velocity = _velocity(points)
+    best_frame, best_distance = anchor.frame, None
+    for step in range(max_frames + 1):
+        frame = anchor.frame + direction * step
+        x = anchor.x + velocity[0] * direction * step
+        y = anchor.y + velocity[1] * direction * step
+        players = list(players_by_frame.get(frame, []))
+        if nearest_player_to_ball(BallPoint(frame, x, y), players) is None:
+            continue
+        distance = min(_distance_to_box(x, y, box) for _, box in players)
+        if best_distance is None or distance < best_distance:
+            best_frame, best_distance = frame, distance
+    return best_frame
+
+
+def _distance_to_box(x: float, y: float, box: Detection) -> float:
+    return hypot(max(box.x1 - x, 0, x - box.x2), max(box.y1 - y, 0, y - box.y2))
+
+
+def _velocity(points: Sequence[BallPoint]) -> tuple[float, float]:
+    """Pixels per frame from the first to the last point; zero for one point."""
+    first, last = points[0], points[-1]
+    frames = last.frame - first.frame
+    if frames == 0:
+        return (0.0, 0.0)
+    return ((last.x - first.x) / frames, (last.y - first.y) / frames)
 
 
 def turn_angle(incoming: tuple[float, float], outgoing: tuple[float, float]) -> float:
