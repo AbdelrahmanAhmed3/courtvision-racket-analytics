@@ -128,3 +128,30 @@ All at ±2 frames.
   floor.
 - **More labels are the next lever.** Each half trains on about 250 candidates, 50 of
   them impacts. The candidates' 0.66 ceiling is the other.
+
+### Better candidates and inputs
+
+Two problems in the first version, and their fixes:
+
+- **Candidates after a hit were placed late.** TrackNet often finds the ball only a
+  few frames after it leaves the racket, with no tracklet just before. Such a
+  tracklet start is now followed back along its path to the frame where it passes
+  closest to a player (and a tracklet end with nothing after it, forward). A gap
+  between two tracklets is placed where their two paths meet instead of in the
+  middle. The candidates now cover **103 of 138 impacts (75 %, from 66 %)**, 48 of
+  67 bounces and 36 of 47 wall rebounds.
+- **After a hidden gap the inputs were empty.** Speed, vertical movement and the
+  turn angle came from positions within 4 frames of the candidate, so after a gap
+  of 7 frames they were missing. They now come from the last and first 4
+  positions within 10 frames.
+
+| Method | Impact P / R | Impact F1 | Bounce P / R | Wall rebound P / R |
+| --- | --- | --- | --- | --- |
+| Rule: tracklet ends near a player | 0.25 / 0.44 | 0.32 | – | – |
+| **Logistic regression** | **0.44 / 0.38** | **0.41** | 0.30 / 0.33 | 0.24 / **0.51** |
+| Boosted trees | 0.42 / 0.36 | 0.39 | **0.62** / 0.22 | 0.22 / 0.17 |
+
+The classifiers now find impacts better than the rule. The turn angle became the
+most useful input, followed by the vertical movement before and the height in the
+player's box. Boosted trees still answer "nothing" for 40 of the 110 impact
+candidates.
