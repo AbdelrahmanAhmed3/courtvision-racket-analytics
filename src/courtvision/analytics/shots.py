@@ -102,7 +102,7 @@ def _find_player_contact_events(
     current_track_id: int | None = None
     current_frame: int | None = None
     for frame in sorted(ball_points_by_frame):
-        track_id = _nearest_player_at_impact(
+        track_id = nearest_player_to_ball(
             ball_points_by_frame[frame],
             player_detections_by_frame.get(frame, []),
             minimum_distance_px=DEFAULT_CONTACT_DISTANCE_PX,
@@ -136,11 +136,12 @@ def _is_cross_court_flight(
     return distance_m >= DEFAULT_MIN_FLIGHT_DISTANCE_M and crosses_net
 
 
-def _nearest_player_at_impact(
+def nearest_player_to_ball(
     ball_point: BallPoint,
     players: list[tuple[int, Detection]],
     minimum_distance_px: float = DEFAULT_CONTACT_DISTANCE_PX,
 ) -> int | None:
+    """Track ID of the player whose box is close enough to the ball to hit it."""
     if not ball_point.visible or ball_point.x is None or ball_point.y is None:
         return None
 
@@ -215,7 +216,7 @@ def _find_first_bounce(
         + 1,
     ):
         if (
-            _nearest_player_at_impact(
+            nearest_player_to_ball(
                 ball_points_by_frame.get(frame, BallPoint(frame, None, None)),
                 player_detections_by_frame.get(frame, []),
             )

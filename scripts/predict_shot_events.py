@@ -32,6 +32,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from courtvision.analytics.ball_track import detect_impacts  # noqa: E402
 from courtvision.analytics.court_coordinates import (  # noqa: E402
     filter_detections_on_court,
     project_ball_point,
@@ -52,6 +53,7 @@ from courtvision.detectors.tracknet_adapter import (  # noqa: E402
 from courtvision.evaluation.court import court_estimate  # noqa: E402
 from courtvision.evaluation.labels import load_labels  # noqa: E402
 from courtvision.evaluation.scoring import (  # noqa: E402
+    PredictedEvent,
     predictions_from_shots,
     save_predictions,
 )
@@ -69,6 +71,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", help="Predictions JSON (default: outputs/).")
     parser.add_argument("--size", default="nano", help="RF-DETR size.")
     parser.add_argument("--device", default="auto")
+    parser.add_argument(
+        "--method",
+        choices=("shots", "tracklets"),
+        default="shots",
+        help="shots: today's shot code (the baseline); tracklets: impacts where "
+        "ball tracklets start or end next to a player.",
+    )
     return parser.parse_args()
 
 
@@ -118,29 +127,44 @@ def _box(detection) -> list[float]:
     return [detection.x1, detection.y1, detection.x2, detection.y2]
 
 
-def predict_shots(labels, tracks: dict) -> list:
-    """analytics.shots.detect_shots on each segment's cached players and ball."""
-    shots = []
+def cached_segments(labels, tracks: dict):
+    """Each labelled segment with its cached ball points and players by frame."""
     for segment in labels.segments:
         if segment.status != "label":
             continue
         cached = tracks["segments"][str(segment.start)]
-        estimate = court_estimate(segment.court_points)
         ball_points = {
             f: BallPoint(f, x, y, 0.0 if x is None else 1.0)
             for f, x, y in cached["ball"]
         }
+        players = defaultdict(list)
+        for frame, track_id, x1, y1, x2, y2, confidence in cached["players"]:
+            detection = Detection(frame, "person", confidence, x1, y1, x2, y2, "cached")
+            players[frame].append((track_id, detection))
+        yield segment, ball_points, players
+
+
+def predict_shots(labels, tracks: dict) -> list[PredictedEvent]:
+    """analytics.shots.detect_shots on each segment's cached players and ball."""
+    shots = []
+    for segment, ball_points, players in cached_segments(labels, tracks):
+        estimate = court_estimate(segment.court_points)
         ball_coordinates = {}
         for frame, point in ball_points.items():
             coordinate = project_ball_point(point, estimate, PADEL_COURT)
             if coordinate is not None:
                 ball_coordinates[frame] = coordinate
-        players = defaultdict(list)
-        for frame, track_id, x1, y1, x2, y2, confidence in cached["players"]:
-            detection = Detection(frame, "person", confidence, x1, y1, x2, y2, "cached")
-            players[frame].append((track_id, detection))
         shots += detect_shots(ball_points, players, ball_coordinates, labels.fps)
-    return shots
+    return predictions_from_shots(shots)
+
+
+def predict_tracklet_impacts(labels, tracks: dict) -> list[PredictedEvent]:
+    """analytics.ball_track.detect_impacts on each segment's cached data."""
+    return [
+        PredictedEvent("impact", impact.frame)
+        for _, ball_points, players in cached_segments(labels, tracks)
+        for impact in detect_impacts(ball_points.values(), players)
+    ]
 
 
 def main() -> None:
@@ -148,7 +172,8 @@ def main() -> None:
     labels = load_labels(args.labels)
     stem = Path(args.labels).stem
     output = Path(
-        args.output or REPO_ROOT / "outputs" / "predictions" / f"{stem}--shots.json"
+        args.output
+        or REPO_ROOT / "outputs" / "predictions" / f"{stem}--{args.method}.json"
     )
     cache = REPO_ROOT / "outputs" / "predictions" / f"{stem}--tracks-{args.size}.json"
     if cache.exists():
@@ -157,10 +182,12 @@ def main() -> None:
         tracks = run_models(args, labels)
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(tracks) + "\n")
-    shots = predict_shots(labels, tracks)
-    predictions = predictions_from_shots(shots)
+    if args.method == "shots":
+        predictions = predict_shots(labels, tracks)
+    else:
+        predictions = predict_tracklet_impacts(labels, tracks)
     save_predictions(output, predictions)
-    print(f"{len(shots)} shots, {len(predictions)} predicted events: {output}")
+    print(f"{len(predictions)} predicted events: {output}")
 
 
 if __name__ == "__main__":
