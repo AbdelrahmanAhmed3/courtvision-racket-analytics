@@ -48,3 +48,39 @@ The players and ball are cached in `outputs/predictions/` after the first run (a
 18 minutes on an Apple M4); after that, changing the shot code and scoring again takes
 under a second. The step counts above came from the cached tracks and the shot code's
 contact step (`_find_player_contact_events`).
+
+## Impacts where ball tracklets start or end (2026-10-19)
+
+`analytics/ball_track.py`, part of #8. The TrackNet positions are split into
+**tracklets**, runs of positions one ball could really travel: a tracklet ends
+after a gap of more than 2 frames, or where the next position is more than 125 px
+per frame away. At an impact the ball is often hidden by the player for a frame or
+two, so a tracklet start or end next to a player is an impact candidate.
+Candidates at most 3 frames apart are one impact. Same cached players and ball as
+the baseline; `scripts/predict_shot_events.py --method tracklets`.
+
+| Method | Predicted | Precision (±2) | Recall (±2) | Precision (±5) | Recall (±5) |
+| --- | --- | --- | --- | --- | --- |
+| Today's shot code | 74 | 0.14 | 0.07 | 0.31 | 0.17 |
+| Tracklet ends near a player | 247 | 0.25 | **0.44** | 0.38 | **0.70** |
+
+The settings come from physics and were not tuned on the labels: 125 px is a hard
+smash near the camera plus margin. Tuning them on half the rallies did not help on
+the other half: the best settings on rallies 1, 3, 5, 7, 9 (F1 0.34) scored F1 0.28
+on the others, below the untuned settings (0.30). With 10 rallies, tuning mostly
+fits noise.
+
+### Where the wrong impacts come from
+
+Of the 271 predictions in the labelled segments (24 fall outside the rallies and are
+not scored above), 210 match no impact within ±2 frames:
+
+| Cause | Wrong |
+| --- | --- |
+| 2–8 frames from an impact: the tracklet ends before and starts after a hit more than 3 frames apart, or the timing is off | 79 |
+| At or near a bounce (often just before the hit, at the player's feet) | 47 |
+| At or near a wall rebound | 29 |
+| Nothing labelled within 8 frames: wrong positions, reflections, the ball passing a player | 55 |
+
+Each cause is a next step for #8: one impact per hit, telling a hit from a bounce
+next to a player, and dropping reflections and single wrong positions.
