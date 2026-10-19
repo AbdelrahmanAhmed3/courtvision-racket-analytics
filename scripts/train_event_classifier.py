@@ -46,8 +46,8 @@ from courtvision.evaluation.scoring import (  # noqa: E402
 )
 
 FEATURES = (
-    "speed_in",  # px per frame, over up to 4 frames before
-    "speed_out",  # px per frame, over up to 4 frames after
+    "speed_in",  # px per frame, over the last 4 positions up to 10 frames before
+    "speed_out",  # px per frame, over the first 4 positions up to 10 frames after
     "turn_degrees",  # between the directions before and after
     "dy_in",  # vertical movement before, px per frame (positive: down the image)
     "dy_out",
@@ -88,9 +88,11 @@ def candidate_rows(segment, cached: dict) -> list[tuple[int, list[float], str]]:
         if len(tracklet) >= 3
         for point in tracklet
     }
-    boxes = defaultdict(list)
-    for frame, _, x1, y1, x2, y2, _ in cached["players"]:
+    boxes, players = defaultdict(list), defaultdict(list)
+    for frame, track_id, x1, y1, x2, y2, confidence in cached["players"]:
         boxes[frame].append((x1, y1, x2, y2))
+        detection = Detection(frame, "person", confidence, x1, y1, x2, y2, "cached")
+        players[frame].append((track_id, detection))
     estimate = court_estimate(segment.court_points)
 
     def court(point: BallPoint) -> tuple[float, float]:
@@ -98,12 +100,13 @@ def candidate_rows(segment, cached: dict) -> list[tuple[int, list[float], str]]:
         return float(x), float(y)
 
     rows = []
-    for frame in event_candidates(raw):
+    for frame in event_candidates(raw, players):
         if not segment.rally_start - 2 <= frame <= segment.rally_end + 2:
             continue
         values = dict.fromkeys(FEATURES, np.nan)
-        before = [clean[f] for f in range(frame - 4, frame + 1) if f in clean]
-        after = [clean[f] for f in range(frame, frame + 5) if f in clean]
+        # After a hidden gap the nearest positions can be several frames away.
+        before = [clean[f] for f in range(frame - 10, frame + 1) if f in clean][-4:]
+        after = [clean[f] for f in range(frame, frame + 11) if f in clean][:4]
         incoming, outgoing = velocity(before), velocity(after)
         if incoming:
             values["speed_in"], values["dy_in"] = hypot(*incoming), incoming[1]
