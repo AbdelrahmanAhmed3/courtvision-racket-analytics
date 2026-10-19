@@ -44,6 +44,10 @@ ui = [
     "streamlit",
     "streamlit-image-coordinates",
 ]
+train = [
+    # Experiments that train small models on extracted features (BSD-3-Clause).
+    "scikit-learn",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,6 +1,7 @@
 from courtvision.analytics.ball_track import (
     Impact,
     detect_impacts,
+    event_candidates,
     split_into_tracklets,
 )
 from courtvision.detectors.base import Detection
@@ -46,3 +47,16 @@ def test_tracklet_ends_next_to_a_player_are_one_impact() -> None:
     # the outgoing one; together they are one impact by track 7. The first and
     # last positions are far from the player and are not impacts.
     assert impacts == [Impact(frame=10, track_id=7)]
+
+
+def test_event_candidates_are_hidden_gaps_free_ends_and_sharp_turns() -> None:
+    before_hit = [ball(f, 100 + 20 * f) for f in range(0, 6)]  # ends at frame 5
+    after_hit = [ball(f, 300 - 20 * (f - 11)) for f in range(11, 16)]  # hidden 6 frames
+    # Much later the ball bounces: moving down the image, then up, without a gap.
+    bounce = [ball(f, 500, 200 + 15 * abs(f - 43)) for f in range(40, 47)]
+
+    candidates = event_candidates([*before_hit, *after_hit, *bounce])
+
+    # 0: the first tracklet starts; 8: the middle of the hidden hit (5 to 11);
+    # 15 and 40: tracklet ends far from the next; 43: the bounce; 46: the end.
+    assert candidates == [0, 8, 15, 40, 43, 46]
