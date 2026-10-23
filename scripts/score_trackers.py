@@ -24,12 +24,15 @@ if str(SRC_ROOT) not in sys.path:
 from courtvision.detectors.base import Detection  # noqa: E402
 from courtvision.evaluation.identity import score_identities  # noqa: E402
 from courtvision.evaluation.labels import load_labels  # noqa: E402
+from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 from courtvision.tracking.kalman_iou_tracker import KalmanIouTracker  # noqa: E402
 from courtvision.tracking.simple_tracker import SimpleIouTracker  # noqa: E402
 
 TRACKERS = {
     "greedy IoU (pipeline default)": SimpleIouTracker,
     "Kalman + Hungarian": KalmanIouTracker,
+    "4 IDs, greedy": FixedCountTracker,
+    "4 IDs, Hungarian": lambda: FixedCountTracker(assignment="hungarian"),
 }
 
 
