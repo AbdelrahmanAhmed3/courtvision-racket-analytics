@@ -26,3 +26,21 @@ cached boxes (RF-DETR Nano on the hand-marked court, at most four per frame) wit
 The Kalman tracker's prediction keeps moving a hidden player at their last velocity,
 past the distance it may reconnect from (noted on #5), so it splits players far more
 often.
+
+## Never more IDs than players (2026-10-24)
+
+`tracking/fixed_count_tracker.py`, part of #5. Padel has exactly four players, so
+IDs 1–4 are given out as players first appear and never a fifth. A box that matches
+no ID by overlap takes the ID, among those not seen this frame, whose last box is
+nearest, so a player whose box changes shape, or who was hidden, keeps their ID.
+
+| Tracker | IDF1 | Switches | IDs given to the 4 players, per rally |
+| --- | --- | --- | --- |
+| Greedy IoU (the pipeline's) | 0.96 | 8 | 5 4 4 4 5 4 5 4 5 4 |
+| **Four IDs, greedy overlap first** | **0.97** | **5** | 4 4 4 4 4 4 4 4 4 4 |
+| Four IDs, Hungarian overlap first | 0.97 | 5 | 4 4 4 4 4 4 4 4 4 4 |
+
+The three splits are gone; the five swaps at crossings remain. Partners usually
+wear the same kit, so telling them apart after a crossing needs more than
+appearance: how each was moving, or where each stands relative to the net.
+Matching overlaps greedily or with the Hungarian algorithm makes no difference here.
