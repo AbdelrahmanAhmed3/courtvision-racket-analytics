@@ -89,3 +89,30 @@ def _paired_frames(shared: Counter[tuple[int, int]]) -> int:
     counts = np.array([[shared[p, t] for t in track_ids] for p in players])
     rows, columns = linear_sum_assignment(counts, maximize=True)
     return int(counts[rows, columns].sum())
+
+
+def score_teams(
+    labels: VideoLabels,
+    tracks_by_segment: Mapping[int, TrackedBoxes],
+    teams_by_segment: Mapping[int, Mapping[int, str]],
+    min_iou: float = DEFAULT_MIN_IOU,
+) -> tuple[int, int]:
+    """(right, scored): labelled boxes whose track's team matches the label's.
+
+    Labelled players 1 and 2 are the near team and 3 and 4 the far team
+    (docs/evaluation.md). Only boxes matched to a tracked box are scored.
+    """
+    right = scored = 0
+    for segment in labels.segments:
+        if segment.status != "label":
+            continue
+        tracks = tracks_by_segment.get(segment.start, {})
+        teams = teams_by_segment.get(segment.start, {})
+        for frame in segment.reviewed_box_frames:
+            truth = segment.boxes.get(frame, [])
+            found = list(tracks.get(frame, []))
+            for row, column in match_boxes(truth, [d for _, d in found], min_iou):
+                expected = "near" if truth[row].player in (1, 2) else "far"
+                scored += 1
+                right += teams.get(found[column][0]) == expected
+    return right, scored

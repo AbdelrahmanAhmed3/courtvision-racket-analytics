@@ -44,3 +44,22 @@ The three splits are gone; the five swaps at crossings remain. Partners usually
 wear the same kit, so telling them apart after a crossing needs more than
 appearance: how each was moving, or where each stands relative to the net.
 Matching overlaps greedily or with the Hungarian algorithm makes no difference here.
+
+## Teams by side of the net (2026-10-25)
+
+`analytics/teams.py`, part of #5. Partners share one half of the court for a whole
+rally, so each track's team is the half where its feet project most often. Scored
+against the labels, where players 1 and 2 are the near team and 3 and 4 the far
+team, over every labelled box matched to a track:
+
+| Tracker | Teams right |
+| --- | --- |
+| Greedy IoU | 1.00 |
+| Kalman + Hungarian | 0.97 |
+| Four IDs | 1.00 |
+
+The swaps left at crossings are between partners, so they never put a player on
+the wrong team. The full pipeline writes each track's team to `teams.csv`.
+
+Telling partners apart after they cross, or after one hides behind the other, is a
+known limitation of v4.0, followed up in #47.
