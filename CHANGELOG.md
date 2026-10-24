@@ -2,6 +2,7 @@
 
 ## Unreleased (planned for v4.0)
 
+- track players with at most as many IDs as the court has players (4 for padel, 2 for tennis): a player who is hidden or whose box changes shape gets their ID back instead of a new one (`--tracker fixed`, the default; `--tracker simple` for the old greedy tracker); IDF1 0.96 → 0.97 and ID switches 8 → 5 on the labelled rallies (`reports/player_identity.md`)
 - `scripts/label_clip.py`: label rallies, impacts, bounces, wall rebounds and player boxes for evaluation, with RF-DETR box proposals; format and guide in `docs/evaluation.md`
 - detect players locally with RF-DETR (Apache-2.0 COCO weights, Nano by default) instead of the hosted API: `--detector rfdetr|roboflow`, `--rfdetr-size`, and a detector choice in the app; install with the `local` extra
 - drop people standing off the court before tracking (0.5 m margin for padel; 4 m sides and 7 m ends for tennis)

@@ -68,6 +68,7 @@ from courtvision.detectors.tracknet_adapter import (  # noqa: E402
     infer_ball_track,
     load_tracknet_model,
 )
+from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 from courtvision.tracking.simple_tracker import (  # noqa: E402
     DEFAULT_IOU_THRESHOLD,
     DEFAULT_MAX_MISSING_SECONDS,
@@ -147,7 +148,7 @@ def draw_ball(frame, ball: BallPoint | None, trace: list[BallPoint]) -> None:
 
 def tracks_from_detections(
     detections: list[Detection],
-    tracker: SimpleIouTracker,
+    tracker: SimpleIouTracker | FixedCountTracker,
     timestamp_seconds: float,
     max_players: int | None = None,
 ) -> list[FrameTrack]:
@@ -385,6 +386,14 @@ def parse_args() -> argparse.Namespace:
         "--max-seconds",
         type=float,
         help="Process only the first N seconds of the input video.",
+    )
+    parser.add_argument(
+        "--tracker",
+        choices=("fixed", "simple"),
+        default="fixed",
+        help="fixed: never more track IDs than players on the court type (a lost "
+        "player gets their ID back; reports/player_identity.md); simple: the "
+        "greedy IoU tracker, which gives a new ID to anyone it cannot match.",
     )
     parser.add_argument("--iou-threshold", type=float, default=DEFAULT_IOU_THRESHOLD)
     parser.add_argument(
@@ -704,11 +713,17 @@ def main() -> None:
                 size=args.rfdetr_size,
                 confidence=args.confidence,
             )
-        tracker = SimpleIouTracker(
-            iou_threshold=args.iou_threshold,
-            max_missing_seconds=args.max_missing_seconds,
-            reassociation_distance_px=args.reassociation_distance_px,
-        )
+        if args.tracker == "fixed" and max_player_count:
+            tracker = FixedCountTracker(
+                max_players=max_player_count,
+                iou_threshold=args.iou_threshold,
+            )
+        else:
+            tracker = SimpleIouTracker(
+                iou_threshold=args.iou_threshold,
+                max_missing_seconds=args.max_missing_seconds,
+                reassociation_distance_px=args.reassociation_distance_px,
+            )
 
     tracks_by_frame: dict[int, list[FrameTrack]] = {}
     court_points: list[CourtCoordinate] = []
