@@ -25,6 +25,7 @@ from courtvision.analytics.court_coordinates import (  # noqa: E402
 )
 from courtvision.analytics.player_distance import PlayerDistanceTracker  # noqa: E402
 from courtvision.analytics.shots import ShotEvent, detect_shots  # noqa: E402
+from courtvision.analytics.teams import assign_teams  # noqa: E402
 from courtvision.calibration.homography import (  # noqa: E402
     estimate_template_homography,
 )
@@ -259,6 +260,19 @@ def write_court_coordinates_csv(path: Path, points: list[CourtCoordinate]) -> No
                     f"{point.confidence:.6f}",
                 ]
             )
+
+
+def write_teams_csv(path: Path, points: list[CourtCoordinate]) -> None:
+    """Each player's team, from the half of the court where they play most."""
+    teams = assign_teams(
+        (point.track_id, point.template_y)
+        for point in points
+        if point.object_type == "player"
+    )
+    with path.open("w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["track_id", "team"])
+        writer.writerows(sorted(teams.items()))
 
 
 def write_player_distances_csv(path: Path, distances_m: dict[int, float]) -> None:
@@ -899,6 +913,7 @@ def main() -> None:
             output_dir / "player_distances.csv",
             player_distance_tracker.distances_m,
         )
+        write_teams_csv(output_dir / "teams.csv", court_points)
     shots = detect_shots(
         ball_tracks_by_frame,
         {

@@ -64,3 +64,13 @@ def test_players_are_paired_to_maximise_shared_frames_not_pairs() -> None:
     # Player 1 keeps ID 7 (10 frames). Pairing for the most pairs instead would
     # give player 1 ID 8 and player 2 ID 7: 2 frames.
     assert score.id_hits == 10
+
+
+def test_team_scoring_checks_each_box_against_its_players_team() -> None:
+    from courtvision.evaluation.identity import score_teams
+
+    labels = labels_with({f: [(LEFT, 1), (RIGHT, 3)] for f in (25, 50)})
+    tracks = {0: {f: [(7, box(LEFT)), (9, box(RIGHT))] for f in (25, 50)}}
+
+    # Track 9 is player 3, a far-team player, but was put on the near team.
+    assert score_teams(labels, tracks, {0: {7: "near", 9: "near"}}) == (2, 4)
