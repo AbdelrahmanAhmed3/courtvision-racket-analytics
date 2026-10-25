@@ -155,3 +155,35 @@ The classifiers now find impacts better than the rule. The turn angle became the
 most useful input, followed by the vertical movement before and the height in the
 player's box. Boosted trees still answer "nothing" for 40 of the 110 impact
 candidates.
+
+## Shots and hitters (2026-10-25)
+
+`analytics/ball_events.py`, part of #8. The classifier ships as a JSON model applied
+with numpy (`detect_ball_events`), and `shots_from_events` turns events into
+**shots**: each impact is paired with the next impact within 3 s (a deep lob takes
+2–2.5 s), which gives the receiver; the first bounce in between is the shot's bounce;
+the last shot of a point has no receiver. Court-plane distance and speed run between
+the ball's floor projections at the impact and the receive (or the bounce): the
+ball's height is not modelled, so they are an **approximation**.
+
+**Hitter accuracy**: the hitter is the player nearest the ball at the impact, with
+IDs from the four-ID tracker. Over impacts found by the shipped model (logistic
+regression, cross-validated by rally), matched to a labelled impact within ±2 frames:
+
+| Hitter rule | Right |
+| --- | --- |
+| **Nearest player** | **34 / 52 = 0.65** |
+| Nearest player on the half of the court the ball is in | 30 / 52 = 0.58 |
+| Nearest player on the other team from the previous hitter | 23 / 52 = 0.44 |
+
+Of the 18 wrong hitters with the nearest-player rule, 10 are an opponent, 6 have no
+tracked player near the ball, and 2 are the partner. Both rules that looked like
+fixes made it worse:
+
+- **The ball's half** is unreliable for the same reason "crosses the net" barely
+  helps the classifier: a ball in the air projects to the wrong place on the floor.
+- **"A team never hits twice"** needs reliable events. More than half of the impacts
+  found are false (precision 0.44), and each false one flips the expected team for
+  the next real impact, so errors cascade.
+
+More precise impacts come first; then sequence rules can help the hitter.

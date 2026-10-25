@@ -207,3 +207,83 @@ def _player_features(
     values["box_y"] = (ball.y - box.y1) / height
     values["box_x"] = (ball.x - (box.x1 + box.x2) / 2) / width
     return track_id
+
+
+# The same exchange: a deep lob takes about 2 to 2.5 s to reach the other team.
+MAX_EXCHANGE_SECONDS = 3.0
+
+
+@dataclass(frozen=True)
+class Shot:
+    """One impact and what followed it, up to the next impact if any.
+
+    Court distance and speed are measured on the floor plane between the ball's
+    projected positions at the impact and at the receive (or the bounce when
+    nobody receives). The ball's height is not modelled, so they are an
+    approximation, not the ball's true speed.
+    """
+
+    frame: int  # the impact
+    hitter_track_id: int | None
+    receiver_track_id: int | None  # who hits it next, if anyone does
+    receive_frame: int | None
+    bounce_frame: int | None  # the first bounce after the impact, if any
+    distance_m: float | None
+    duration_seconds: float | None
+    court_speed_kmh: float | None  # approximate: floor-plane distance over time
+
+
+def shots_from_events(
+    events: Iterable[BallEvent],
+    ball_points: Iterable[BallPoint],
+    estimate: HomographyEstimate,
+    fps: float,
+    court_width_m: float = 10.0,
+    court_length_m: float = 20.0,
+) -> list[Shot]:
+    """A shot for every impact, paired with the next impact of the exchange."""
+    events = sorted(events, key=lambda event: event.frame)
+    impacts = [event for event in events if event.kind == "impact"]
+    bounces = [event.frame for event in events if event.kind == "bounce"]
+    visible = {point.frame: point for point in ball_points if point.visible}
+    longest = round(MAX_EXCHANGE_SECONDS * fps)
+
+    def court_position(frame: int) -> tuple[float, float] | None:
+        nearby = [visible[f] for f in range(frame - 4, frame + 5) if f in visible]
+        if not nearby:
+            return None
+        ball = min(nearby, key=lambda point: abs(point.frame - frame))
+        x, y = project_image_points(np.float32([[ball.x, ball.y]]), estimate)[0]
+        return float(x) * court_width_m, float(y) * court_length_m
+
+    shots = []
+    for index, impact in enumerate(impacts):
+        after = impacts[index + 1] if index + 1 < len(impacts) else None
+        if after is not None and after.frame - impact.frame > longest:
+            after = None  # a new point, not this exchange
+        end = after.frame if after else impact.frame + longest
+        bounce = next((f for f in bounces if impact.frame < f < end), None)
+        target = after.frame if after else bounce
+        distance = duration = speed = None
+        start_position = court_position(impact.frame)
+        end_position = court_position(target) if target is not None else None
+        if start_position and end_position and target > impact.frame:
+            distance = hypot(
+                end_position[0] - start_position[0],
+                end_position[1] - start_position[1],
+            )
+            duration = (target - impact.frame) / fps
+            speed = distance / duration * 3.6
+        shots.append(
+            Shot(
+                frame=impact.frame,
+                hitter_track_id=impact.track_id,
+                receiver_track_id=after.track_id if after else None,
+                receive_frame=after.frame if after else None,
+                bounce_frame=bounce,
+                distance_m=distance,
+                duration_seconds=duration,
+                court_speed_kmh=speed,
+            )
+        )
+    return shots

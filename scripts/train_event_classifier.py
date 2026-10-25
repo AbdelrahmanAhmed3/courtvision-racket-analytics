@@ -36,12 +36,14 @@ from courtvision.analytics.ball_track import detect_impacts  # noqa: E402
 from courtvision.detectors.base import Detection  # noqa: E402
 from courtvision.detectors.tracknet_adapter import BallPoint  # noqa: E402
 from courtvision.evaluation.court import court_estimate  # noqa: E402
+from courtvision.evaluation.identity import replay_tracker, score_hitters  # noqa: E402
 from courtvision.evaluation.labels import load_labels  # noqa: E402
 from courtvision.evaluation.scoring import (  # noqa: E402
     PredictedEvent,
     load_predictions,
     score_events,
 )
+from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 
 CLASSES = ("impact", "bounce", "wall_rebound", "none")
 
@@ -59,13 +61,18 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def candidate_rows(segment, cached: dict) -> list[tuple[int, list[float], str]]:
-    """(frame, features, label) for each candidate inside the segment's rally."""
+def tracked_players(segment, cached: dict, fps: float) -> dict:
+    """The cached player boxes with IDs from the pipeline's four-ID tracker."""
+    boxes = defaultdict(list)
+    for frame, _, x1, y1, x2, y2, confidence in cached["players"]:
+        boxes[frame].append(Detection(frame, "person", confidence, x1, y1, x2, y2, ""))
+    frames = range(segment.start, segment.end)
+    return replay_tracker(FixedCountTracker, boxes, frames, fps)
+
+
+def candidate_rows(segment, cached: dict, players: dict) -> list[tuple]:
+    """(frame, features, label, nearest track ID) per candidate in the rally."""
     ball = [BallPoint(f, x, y, 0.0 if x is None else 1.0) for f, x, y in cached["ball"]]
-    players = defaultdict(list)
-    for frame, track_id, x1, y1, x2, y2, confidence in cached["players"]:
-        detection = Detection(frame, "person", confidence, x1, y1, x2, y2, "cached")
-        players[frame].append((track_id, detection))
     rows = []
     estimate = court_estimate(segment.court_points)
     for candidate in candidate_features(ball, players, estimate):
@@ -78,7 +85,9 @@ def candidate_rows(segment, cached: dict) -> list[tuple[int, list[float], str]]:
             if abs(event.frame - frame) <= 2
         ]
         label = min(near_events)[1] if near_events else "none"
-        rows.append((frame, list(candidate.features), label))
+        rows.append(
+            (frame, list(candidate.features), label, candidate.nearest_track_id)
+        )
     return rows
 
 
@@ -117,27 +126,39 @@ def main() -> None:
         (predictions_dir / f"{stem}--tracks-{args.size}.json").read_text()
     )
     segments = [s for s in labels.segments if s.status == "label"]
+    players = {
+        s.start: tracked_players(s, tracks["segments"][str(s.start)], labels.fps)
+        for s in segments
+    }
     rows = {
-        s.start: candidate_rows(s, tracks["segments"][str(s.start)]) for s in segments
+        s.start: candidate_rows(s, tracks["segments"][str(s.start)], players[s.start])
+        for s in segments
     }
     halves = [[s.start for s in segments[0::2]], [s.start for s in segments[1::2]]]
 
     predicted = defaultdict(list)
+    hitters = defaultdict(list)  # segment -> (frame, track ID) of predicted impacts
     truth, boosted, importances = [], [], defaultdict(list)
     for test, train in (halves, halves[::-1]):
-        x_train = np.array([x for s in train for _, x, _ in rows[s]])
-        y_train = [y for s in train for _, _, y in rows[s]]
-        x_test = np.array([x for s in test for _, x, _ in rows[s]])
-        y_test = [y for s in test for _, _, y in rows[s]]
-        frames = [f for s in test for f, _, _ in rows[s]]
+        x_train = np.array([row[1] for s in train for row in rows[s]])
+        y_train = [row[2] for s in train for row in rows[s]]
+        x_test = np.array([row[1] for s in test for row in rows[s]])
+        y_test = [row[2] for s in test for row in rows[s]]
+        tested = [(s, row[0], row[3]) for s in test for row in rows[s]]
         for name, model in build_models().items():
             model.fit(x_train, y_train)
             answers = model.predict(x_test)
             predicted[name] += [
                 PredictedEvent(kind, frame)
-                for frame, kind in zip(frames, answers, strict=True)
+                for (_, frame, _), kind in zip(tested, answers, strict=True)
                 if kind != "none"
             ]
+            if name == "logistic regression":  # the model that ships
+                for (segment, frame, track_id), kind in zip(
+                    tested, answers, strict=True
+                ):
+                    if kind == "impact":
+                        hitters[segment].append((frame, track_id))
             if name == "boosted trees":
                 truth += y_test
                 boosted += list(answers)
@@ -186,6 +207,11 @@ def main() -> None:
     ranked = sorted(importances.items(), key=lambda item: -np.mean(item[1]))
     for feature, values in ranked[:6]:
         print(f"  {feature:16}{np.mean(values):+.3f}")
+    right, scored = score_hitters(labels, hitters, players)
+    print(
+        f"\nHitter of the impacts found (logistic regression, four-ID tracker, "
+        f"nearest player): {right}/{scored} = {right / scored:.2f}"
+    )
     if args.save_model:
         save_model(args.save_model, rows, labels)
 
@@ -193,8 +219,8 @@ def main() -> None:
 def save_model(path: str, rows: dict, labels) -> None:
     """Logistic regression trained on every candidate, exported for numpy."""
     model = build_models()["logistic regression"]
-    x = np.array([x for segment_rows in rows.values() for _, x, _ in segment_rows])
-    y = [y for segment_rows in rows.values() for _, _, y in segment_rows]
+    x = np.array([row[1] for segment_rows in rows.values() for row in segment_rows])
+    y = [row[2] for segment_rows in rows.values() for row in segment_rows]
     model.fit(x, y)
     imputer, scaler, regression = (step for _, step in model.steps)
     EventModel(
