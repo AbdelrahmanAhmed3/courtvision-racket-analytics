@@ -2,6 +2,7 @@
 
 ## Unreleased (planned for v4.0)
 
+- detect impacts, bounces and wall rebounds with a small trained model (`--events classifier`, the default; `--events legacy` for the older tennis-tuned shot code); the full pipeline writes `ball_events.csv`, shots with hitter, receiver and bounce in `shots.csv` (speed column `approx_court_speed_kmh`: the ball's height is not modelled), and marks each event on `annotated.mp4`; impact F1 0.41, hitter right for 65% of impacts found (`reports/ball_events.md`)
 - assign each tracked player to the near or far team by the half of the court they play in; the full pipeline writes `teams.csv` (all labelled players on the right team, `reports/player_identity.md`)
 - track players with at most as many IDs as the court has players (4 for padel, 2 for tennis): a player who is hidden or whose box changes shape gets their ID back instead of a new one (`--tracker fixed`, the default; `--tracker simple` for the old greedy tracker); IDF1 0.96 → 0.97 and ID switches 8 → 5 on the labelled rallies (`reports/player_identity.md`)
 - `scripts/label_clip.py`: label rallies, impacts, bounces, wall rebounds and player boxes for evaluation, with RF-DETR box proposals; format and guide in `docs/evaluation.md`

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections import Counter
 import math
 import sys
 from dataclasses import dataclass, replace
@@ -24,6 +25,12 @@ from courtvision.analytics.court_coordinates import (  # noqa: E402
     project_player_detection,
 )
 from courtvision.analytics.player_distance import PlayerDistanceTracker  # noqa: E402
+from courtvision.analytics.ball_events import (  # noqa: E402
+    BallEvent,
+    Shot,
+    detect_ball_events,
+    shots_from_events,
+)
 from courtvision.analytics.shots import ShotEvent, detect_shots  # noqa: E402
 from courtvision.analytics.teams import assign_teams  # noqa: E402
 from courtvision.calibration.homography import (  # noqa: E402
@@ -315,6 +322,138 @@ def write_shots_csv(path: Path, shots: list[ShotEvent]) -> None:
             )
 
 
+def write_ball_events_csv(path: Path, events: list[BallEvent]) -> None:
+    with path.open("w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["frame", "kind", "track_id"])
+        for event in events:
+            track_id = "" if event.track_id is None else event.track_id
+            writer.writerow([event.frame, event.kind, track_id])
+
+
+def write_ball_shots_csv(path: Path, shots: list[Shot]) -> None:
+    """Shots from the ball events; the speed column says it is approximate."""
+
+    def cell(value, digits=None):
+        if value is None:
+            return ""
+        return f"{value:.{digits}f}" if digits is not None else value
+
+    with path.open("w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            [
+                "frame",
+                "hitter_track_id",
+                "receiver_track_id",
+                "receive_frame",
+                "bounce_frame",
+                "distance_m",
+                "duration_seconds",
+                "approx_court_speed_kmh",
+            ]
+        )
+        for shot in shots:
+            writer.writerow(
+                [
+                    shot.frame,
+                    cell(shot.hitter_track_id),
+                    cell(shot.receiver_track_id),
+                    cell(shot.receive_frame),
+                    cell(shot.bounce_frame),
+                    cell(shot.distance_m, 3),
+                    cell(shot.duration_seconds, 3),
+                    cell(shot.court_speed_kmh, 1),
+                ]
+            )
+
+
+def map_speed_labels(shots: list[Shot]) -> list[ShotEvent]:
+    """Shots with a speed, in the form the court-map speed labels draw."""
+    return [
+        ShotEvent(
+            event_type="shot",
+            frame=shot.frame,
+            hitter_track_id=shot.hitter_track_id,
+            receiver_track_id=shot.receiver_track_id,
+            receive_frame=shot.receive_frame or shot.frame,
+            bounce_frame=shot.bounce_frame,
+            court_plane_speed_kmh=shot.court_speed_kmh,
+            segment_distance_m=shot.distance_m or 0.0,
+            segment_duration_seconds=shot.duration_seconds or 0.0,
+        )
+        for shot in shots
+        if shot.court_speed_kmh is not None
+    ]
+
+
+EVENT_DISPLAY_SECONDS = 0.6
+EVENT_COLOURS = {
+    "impact": (0, 200, 255),
+    "bounce": (80, 255, 80),
+    "wall_rebound": (255, 120, 255),
+}
+
+
+def render_events_on_video(
+    video_path: Path,
+    events: list[BallEvent],
+    ball_by_frame: dict[int, BallPoint],
+    fps: float,
+) -> None:
+    """Mark each impact, bounce and wall rebound on the video for a moment."""
+    if not events:
+        return
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        raise ValueError(f"Could not open video for event labels: {video_path}")
+    size = (
+        int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+        int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+    )
+    output_path = video_path.with_name(f"{video_path.stem}_events.mp4")
+    writer = cv2.VideoWriter(
+        str(output_path), cv2.VideoWriter_fourcc(*"mp4v"), fps, size
+    )
+    shown = round(EVENT_DISPLAY_SECONDS * fps)
+    frame_index = 0
+    try:
+        while True:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            for event in events:
+                if event.frame <= frame_index < event.frame + shown:
+                    _draw_event(frame, event, ball_by_frame)
+            writer.write(frame)
+            frame_index += 1
+    finally:
+        capture.release()
+        writer.release()
+    output_path.replace(video_path)
+
+
+def _draw_event(image, event: BallEvent, ball_by_frame: dict[int, BallPoint]) -> None:
+    colour = EVENT_COLOURS[event.kind]
+    label = {"impact": "IMPACT", "bounce": "BOUNCE", "wall_rebound": "WALL"}[event.kind]
+    if event.kind == "impact" and event.track_id is not None:
+        label += f" P{event.track_id}"
+    nearby = [
+        ball_by_frame[f]
+        for f in range(event.frame - 3, event.frame + 4)
+        if f in ball_by_frame and ball_by_frame[f].visible
+    ]
+    if nearby:
+        ball = min(nearby, key=lambda point: abs(point.frame - event.frame))
+        centre = (int(ball.x), int(ball.y))
+        cv2.circle(image, centre, 16, colour, 3)
+        origin = (centre[0] + 20, centre[1] - 12)
+    else:
+        origin = (20, image.shape[0] - 30)
+    cv2.putText(image, label, origin, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 5)
+    cv2.putText(image, label, origin, cv2.FONT_HERSHEY_SIMPLEX, 0.8, colour, 2)
+
+
 def render_shot_speeds_on_map_video(
     video_path: Path,
     shots: list[ShotEvent],
@@ -400,6 +539,15 @@ def parse_args() -> argparse.Namespace:
         "--max-seconds",
         type=float,
         help="Process only the first N seconds of the input video.",
+    )
+    parser.add_argument(
+        "--events",
+        choices=("classifier", "legacy"),
+        default="classifier",
+        help="classifier: impacts, bounces and wall rebounds from the trained "
+        "model in analytics/ball_events.py, written to ball_events.csv and shown "
+        "on annotated.mp4 (reports/ball_events.md); legacy: the older shot code "
+        "tuned on tennis.",
     )
     parser.add_argument(
         "--tracker",
@@ -914,37 +1062,52 @@ def main() -> None:
             player_distance_tracker.distances_m,
         )
         write_teams_csv(output_dir / "teams.csv", court_points)
-    shots = detect_shots(
-        ball_tracks_by_frame,
-        {
-            frame: [(track.track_id, track.detection) for track in tracks]
-            for frame, tracks in tracks_by_frame.items()
-        },
-        ball_coordinates_by_frame,
-        fps,
-    )
-    if ball_tracks_by_frame:
-        write_shots_csv(output_dir / "shots.csv", shots)
-        if shots and map_writer is not None:
-            render_shot_speeds_on_map_video(
-                output_dir / "court_map.mp4",
-                shots,
-                fps,
-            )
-            render_shot_speeds_on_map_video(
-                output_dir / "court_map_annotated.mp4",
-                shots,
-                fps,
-                panel_offset_x=width,
-                panel_width=map_width,
-            )
+    players_by_frame = {
+        frame: [(track.track_id, track.detection) for track in tracks]
+        for frame, tracks in tracks_by_frame.items()
+    }
+    events: list[BallEvent] = []
+    shot_count = 0
+    if args.events == "classifier" and estimate is not None and ball_tracks_by_frame:
+        ball_points = list(ball_tracks_by_frame.values())
+        events = detect_ball_events(ball_points, players_by_frame, estimate)
+        new_shots = shots_from_events(events, ball_points, estimate, fps)
+        write_ball_events_csv(output_dir / "ball_events.csv", events)
+        write_ball_shots_csv(output_dir / "shots.csv", new_shots)
+        render_events_on_video(
+            output_dir / "annotated.mp4", events, ball_tracks_by_frame, fps
+        )
+        shots = map_speed_labels(new_shots)
+        shot_count = len(new_shots)
+    else:
+        shots = detect_shots(
+            ball_tracks_by_frame, players_by_frame, ball_coordinates_by_frame, fps
+        )
+        if ball_tracks_by_frame:
+            write_shots_csv(output_dir / "shots.csv", shots)
+        shot_count = len(shots)
+    if shots and map_writer is not None:
+        render_shot_speeds_on_map_video(output_dir / "court_map.mp4", shots, fps)
+        render_shot_speeds_on_map_video(
+            output_dir / "court_map_annotated.mp4",
+            shots,
+            fps,
+            panel_offset_x=width,
+            panel_width=map_width,
+        )
     print(f"Wrote detections: {output_dir / 'detections.csv'}")
     print(f"Wrote annotated video: {output_dir / 'annotated.mp4'}")
     if court_points:
         print(f"Wrote court coordinates: {output_dir / 'tracks_with_court_coords.csv'}")
         print(f"Wrote player distances: {output_dir / 'player_distances.csv'}")
+    if events:
+        counts = Counter(event.kind for event in events)
+        summary = ", ".join(
+            f"{counts[k]} {k.replace('_', ' ')}s" for k in sorted(counts)
+        )
+        print(f"Wrote ball events: {output_dir / 'ball_events.csv'} ({summary})")
     if ball_tracks_by_frame:
-        print(f"Wrote estimated shots: {output_dir / 'shots.csv'} ({len(shots)})")
+        print(f"Wrote estimated shots: {output_dir / 'shots.csv'} ({shot_count})")
     if map_writer is not None:
         print(f"Wrote court-map video: {output_dir / 'court_map_annotated.mp4'}")
         print(f"Wrote standalone court map: {output_dir / 'court_map.mp4'}")
