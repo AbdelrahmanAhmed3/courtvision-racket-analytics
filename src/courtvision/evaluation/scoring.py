@@ -8,7 +8,7 @@ prediction: three predictions for one impact are one hit and two false alarms.
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -144,3 +144,44 @@ def load_predictions(path: str | Path) -> list[PredictedEvent]:
     if unknown:
         raise ValueError(f"Unknown event kinds in predictions: {sorted(unknown)}")
     return events
+
+
+@dataclass(frozen=True)
+class RallyScore:
+    labelled: int
+    found: int  # labelled rallies overlapped by a predicted one
+    extra: int  # predicted rallies beyond one per labelled rally
+    start_errors: tuple[float, ...]  # seconds, predicted minus labelled
+    end_errors: tuple[float, ...]
+
+
+def score_rallies(labels: VideoLabels, rallies_by_segment: Mapping) -> RallyScore:
+    """Compare predicted rallies with the labelled one in each segment.
+
+    ``rallies_by_segment`` maps a labelled segment's start frame to rallies with
+    ``start_frame`` and ``end_frame``. The predicted rally overlapping the
+    labelled one most is compared; any others in the segment are extra.
+    """
+    labelled = found = extra = 0
+    start_errors, end_errors = [], []
+    for segment in labels.segments:
+        if segment.status != "label":
+            continue
+        labelled += 1
+        start, end = segment.rally_start, segment.rally_end
+        predicted = list(rallies_by_segment.get(segment.start, []))
+        overlaps = [(_overlap(start, end, rally), rally) for rally in predicted]
+        matching = [(frames, rally) for frames, rally in overlaps if frames > 0]
+        extra += len(predicted) - (1 if matching else 0)
+        if not matching:
+            continue
+        found += 1
+        best = max(matching, key=lambda pair: pair[0])[1]
+        start_errors.append((best.start_frame - start) / labels.fps)
+        end_errors.append((best.end_frame - end) / labels.fps)
+    return RallyScore(labelled, found, extra, tuple(start_errors), tuple(end_errors))
+
+
+def _overlap(start: int, end: int, rally) -> int:
+    """Frames a predicted rally shares with the labelled one."""
+    return min(end, rally.end_frame) - max(start, rally.start_frame)

@@ -29,10 +29,15 @@ if str(SRC_ROOT) not in sys.path:
 
 from courtvision.analytics.ball_events import (  # noqa: E402
     FEATURES,
+    BallEvent,
     EventModel,
     candidate_features,
 )
 from courtvision.analytics.ball_track import detect_impacts  # noqa: E402
+from courtvision.analytics.rallies import (  # noqa: E402
+    DEFAULT_MAX_GAP_SECONDS,
+    segment_rallies,
+)
 from courtvision.detectors.base import Detection  # noqa: E402
 from courtvision.detectors.tracknet_adapter import BallPoint  # noqa: E402
 from courtvision.evaluation.court import court_estimate  # noqa: E402
@@ -42,6 +47,7 @@ from courtvision.evaluation.scoring import (  # noqa: E402
     PredictedEvent,
     load_predictions,
     score_events,
+    score_rallies,
 )
 from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 
@@ -138,6 +144,7 @@ def main() -> None:
 
     predicted = defaultdict(list)
     hitters = defaultdict(list)  # segment -> (frame, track ID) of predicted impacts
+    found_events = defaultdict(list)  # segment -> events of the shipped model
     truth, boosted, importances = [], [], defaultdict(list)
     for test, train in (halves, halves[::-1]):
         x_train = np.array([row[1] for s in train for row in rows[s]])
@@ -159,6 +166,8 @@ def main() -> None:
                 ):
                     if kind == "impact":
                         hitters[segment].append((frame, track_id))
+                    if kind != "none":
+                        found_events[segment].append(BallEvent(kind, frame, track_id))
             if name == "boosted trees":
                 truth += y_test
                 boosted += list(answers)
@@ -212,6 +221,20 @@ def main() -> None:
         f"\nHitter of the impacts found (logistic regression, four-ID tracker, "
         f"nearest player): {right}/{scored} = {right / scored:.2f}"
     )
+    print("\nRallies from those events (seconds; error is predicted minus labelled)")
+    for gap in (3.0, DEFAULT_MAX_GAP_SECONDS, 8.0):
+        rallies = {
+            s: segment_rallies(found_events[s], labels.fps, max_gap_seconds=gap)
+            for s in found_events
+        }
+        score = score_rallies(labels, rallies)
+        start, end = np.abs(score.start_errors), np.abs(score.end_errors)
+        print(
+            f"  silence {gap:.0f} s: found {score.found}/{score.labelled}, "
+            f"extra {score.extra}; start error median {np.median(start):.2f} "
+            f"(mean signed {np.mean(score.start_errors):+.2f}), end error median "
+            f"{np.median(end):.2f} (mean signed {np.mean(score.end_errors):+.2f})"
+        )
     if args.save_model:
         save_model(args.save_model, rows, labels)
 
