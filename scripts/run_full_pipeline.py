@@ -31,6 +31,7 @@ from courtvision.analytics.ball_events import (  # noqa: E402
     detect_ball_events,
     shots_from_events,
 )
+from courtvision.analytics.rallies import Rally, segment_rallies  # noqa: E402
 from courtvision.analytics.shots import ShotEvent, detect_shots  # noqa: E402
 from courtvision.analytics.teams import assign_teams  # noqa: E402
 from courtvision.calibration.homography import (  # noqa: E402
@@ -364,6 +365,26 @@ def write_ball_shots_csv(path: Path, shots: list[Shot]) -> None:
                     cell(shot.distance_m, 3),
                     cell(shot.duration_seconds, 3),
                     cell(shot.court_speed_kmh, 1),
+                ]
+            )
+
+
+def write_rallies_csv(path: Path, rallies: list[Rally], fps: float) -> None:
+    """Each rally's first impact and last event; who won is not decided."""
+    with path.open("w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            ["rally", "start_frame", "end_frame", "duration_seconds", "shots"]
+        )
+        for number, rally in enumerate(rallies, start=1):
+            duration = (rally.end_frame - rally.start_frame) / fps
+            writer.writerow(
+                [
+                    number,
+                    rally.start_frame,
+                    rally.end_frame,
+                    f"{duration:.2f}",
+                    len(rally.shots),
                 ]
             )
 
@@ -1067,6 +1088,7 @@ def main() -> None:
         for frame, tracks in tracks_by_frame.items()
     }
     events: list[BallEvent] = []
+    rallies: list[Rally] = []
     shot_count = 0
     if args.events == "classifier" and estimate is not None and ball_tracks_by_frame:
         ball_points = list(ball_tracks_by_frame.values())
@@ -1074,6 +1096,8 @@ def main() -> None:
         new_shots = shots_from_events(events, ball_points, estimate, fps)
         write_ball_events_csv(output_dir / "ball_events.csv", events)
         write_ball_shots_csv(output_dir / "shots.csv", new_shots)
+        rallies = segment_rallies(events, fps, shots=new_shots)
+        write_rallies_csv(output_dir / "rallies.csv", rallies, fps)
         render_events_on_video(
             output_dir / "annotated.mp4", events, ball_tracks_by_frame, fps
         )
@@ -1108,6 +1132,8 @@ def main() -> None:
         print(f"Wrote ball events: {output_dir / 'ball_events.csv'} ({summary})")
     if ball_tracks_by_frame:
         print(f"Wrote estimated shots: {output_dir / 'shots.csv'} ({shot_count})")
+    if events:
+        print(f"Wrote rallies: {output_dir / 'rallies.csv'} ({len(rallies)})")
     if map_writer is not None:
         print(f"Wrote court-map video: {output_dir / 'court_map_annotated.mp4'}")
         print(f"Wrote standalone court map: {output_dir / 'court_map.mp4'}")

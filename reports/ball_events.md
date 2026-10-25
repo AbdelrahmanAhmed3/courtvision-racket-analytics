@@ -187,3 +187,32 @@ fixes made it worse:
   the next real impact, so errors cascade.
 
 More precise impacts come first; then sequence rules can help the hitter.
+
+## Rallies (2026-10-25)
+
+`analytics/rallies.py`, #9. A rally starts at its first impact (the serve, when it is
+seen) and ends at its last ball event; a silence longer than 5 s ends it. In the
+labels, consecutive events inside a rally are at most 2.5 s apart (95 % under
+1.7 s), the rally starts on its first impact in 9 of 10 rallies (the tenth begins at
+a camera cut), and ends 0–0.8 s after its last event. 5 s doubles the longest
+labelled gap, because the classifier misses events, and stays short of the pause
+between points. Events before the first impact, such as the server bouncing the ball,
+are left out of the rally.
+
+Scored with the shipped model's events, cross-validated by rally:
+
+| Measure | Result |
+| --- | --- |
+| Labelled rallies found | 10 / 10, none extra |
+| Start error, median (mean signed) | 0.20 s (+0.86 s) |
+| End error, median (mean signed) | 0.14 s (−0.56 s) |
+
+- Three rallies start 2.3–2.7 s late, where the serve and the return were both
+  missed; two end 2.1–2.4 s early, one of them the out-of-court point, where the
+  ball leaves the view.
+- A 3, 5 or 8 s silence gives the same result: no rally is split. Each labelled
+  segment holds one point, so these labels cannot test two points inside one
+  continuous camera shot; the 5 s limit is untested there.
+- On the 15-second Qatar clip the pipeline finds one rally of 13.9 s with 12 shots,
+  starting at the serve; the false wall rebounds from the server's bounces before it
+  fall outside the rally.
