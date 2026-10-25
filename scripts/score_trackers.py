@@ -27,7 +27,11 @@ from courtvision.analytics.teams import assign_teams  # noqa: E402
 from courtvision.calibration.homography import project_image_points  # noqa: E402
 from courtvision.detectors.base import Detection  # noqa: E402
 from courtvision.evaluation.court import court_estimate  # noqa: E402
-from courtvision.evaluation.identity import score_identities, score_teams  # noqa: E402
+from courtvision.evaluation.identity import (  # noqa: E402
+    replay_tracker,
+    score_identities,
+    score_teams,
+)
 from courtvision.evaluation.labels import load_labels  # noqa: E402
 from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 from courtvision.tracking.kalman_iou_tracker import KalmanIouTracker  # noqa: E402
@@ -53,12 +57,7 @@ def replay(make_tracker, segment, cached: dict, fps: float) -> dict:
     boxes = defaultdict(list)
     for frame, _, x1, y1, x2, y2, confidence in cached["players"]:
         boxes[frame].append(Detection(frame, "person", confidence, x1, y1, x2, y2, ""))
-    tracker = make_tracker()
-    tracks = {}
-    for frame in range(segment.start, segment.end):
-        tracked = tracker.update(boxes.get(frame, []), timestamp_seconds=frame / fps)
-        tracks[frame] = [(t.track_id, t.detection) for t in tracked]
-    return tracks
+    return replay_tracker(make_tracker, boxes, range(segment.start, segment.end), fps)
 
 
 def teams_for(segment, tracks: dict) -> dict[int, str]:
