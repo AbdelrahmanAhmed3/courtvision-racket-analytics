@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CourtVision match report",
+  "description": "report.json, written by the full pipeline for each clip. Every key is listed here; tests/test_report.py checks the report against this file, so a key cannot be added or renamed without describing it.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "video",
+    "seconds_analysed",
+    "players",
+    "rallies",
+    "highlights",
+    "accuracy_notes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "The shape of this file. It goes up only when a change would break a reader of the older shape: a key renamed or removed, or a unit or meaning changed. Adding a key keeps the version."
+    },
+    "video": {
+      "type": "string",
+      "description": "File name of the analysed clip."
+    },
+    "seconds_analysed": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Length of the clip that was processed, in seconds."
+    },
+    "players": {
+      "type": "array",
+      "description": "One row per tracked player, by track ID.",
+      "items": { "$ref": "#/$defs/player" }
+    },
+    "rallies": {
+      "type": "array",
+      "description": "Rallies in the order they were played. A rally starts at its first detected impact and ends at its last ball event; a 5 s silence ends it.",
+      "items": { "$ref": "#/$defs/rally" }
+    },
+    "highlights": { "$ref": "#/$defs/highlights" },
+    "accuracy_notes": {
+      "type": "array",
+      "description": "How far to trust the numbers, from the measured results in reports/.",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "track_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The player's ID from the tracker: at most four, kept through the clip."
+    },
+    "team": {
+      "enum": ["near", "far", null],
+      "description": "The half of the court the player is in most often: near the camera or far from it. Null when it could not be decided."
+    },
+    "seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "player": {
+      "type": "object",
+      "required": [
+        "track_id",
+        "team",
+        "shots",
+        "distance_m",
+        "average_speed_kmh",
+        "top_speed_kmh",
+        "seconds_at_net",
+        "seconds_in_middle",
+        "seconds_at_back"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "track_id": { "$ref": "#/$defs/track_id" },
+        "team": { "$ref": "#/$defs/team" },
+        "shots": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Detected impacts where this player was the nearest to the ball."
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Metres covered, from smoothed positions of the player's feet on the court; tracking jumps are not counted."
+        },
+        "average_speed_kmh": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Distance over the time the player was tracked, in km/h."
+        },
+        "top_speed_kmh": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Fastest movement over any 0.5 s, in km/h."
+        },
+        "seconds_at_net": {
+          "$ref": "#/$defs/seconds",
+          "description": "Seconds within 4 m of the net, where volleys are played."
+        },
+        "seconds_in_middle": {
+          "$ref": "#/$defs/seconds",
+          "description": "Seconds between 4 m from the net and the service line."
+        },
+        "seconds_at_back": {
+          "$ref": "#/$defs/seconds",
+          "description": "Seconds behind the service line, 6.95 m or more from the net."
+        }
+      }
+    },
+    "rally": {
+      "type": "object",
+      "required": ["start_frame", "end_frame", "seconds", "shots", "same_team_twice"],
+      "additionalProperties": false,
+      "properties": {
+        "start_frame": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Frame of the first impact: the serve, when it is seen."
+        },
+        "end_frame": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Frame of the last ball event before play stops."
+        },
+        "seconds": {
+          "$ref": "#/$defs/seconds",
+          "description": "From the first impact to the last ball event."
+        },
+        "shots": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Detected impacts in the rally, by any player."
+        },
+        "same_team_twice": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Places where the same team hit twice in a row, which the rules do not allow: at each, a shot was missed, a false one was counted, or the hitter is wrong. Shots without a known hitter are not judged."
+        }
+      }
+    },
+    "highlights": {
+      "type": "object",
+      "description": "The headline numbers. A leader is null when nobody scored above zero, for example shots on a clip without ball tracking.",
+      "required": [
+        "most_shots",
+        "most_distance",
+        "top_speed",
+        "rally_count",
+        "average_rally_seconds",
+        "longest_rally_seconds",
+        "average_shots_per_rally",
+        "same_team_twice",
+        "fastest_shot"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "most_shots": {
+          "type": ["object", "null"],
+          "required": ["track_id", "team", "shots"],
+          "additionalProperties": false,
+          "properties": {
+            "track_id": { "$ref": "#/$defs/track_id" },
+            "team": { "$ref": "#/$defs/team" },
+            "shots": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "most_distance": {
+          "type": ["object", "null"],
+          "required": ["track_id", "team", "distance_m"],
+          "additionalProperties": false,
+          "properties": {
+            "track_id": { "$ref": "#/$defs/track_id" },
+            "team": { "$ref": "#/$defs/team" },
+            "distance_m": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "top_speed": {
+          "type": ["object", "null"],
+          "required": ["track_id", "team", "top_speed_kmh"],
+          "additionalProperties": false,
+          "properties": {
+            "track_id": { "$ref": "#/$defs/track_id" },
+            "team": { "$ref": "#/$defs/team" },
+            "top_speed_kmh": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "rally_count": { "type": "integer", "minimum": 0 },
+        "average_rally_seconds": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Null when there are no rallies."
+        },
+        "longest_rally_seconds": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Null when there are no rallies."
+        },
+        "average_shots_per_rally": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Null when there are no rallies."
+        },
+        "same_team_twice": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "same_team_twice summed over the rallies."
+        },
+        "fastest_shot": {
+          "type": ["object", "null"],
+          "description": "The shot with the highest court speed. Null when no shot has a speed.",
+          "required": ["hitter_track_id", "receiver_track_id", "approx_court_speed_kmh"],
+          "additionalProperties": false,
+          "properties": {
+            "hitter_track_id": {
+              "anyOf": [{ "$ref": "#/$defs/track_id" }, { "type": "null" }]
+            },
+            "receiver_track_id": {
+              "anyOf": [{ "$ref": "#/$defs/track_id" }, { "type": "null" }],
+              "description": "The player who hit the ball next, within 3 s. Null for a winner or when the next hit was not detected."
+            },
+            "approx_court_speed_kmh": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Distance along the court floor from the impact to the next hit (or, without one, the first bounce), over the time it took. The ball's height is not modelled, so it is approximate."
+            }
+          }
+        }
+      }
+    }
+  }
+}

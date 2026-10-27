@@ -4,7 +4,9 @@ Built from templates, not a language model: who played the most shots, covered
 the most distance and reached the top speed, and how many rallies there were
 and how long. The JSON is also the structured input for the coaching report
 planned for the Personal edition. Accuracy notes come from the measured results
-in reports/, so a reader knows how far to trust each number.
+in reports/, so a reader knows how far to trust each number, and each rally is
+checked against the rule that the teams take turns. Every JSON key is described
+in report.schema.json.
 """
 
 from __future__ import annotations
@@ -18,8 +20,9 @@ from courtvision.analytics.rallies import Rally
 
 REPORT_SCHEMA_VERSION = 1
 ACCURACY_NOTES = (
-    "Shots are counted from detected impacts, and about 4 in 10 impacts are found, "
-    "so shot counts are low (reports/ball_events.md).",
+    "Shots are counted from detected impacts: about 4 in 10 real impacts are "
+    "found, and fewer than half of the detected ones are real, so a count can be "
+    "off either way (reports/ball_events.md).",
     "The hitter is the player nearest the ball at the impact, right about 2 times "
     "in 3.",
     "Shot speeds are measured on the court floor; the ball's height is not "
@@ -60,6 +63,7 @@ def build_report(
             "end_frame": rally.end_frame,
             "seconds": round((rally.end_frame - rally.start_frame) / fps, 1),
             "shots": len(rally.shots),
+            "same_team_twice": _same_team_twice(rally.shots, teams),
         }
         for rally in rallies
     ]
@@ -72,6 +76,21 @@ def build_report(
         "highlights": _highlights(players, rally_list, shots),
         "accuracy_notes": list(ACCURACY_NOTES),
     }
+
+
+def _same_team_twice(shots: Sequence[Shot], teams: Mapping[int, str]) -> int:
+    """Places where one team hit twice in a row, which the rules do not allow.
+
+    The ball crosses the net after every shot, so the teams take turns. Each
+    repeat means a missed shot in between, a false one, or a wrong hitter. A
+    check of the order, not the totals: near, near, far, far balances 2 to 2 but
+    has two repeats. Shots without a known team are not judged.
+    """
+    sides = [
+        teams.get(shot.hitter_track_id)
+        for shot in sorted(shots, key=lambda shot: shot.frame)
+    ]
+    return sum(1 for a, b in zip(sides, sides[1:], strict=False) if a and a == b)
 
 
 def _highlights(players: list[dict], rallies: list[dict], shots: Sequence[Shot]):
@@ -101,6 +120,7 @@ def _highlights(players: list[dict], rallies: list[dict], shots: Sequence[Shot])
             if rallies
             else None
         ),
+        "same_team_twice": sum(rally["same_team_twice"] for rally in rallies),
         "fastest_shot": (
             {
                 "hitter_track_id": fastest.hitter_track_id,
@@ -175,14 +195,23 @@ def report_markdown(report: dict, heatmap_image: str | None = None) -> str:
     if heatmap_image:
         lines += ["", "## Where each player stood", "", f"![Heatmaps]({heatmap_image})"]
     if report["rallies"]:
-        lines += ["", "## Rallies", "", "| Rally | Start frame | Length | Shots |"]
-        lines.append("| --- | --- | --- | --- |")
+        lines += ["", "## Rallies", ""]
+        lines.append("| Rally | Start frame | Length | Shots | Same team twice |")
+        lines.append("| --- | --- | --- | --- | --- |")
         for number, rally in enumerate(report["rallies"], start=1):
             lines.append(
                 f"| {number} | {rally['start_frame']} | {rally['seconds']} s "
-                f"| {rally['shots']} |"
+                f"| {rally['shots']} | {rally['same_team_twice']} |"
             )
     lines += ["", "## How far to trust these numbers", ""]
+    repeats = highlights["same_team_twice"]
+    if repeats:
+        places = "1 place" if repeats == 1 else f"{repeats} places"
+        lines.append(
+            f"- In {places}, the same team hit twice in a row, which the rules do "
+            "not allow: at each, a shot was missed, a false one was counted, or "
+            "the hitter is wrong."
+        )
     lines += [f"- {note}" for note in report["accuracy_notes"]]
     return "\n".join(lines) + "\n"
 
