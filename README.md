@@ -191,7 +191,7 @@ This separation makes GPU/Kaggle inference and local analysis interoperable. Run
 | `ball_events.csv` | Impacts (with the nearest player), bounces and wall rebounds (needs ball tracking) |
 | `shots.csv` | Shots with hitter, receiver, bounce and an approximate court-plane speed (needs ball tracking) |
 | `rallies.csv` | Each rally's start and end frame, duration and number of shots (needs ball tracking) |
-| `report.md`, `report.json` | Match report: who played the most shots, covered the most distance and reached the top speed, rallies, and how far to trust each number |
+| `report.md`, `report.json` | Match report: who played the most shots, covered the most distance and reached the top speed, rallies, and how far to trust each number, including where the same team hit twice in a row; every JSON key is described in [`report.schema.json`](src/courtvision/analytics/report.schema.json) |
 | `heatmaps.png` | One small court per player, warmer where they stood |
 | `calibration.json` | Named landmarks and source metadata (written by `--create-calibration`) |
 

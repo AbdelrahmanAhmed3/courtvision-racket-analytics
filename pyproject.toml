@@ -22,6 +22,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    # Checks report.json against its schema in the tests (MIT).
+    "jsonschema",
     "pytest",
     "ruff",
 ]

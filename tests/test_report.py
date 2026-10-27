@@ -1,11 +1,18 @@
 import json
+from pathlib import Path
 
 import numpy as np
+import pytest
 
+from courtvision.analytics import report as report_module
 from courtvision.analytics.ball_events import Shot
 from courtvision.analytics.movement import MovementStats
 from courtvision.analytics.rallies import Rally
-from courtvision.analytics.report import build_report, report_markdown
+from courtvision.analytics.report import (
+    REPORT_SCHEMA_VERSION,
+    build_report,
+    report_markdown,
+)
 from courtvision.visualization.heatmaps import draw_heatmaps
 
 FPS = 25.0
@@ -86,6 +93,41 @@ def test_a_clip_without_ball_tracking_still_gets_a_report() -> None:
     text = report_markdown(report)
     assert "Most shots" not in text and "## Rallies" not in text
     assert "- **Most distance:** Player 1, 5.0 m." in text
+
+
+def test_a_team_hitting_twice_in_a_row_is_counted() -> None:
+    teams = {1: "near", 2: "far", 3: "near", 4: "far"}
+    # near, near, far, far: the totals balance 2 to 2, the order does not.
+    order = (shot(10, 1), shot(40, 3), shot(70, 2), shot(100, 4))
+    unknown = (shot(10, 1), shot(40, None), shot(70, 3))  # not judged
+    rallies = [Rally(10, 100, order), Rally(200, 300, unknown)]
+
+    movement = {1: stats(5.0, 7.0)}
+    report = build_report("clip.mp4", FPS, 500, teams, movement, (), rallies)
+
+    assert [rally["same_team_twice"] for rally in report["rallies"]] == [2, 0]
+    assert report["highlights"]["same_team_twice"] == 2
+    text = report_markdown(report)
+    assert "- In 2 places, the same team hit twice in a row" in text
+    assert "| 1 | 10 | 3.6 s | 4 | 2 |" in text
+    assert "hit twice in a row" not in report_markdown(clip_report())
+
+
+def test_every_report_matches_its_schema() -> None:
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads(
+        Path(report_module.__file__).with_name("report.schema.json").read_text()
+    )
+    jsonschema.Draft202012Validator.check_schema(schema)
+    assert schema["properties"]["schema_version"]["const"] == REPORT_SCHEMA_VERSION
+
+    one_rally = Rally(10, 110, (shot(10, 1, None, 30.0),))
+    for report in (
+        clip_report(),
+        build_report("clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)}),
+        build_report("clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)}, (), [one_rally]),
+    ):
+        jsonschema.validate(json.loads(json.dumps(report)), schema)
 
 
 def test_heatmaps_draw_one_court_per_player() -> None:
