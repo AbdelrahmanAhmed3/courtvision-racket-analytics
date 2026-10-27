@@ -180,13 +180,17 @@ This separation makes GPU/Kaggle inference and local analysis interoperable. Run
 
 | Artifact | Purpose |
 | --- | --- |
-| `annotated.mp4` | Player IDs, ball trail, and calibration diagnostics |
+| `annotated.mp4` | Player IDs, ball trail, impact, bounce and wall-rebound markers, and calibration diagnostics |
 | `court_map.mp4` | Standalone synchronized top-down view (`--draw-court-map`) |
 | `court_map_annotated.mp4` | Broadcast and court map side by side |
 | `detections.csv` | Detector output suitable for replay with `--detections` |
 | `tracks_with_court_coords.csv` | Image, normalized, and metric court coordinates |
-| `player_distances.csv` | Distance covered per player, in metres |
-| `shots.csv` | Experimental shots with hitter, receiver, bounce frame, and court-plane speed (needs ball tracking) |
+| `teams.csv` | Each player's team, near or far, from the half they play in |
+| `movement.csv` | Per player: distance, average and top speed, time at the net, in the middle and at the back |
+| `heatmaps.json` | Per player: seconds spent in each square metre of the court |
+| `ball_events.csv` | Impacts (with the nearest player), bounces and wall rebounds (needs ball tracking) |
+| `shots.csv` | Shots with hitter, receiver, bounce and an approximate court-plane speed (needs ball tracking) |
+| `rallies.csv` | Each rally's start and end frame, duration and number of shots (needs ball tracking) |
 | `calibration.json` | Named landmarks and source metadata (written by `--create-calibration`) |
 
 ## Evaluation and Engineering Decisions
