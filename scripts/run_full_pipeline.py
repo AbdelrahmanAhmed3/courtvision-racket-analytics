@@ -26,7 +26,6 @@ from courtvision.analytics.court_coordinates import (  # noqa: E402
     project_ball_point,
     project_player_detection,
 )
-from courtvision.analytics.player_distance import PlayerDistanceTracker  # noqa: E402
 from courtvision.analytics.ball_events import (  # noqa: E402
     BallEvent,
     Shot,
@@ -35,6 +34,7 @@ from courtvision.analytics.ball_events import (  # noqa: E402
 )
 from courtvision.analytics.movement import movement_stats  # noqa: E402
 from courtvision.analytics.rallies import Rally, segment_rallies  # noqa: E402
+from courtvision.analytics.report import build_report, report_markdown  # noqa: E402
 from courtvision.analytics.shots import ShotEvent, detect_shots  # noqa: E402
 from courtvision.analytics.teams import assign_teams  # noqa: E402
 from courtvision.calibration.homography import (  # noqa: E402
@@ -91,9 +91,9 @@ from courtvision.tracking.simple_tracker import (  # noqa: E402
 from courtvision.visualization.court_overlay import (  # noqa: E402
     draw_calibration_overlay,
 )
+from courtvision.visualization.heatmaps import draw_heatmaps  # noqa: E402
 from courtvision.visualization.minimap import (  # noqa: E402
     draw_court_map,
-    draw_player_distance_totals,
     draw_projected_point,
     draw_shot_speed,
     get_court_spec,
@@ -288,8 +288,11 @@ def write_teams_csv(path: Path, points: list[CourtCoordinate]) -> None:
 
 def write_movement_files(
     output_dir: Path, points: list[CourtCoordinate], fps: float
-) -> None:
-    """movement.csv (one row per player) and heatmaps.json (seconds per m²)."""
+) -> tuple[dict, dict]:
+    """movement.csv (one row per player) and heatmaps.json (seconds per m²).
+
+    Returns the movement stats and teams by track ID, for the match report.
+    """
     players = [point for point in points if point.object_type == "player"]
     stats = movement_stats(
         ((p.track_id, p.frame, p.court_x_m, p.court_y_m) for p in players), fps
@@ -333,6 +336,7 @@ def write_movement_files(
         },
     }
     (output_dir / "heatmaps.json").write_text(json.dumps(heatmaps) + "\n")
+    return stats, teams
 
 
 def write_shots_csv(path: Path, shots: list[ShotEvent]) -> None:
@@ -958,7 +962,6 @@ def main() -> None:
     ball_trace: list[BallPoint] = []
     ball_court_trace: list[CourtCoordinate] = []
     ball_coordinates_by_frame: dict[int, CourtCoordinate] = {}
-    player_distance_tracker = PlayerDistanceTracker()
     temporal_calibrator: TemporalCourtCalibrator | None = None
     temporal_result: TemporalCalibrationResult | None = None
     # Calibration used to drop people standing off the court. With a moving
@@ -1056,7 +1059,6 @@ def main() -> None:
                 for track in current_tracks
             ]
             court_points.extend(frame_points)
-            player_distance_tracker.update(frame_points, frame_index / fps)
             ball_coordinate = None
             if ball is not None:
                 ball_coordinate = project_ball_point(ball, frame_estimate, spec)
@@ -1101,7 +1103,6 @@ def main() -> None:
 
         if map_image is not None:
             assert map_writer is not None and court_map_writer is not None
-            draw_player_distance_totals(map_image, player_distance_tracker.distances_m)
             court_map_writer.write(map_image)
             map_image = cv2.resize(map_image, (map_width, height))
             map_writer.write(cv2.hconcat((annotated, map_image)))
@@ -1118,18 +1119,20 @@ def main() -> None:
         court_map_writer.release()
 
     write_detections_csv(output_dir / "detections.csv", tracks_by_frame)
+    movement, teams = {}, {}
     if court_points:
         write_court_coordinates_csv(
             output_dir / "tracks_with_court_coords.csv", court_points
         )
         write_teams_csv(output_dir / "teams.csv", court_points)
-        write_movement_files(output_dir, court_points, fps)
+        movement, teams = write_movement_files(output_dir, court_points, fps)
     players_by_frame = {
         frame: [(track.track_id, track.detection) for track in tracks]
         for frame, tracks in tracks_by_frame.items()
     }
     events: list[BallEvent] = []
     rallies: list[Rally] = []
+    new_shots: list[Shot] = []
     shot_count = 0
     if args.events == "classifier" and estimate is not None and ball_tracks_by_frame:
         ball_points = list(ball_tracks_by_frame.values())
@@ -1151,6 +1154,19 @@ def main() -> None:
         if ball_tracks_by_frame:
             write_shots_csv(output_dir / "shots.csv", shots)
         shot_count = len(shots)
+    if movement:
+        report = build_report(
+            input_path.name, fps, frame_index, teams, movement, new_shots, rallies
+        )
+        (output_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
+        heatmap_image = draw_heatmaps(
+            {track_id: stats.heatmap_seconds for track_id, stats in movement.items()},
+            teams,
+        )
+        cv2.imwrite(str(output_dir / "heatmaps.png"), heatmap_image)
+        (output_dir / "report.md").write_text(
+            report_markdown(report, heatmap_image="heatmaps.png")
+        )
     if shots and map_writer is not None:
         render_shot_speeds_on_map_video(output_dir / "court_map.mp4", shots, fps)
         render_shot_speeds_on_map_video(
@@ -1165,6 +1181,7 @@ def main() -> None:
     if court_points:
         print(f"Wrote court coordinates: {output_dir / 'tracks_with_court_coords.csv'}")
         print(f"Wrote movement stats: {output_dir / 'movement.csv'} and heatmaps.json")
+        print(f"Wrote match report: {output_dir / 'report.md'} and report.json")
     if events:
         counts = Counter(event.kind for event in events)
         summary = ", ".join(

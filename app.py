@@ -301,6 +301,39 @@ def video_data_url(video_path: Path) -> str:
     return f"data:video/mp4;base64,{encoded}"
 
 
+HEATMAP_LINE = "![Heatmaps](heatmaps.png)"
+
+
+def show_match_report(output_dir: Path) -> None:
+    """The match report under the videos, with the heatmaps where they belong."""
+    report_path = output_dir / "report.md"
+    if not report_path.exists():
+        return
+    st.subheader("Match report")
+    before, _, after = report_path.read_text().partition(HEATMAP_LINE)
+    # The report's own title repeats the file name; the subheader replaces it.
+    st.markdown(before.split("\n", 1)[1] if before.startswith("# ") else before)
+    heatmaps = output_dir / "heatmaps.png"
+    if after and heatmaps.exists():
+        st.image(
+            str(heatmaps), caption="Seconds per square metre; far baseline at the top"
+        )
+        st.markdown(after)
+    download_report, download_json = st.columns(2)
+    download_report.download_button(
+        "Download report (Markdown)",
+        data=report_path.read_bytes(),
+        file_name="report.md",
+        mime="text/markdown",
+    )
+    download_json.download_button(
+        "Download report (JSON)",
+        data=(output_dir / "report.json").read_bytes(),
+        file_name="report.json",
+        mime="application/json",
+    )
+
+
 def projection_counts(path: Path) -> dict[str, int]:
     counts = {"player": 0, "ball": 0}
     with path.open(newline="") as file:
@@ -1295,6 +1328,7 @@ def main() -> None:
             st.error(f"Could not prepare browser videos: {error}")
             return
         render_synchronized_videos(tracked_video, court_map_video)
+        show_match_report(output_dir)
         st.download_button(
             "Download court coordinates CSV",
             data=(output_dir / "tracks_with_court_coords.csv").read_bytes(),
