@@ -190,47 +190,6 @@ def draw_projected_point(
     return image
 
 
-def draw_player_distance_totals(
-    image: np.ndarray,
-    distances_m: dict[int, float],
-) -> np.ndarray:
-    """Draw stable player-distance totals in the map's upper left and right."""
-    track_ids = sorted(distances_m)
-    split_index = (len(track_ids) + 1) // 2
-    for side, ids in enumerate((track_ids[:split_index], track_ids[split_index:])):
-        for row, track_id in enumerate(ids):
-            label = f"P{track_id}: {distances_m[track_id] / 1000:.2f} km"
-            text_size, _ = cv2.getTextSize(
-                label,
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.52,
-                1,
-            )
-            x = 16 if side == 0 else image.shape[1] - 16 - text_size[0]
-            y = 60 + row * 28
-            cv2.putText(
-                image,
-                label,
-                (x, y),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.52,
-                (18, 18, 18),
-                3,
-                cv2.LINE_AA,
-            )
-            cv2.putText(
-                image,
-                label,
-                (x, y),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.52,
-                (235, 240, 235),
-                1,
-                cv2.LINE_AA,
-            )
-    return image
-
-
 def draw_shot_speed(
     image: np.ndarray,
     hitter_id: int | None,
