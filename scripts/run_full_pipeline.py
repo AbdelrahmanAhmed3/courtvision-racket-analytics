@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 from collections import Counter
 import math
 import sys
@@ -11,6 +12,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 import cv2
+import numpy as np
 from tqdm import tqdm
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +33,7 @@ from courtvision.analytics.ball_events import (  # noqa: E402
     detect_ball_events,
     shots_from_events,
 )
+from courtvision.analytics.movement import movement_stats  # noqa: E402
 from courtvision.analytics.rallies import Rally, segment_rallies  # noqa: E402
 from courtvision.analytics.shots import ShotEvent, detect_shots  # noqa: E402
 from courtvision.analytics.teams import assign_teams  # noqa: E402
@@ -283,12 +286,53 @@ def write_teams_csv(path: Path, points: list[CourtCoordinate]) -> None:
         writer.writerows(sorted(teams.items()))
 
 
-def write_player_distances_csv(path: Path, distances_m: dict[int, float]) -> None:
-    with path.open("w", newline="") as file:
+def write_movement_files(
+    output_dir: Path, points: list[CourtCoordinate], fps: float
+) -> None:
+    """movement.csv (one row per player) and heatmaps.json (seconds per m²)."""
+    players = [point for point in points if point.object_type == "player"]
+    stats = movement_stats(
+        ((p.track_id, p.frame, p.court_x_m, p.court_y_m) for p in players), fps
+    )
+    teams = assign_teams((p.track_id, p.template_y) for p in players)
+    with (output_dir / "movement.csv").open("w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["track_id", "distance_m", "distance_km"])
-        for track_id, distance_m in sorted(distances_m.items()):
-            writer.writerow([track_id, f"{distance_m:.3f}", f"{distance_m / 1000:.5f}"])
+        writer.writerow(
+            [
+                "track_id",
+                "team",
+                "seconds_tracked",
+                "distance_m",
+                "average_speed_kmh",
+                "top_speed_kmh",
+                "seconds_at_net",
+                "seconds_in_middle",
+                "seconds_at_back",
+            ]
+        )
+        for track_id, player in sorted(stats.items()):
+            writer.writerow(
+                [
+                    track_id,
+                    teams.get(track_id, ""),
+                    f"{player.seconds_tracked:.2f}",
+                    f"{player.distance_m:.1f}",
+                    f"{player.average_speed_kmh:.1f}",
+                    f"{player.top_speed_kmh:.1f}",
+                    f"{player.seconds_at_net:.2f}",
+                    f"{player.seconds_in_middle:.2f}",
+                    f"{player.seconds_at_back:.2f}",
+                ]
+            )
+    heatmaps = {
+        "about": "Seconds per 1 m square: 20 rows from the far baseline, "
+        "10 columns from the left side of the court.",
+        "players": {
+            str(track_id): np.round(player.heatmap_seconds, 2).tolist()
+            for track_id, player in sorted(stats.items())
+        },
+    }
+    (output_dir / "heatmaps.json").write_text(json.dumps(heatmaps) + "\n")
 
 
 def write_shots_csv(path: Path, shots: list[ShotEvent]) -> None:
@@ -1078,11 +1122,8 @@ def main() -> None:
         write_court_coordinates_csv(
             output_dir / "tracks_with_court_coords.csv", court_points
         )
-        write_player_distances_csv(
-            output_dir / "player_distances.csv",
-            player_distance_tracker.distances_m,
-        )
         write_teams_csv(output_dir / "teams.csv", court_points)
+        write_movement_files(output_dir, court_points, fps)
     players_by_frame = {
         frame: [(track.track_id, track.detection) for track in tracks]
         for frame, tracks in tracks_by_frame.items()
@@ -1123,7 +1164,7 @@ def main() -> None:
     print(f"Wrote annotated video: {output_dir / 'annotated.mp4'}")
     if court_points:
         print(f"Wrote court coordinates: {output_dir / 'tracks_with_court_coords.csv'}")
-        print(f"Wrote player distances: {output_dir / 'player_distances.csv'}")
+        print(f"Wrote movement stats: {output_dir / 'movement.csv'} and heatmaps.json")
     if events:
         counts = Counter(event.kind for event in events)
         summary = ", ".join(

@@ -2,6 +2,7 @@
 
 ## Unreleased (planned for v4.0)
 
+- movement stats per player from smoothed court positions: distance, average and top speed, time at the net, in the middle and at the back (`movement.csv`), and a heatmap of seconds per square metre (`heatmaps.json`); tracking jumps such as ID swaps cut the track instead of counting as running (`reports/player_movement.md`); `player_distances.csv` is replaced by `movement.csv`
 - split a clip into rallies from its ball events (a rally starts at its first impact and ends at its last event; 5 s of silence ends it); the full pipeline writes `rallies.csv`; all 10 labelled rallies found, start and end within 0.2 s at the median (`reports/ball_events.md`)
 - detect impacts, bounces and wall rebounds with a small trained model (`--events classifier`, the default; `--events legacy` for the older tennis-tuned shot code); the full pipeline writes `ball_events.csv`, shots with hitter, receiver and bounce in `shots.csv` (speed column `approx_court_speed_kmh`: the ball's height is not modelled), and marks each event on `annotated.mp4`; impact F1 0.41, hitter right for 65% of impacts found (`reports/ball_events.md`)
 - assign each tracked player to the near or far team by the half of the court they play in; the full pipeline writes `teams.csv` (all labelled players on the right team, `reports/player_identity.md`)
