@@ -55,5 +55,5 @@ service line (6.95 m from the net); the middle is in between.
 - **The ID swap above is a second failure mode for identity**, after crossings (#47): a
   false detection near one player can hand their ID to their partner.
 - Positions outside the court count in the edge squares of the heatmap.
-- The court-map video's running distance counter still uses the older, unsmoothed
-  tracker; it moves to these stats with the match report (#11).
+- The court-map video's running distance counter used an older, unsmoothed tracker; it
+  was removed with the match report (#11), which shows these stats instead.
