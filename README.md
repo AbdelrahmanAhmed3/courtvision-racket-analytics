@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml)
 
-![The Qatar Major clip with the four players, the ball and its impacts tracked, beside the court map](DEMO_GIF_URL)
+![The Qatar Major clip with the four players, the ball and its impacts tracked, beside the court map](https://github.com/user-attachments/assets/bcd319e6-3858-4020-98c3-02e0c4fe2864)
 
 <sub>Footage: [THE BEST PADEL POINTS OF 2025... so far](https://www.youtube.com/watch?v=gFl3ADnFRtc) by [Daily Padel](https://www.youtube.com/channel/UCpNwqev9uCJkgH517mbOVTw), shown as a short excerpt ([ADR 0006](docs/adr/0006-short-demo-excerpts.md)).</sub>
 
