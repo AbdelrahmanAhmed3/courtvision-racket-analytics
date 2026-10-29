@@ -29,6 +29,8 @@ outputs/*
 *.avi
 *.mov
 *.mkv
+!docs/assets/*.png
+!docs/assets/*.jpg
 *.pt
 *.pth
 *.onnx

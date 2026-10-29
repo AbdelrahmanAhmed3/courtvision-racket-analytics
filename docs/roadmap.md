@@ -37,4 +37,4 @@ Tracked in the [v4.0 milestone](https://github.com/AbdelrahmanAhmed3/courtvision
 ## Not planned yet
 
 - Point outcomes and forced/unforced errors on broadcast clips.
-- Wall rebounds and 3D ball height.
+- 3D ball height.

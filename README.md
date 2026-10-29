@@ -1,243 +1,190 @@
-# CourtVision: Tennis and Padel Video Analytics
+# CourtVision: padel analytics from match video
 
 [![CI](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/actions/workflows/ci.yml)
 
-CourtVision is a computer-vision research prototype that turns a broadcast tennis or
-padel video into tracked players, a TrackNet ball trajectory, and a synchronized
-top-down court view. It combines learned detectors with classical geometry and makes
-calibration quality visible instead of silently returning plausible-looking results.
+![The Qatar Major clip with the four players, the ball and its impacts tracked, beside the court map](DEMO_GIF_URL)
 
-The project was built as an end-to-end portfolio case study: model integration,
-multi-object tracking, homography estimation, optical flow, temporal analytics,
-interactive debugging, testing, and deployment-friendly command-line workflows.
+<sub>Footage: [THE BEST PADEL POINTS OF 2025... so far](https://www.youtube.com/watch?v=gFl3ADnFRtc) by [Daily Padel](https://www.youtube.com/channel/UCpNwqev9uCJkgH517mbOVTw), shown as a short excerpt ([ADR 0006](docs/adr/0006-short-demo-excerpts.md)).</sub>
 
-| Tennis ball projection | Padel player distance |
-| --- | --- |
-| ![Tennis court map with players and a TrackNet ball trail](docs/assets/tennis-ball-projection.jpg) | ![Padel court map with four tracked players and distance totals](docs/assets/padel-player-distance.jpg) |
+Drop in a padel match clip and CourtVision finds the four players and the ball, maps
+them onto a top-down court, and tells you who hit each shot, how the rallies went, how
+far and how fast everyone ran, and where they stood. It runs on a laptop, needs no API
+key, and every number it reports has been measured against hand labels, with the
+results and their weak spots written up in [`reports/`](reports/).
 
-> **Project status:** Manual calibration and court projection are the trusted baseline.
-> Model-assisted calibration, ball-event detection, and shot-speed estimation are
-> experimental and expose warnings or fallbacks when their inputs are unreliable.
+## What you get from a clip
 
-## What It Demonstrates
+- **Four players with stable identities and teams.** RF-DETR finds people, a court
+  filter keeps the players, and a tracker that never gives out more than four IDs keeps
+  each player's ID through the clip.
+- **The ball and its events.** TrackNet follows the ball; a small classifier marks
+  impacts, bounces and wall rebounds.
+- **Shots and rallies.** Each impact becomes a shot with a hitter, a receiver, the
+  bounce and an approximate speed; rallies are split from the gaps in play.
+- **Movement.** Distance, average and top speed, time at the net, in the middle and at
+  the back, and a heatmap per player.
+- **A match report** in Markdown and JSON, with a section on how far to trust each
+  number. On the clip above:
 
-- Local player detection with RF-DETR (no API key), with hosted Roboflow as an optional
-  backend behind the same detector interface.
-- Time-aware player identity persistence using IoU, spatial recovery, and a dormant
-  track window.
-- TrackNet integration for small, fast ball tracking on CPU, MPS, and CUDA.
-- Manual, classical-CV, and model-assisted court calibration for tennis and padel.
-- RANSAC homography validation with inlier and reprojection-error reporting.
-- Sparse Lucas-Kanade optical flow for adapting calibration to camera movement.
-- Court-space player distance, ball trajectories, and experimental shot analytics.
-- A Streamlit interface for video selection, calibration, threshold tuning, and
-  synchronized video/map playback.
-- Unit tests for geometry, calibration, tracking, masks, analytics, and model-response
-  conversion.
+  > - **Most shots:** Player 3 (near team), 4 shots.
+  > - **Most distance:** Player 3 (near team), 16.7 m.
+  > - **Top speed:** Player 3 (near team), 11.4 km/h.
+  > - **Rally:** 13.9 s long, 12 shots.
+  > - In 4 places, the same team hit twice in a row, which the rules do not allow: at
+  >   each, a shot was missed, a false one was counted, or the hitter is wrong.
 
-## Architecture
+  ![Where each of the four players stood, one small court each](docs/assets/heatmaps.png)
 
-```mermaid
-flowchart LR
-    V[Video] --> PD[Player detector]
-    V --> BT[TrackNet ball tracker]
-    PD --> PT[Time-aware IoU tracker]
-    V --> C[Manual / assisted calibration]
-    C --> H[RANSAC homography]
-    H --> OF[Optical-flow updates]
-    PT --> P[Image-to-court projection]
-    BT --> P
-    OF --> P
-    P --> M[Synchronized court map]
-    P --> A[Distance and shot analytics]
-```
+- **A Streamlit app** to calibrate the court, run the pipeline, and watch the tracked
+  video and the court map side by side with the report underneath.
 
-The calibration subsystem is deliberately hybrid. A human can click named court
-landmarks for the most reliable result. Auto and assisted modes can instead combine
-hosted keypoints with near-white line evidence, RANSAC-fitted intersections, and a
-padel surface-color boundary. All modes produce the same named-landmark format, so
-validation and projection do not depend on how the points were obtained.
+## Measured results
 
-## Capability Status
+Measured on 10 hand-labelled rallies from 5 different courts (138 impacts, 651 player
+boxes); how the labels were made and scored is in [docs/evaluation.md](docs/evaluation.md).
 
-| Capability | Status | Notes |
+| What | Result | Details |
 | --- | --- | --- |
-| Manual tennis/padel calibration | Validated baseline | Named points, RANSAC report, overlay |
-| Player detection | Working | RF-DETR Nano runs locally by default (20–25 FPS on an Apple M4, see [reports/model_comparison.md](reports/model_comparison.md)); people off the court are dropped; hosted Roboflow is optional |
-| Player tracking | Working | Simple time-aware IoU tracker is the current default |
-| Ball tracking | Working with weights | TrackNet model is supplied separately |
-| Player/ball court projection | Working | Ball projection assumes the ball lies on the court plane |
-| Camera-motion compensation | Working with constraints | Optical flow; invalid frames are left unmapped |
-| Keypoint-assisted calibration | Experimental | Hosted model; sensitive to domain shift and court visibility |
-| Line-based (RANSAC) calibration | Experimental | Local; reliable on the near side, weak on the far side |
-| Padel surface-colour corners | Experimental | Needs a model's corners as a seed; breaks with shadows and same-colour surroundings |
-| Player distance | Working | Accumulated in calibrated court coordinates |
-| Shot events and speed | Experimental | 2D video estimate, not radar-equivalent speed |
+| Players found (RF-DETR Nano) | precision 1.00, recall 0.97 | [model_comparison.md](reports/model_comparison.md) |
+| Player identity | IDF1 0.97, 5 switches (all at crossings); teams 100 % right | [player_identity.md](reports/player_identity.md) |
+| Impacts | precision 0.44, recall 0.38 (±2 frames) | [ball_events.md](reports/ball_events.md) |
+| Bounces / wall rebounds | recall 0.33 / 0.51 | [ball_events.md](reports/ball_events.md) |
+| Hitter of a found impact | right 65 % of the time | [ball_events.md](reports/ball_events.md#shots-and-hitters-2026-10-25) |
+| Rallies | 10 of 10 found; start and end within 0.2 s (median) | [ball_events.md](reports/ball_events.md) |
+| Distance and speed | no ground truth; checked on synthetic tracks | [player_movement.md](reports/player_movement.md) |
 
-## Quick Start
+Ball events are the weakest part: the ball tracker was trained on tennis and misses
+the padel ball on about 3 frames in 10. Improving them is tracked in
+[#52](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/52).
 
-Python 3.10 or newer is required.
+## Quick start
+
+Python 3.10 or newer.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -e ".[dev,ui,local,media]"
-```
-
-The first run downloads the RF-DETR weights (about 370 MB for the default Nano model, cached in
-`~/.roboflow/models`). No API key is needed. Hosted Roboflow detection and the
-keypoint-model calibration are optional: install the `roboflow` extra and put your
-`ROBOFLOW_API_KEY` in `.env` (copy `.env.example`). Then start the local interface:
-
-```bash
+pip install -e ".[ui,local,media]"
 streamlit run app.py
 ```
 
-The app writes generated artifacts under `outputs/ui_runs/`. Videos, model weights,
-credentials, and generated outputs are intentionally excluded from Git.
+The first run downloads the RF-DETR weights (about 370 MB for Nano, cached in
+`~/.roboflow/models`). Generated files go to `outputs/`, which git ignores.
 
-### TrackNet Setup
-
-Install PyTorch and place compatible TrackNet source and weights locally:
+**Ball tracking** needs TrackNet, whose weights are not distributed with CourtVision
+(see [Third-party components](#third-party-components)):
 
 ```bash
 pip install -e ".[tracknet]"
 ```
 
-The UI detects `tracknet-model/model_best.pt` when present. The CLI accepts explicit
-source and weight paths:
+Put the TrackNet source in `tracknet-model/TrackNet` and the weights at
+`tracknet-model/model_best.pt`; the app finds them there. Without them, you still get
+players, teams, movement and the report, without shots or rallies.
+
+**From the command line,** calibrate the court once by clicking named points, then run
+the whole pipeline:
 
 ```bash
-python scripts/run_full_pipeline.py \
-  --input data/raw/your_video.mp4 \
-  --output-dir outputs/your_run \
-  --calibration configs/calibrations/your_video.json \
-  --draw-court-map \
-  --tracknet-dir /path/to/TrackNet \
-  --tracknet-model-path /path/to/model_best.pt
+python scripts/calibrate_court.py --input data/raw/clip.mp4 --court-type padel \
+  --frame 90 --output configs/calibrations/clip.json
+python scripts/run_full_pipeline.py --input data/raw/clip.mp4 \
+  --calibration configs/calibrations/clip.json --output-dir outputs/clip \
+  --tracknet-dir tracknet-model/TrackNet \
+  --tracknet-model-path tracknet-model/model_best.pt --draw-court-map
 ```
 
-## Calibration Workflows
+A 15-second clip takes about 2 minutes on an Apple M4. Run
+`python scripts/run_full_pipeline.py --help` for every option, including replaying
+saved detections without running the detector again.
 
-For a fixed or mildly moving camera, manual calibration is the dependable workflow:
+## Known limitations
 
-```bash
-python scripts/calibrate_court.py \
-  --input data/raw/your_video.mp4 \
-  --court-type tennis \
-  --frame 90 \
-  --output configs/calibrations/your_video_frame_90.json
+- **One camera angle, no cuts.** The clip must come from a single high camera, like a
+  broadcast's main view. Cuts to close-ups or replays are not detected, so trim them
+  out first. From behind the glass at player height, the four players are all found on
+  only 66 % of frames ([model_comparison.md](reports/model_comparison.md)).
+- **Ball speed is approximate.** The ball's height is not modelled: speed is measured
+  along the court floor from one hit to the next. It is not a radar speed.
+- **No point outcomes yet.** CourtVision does not know who won a point, or whether it
+  ended in a winner or an error.
+- **About 4 in 10 impacts are found,** and fewer than half of the impacts it reports are
+  real, so shot counts per player can be off either way. The report says so.
+- **Players who cross can swap IDs,** and a false detection near one player can hand
+  their ID to their partner ([#47](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/47)).
+- **Players who run out of the court are dropped** by the court filter ([#38](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/38)).
+- **The court is calibrated by hand.** Automatic calibration from a trained keypoint
+  model is planned for v4.1 ([#26](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/26)).
+- **Tennis** courts work for calibration and the court map, but the analytics are built
+  and measured on padel only.
+
+## How it works
+
+```mermaid
+flowchart LR
+    V[Video] --> PD[RF-DETR players]
+    V --> BT[TrackNet ball]
+    PD --> PT[Four-ID tracker and teams]
+    V --> C[Court calibration]
+    C --> H[Homography]
+    PT --> P[Court positions]
+    BT --> E[Ball events classifier]
+    PT --> E
+    H --> P
+    E --> S[Shots and rallies]
+    P --> M[Movement and heatmaps]
+    S --> R[Match report]
+    M --> R
+    P --> CM[Court map video]
 ```
 
-Validate it by projecting the complete court model back onto the source frame:
-
-```bash
-python scripts/validate_calibration.py \
-  --input data/raw/your_video.mp4 \
-  --calibration configs/calibrations/your_video_frame_90.json \
-  --output outputs/calibration/your_video_overlay.jpg
-```
-
-Enable **Adapt calibration to camera movement** in the UI, or pass
-`--track-calibration` to the full pipeline. Sparse optical flow follows stable image
-features from the calibrated frame, while RANSAC rejects inconsistent correspondences
-before estimating each new homography. A cut or failed validation leaves that frame
-unmapped rather than applying stale geometry.
-
-Auto and assisted calibration are available in the UI as inspectable experiments.
-Their debug views expose pixel masks, candidate lines, model points, refined points,
-confidence, and threshold sensitivity so a failed proposal can be diagnosed.
-
-## Running the Pipeline
-
-Run detection, tracking, calibration, projection, and visualization together:
-
-```bash
-python scripts/run_full_pipeline.py \
-  --input data/raw/your_video.mp4 \
-  --output-dir outputs/your_run \
-  --calibration configs/calibrations/your_video.json \
-  --draw-court-map \
-  --draw-calibration-overlay
-```
-
-To reproduce visualization without running detection again, provide saved detections:
-
-```bash
-python scripts/run_full_pipeline.py \
-  --input data/raw/your_video.mp4 \
-  --detections outputs/previous_run/detections.csv \
-  --calibration configs/calibrations/your_video.json \
-  --output-dir outputs/replay \
-  --draw-court-map
-```
-
-This separation makes GPU/Kaggle inference and local analysis interoperable. Run
-`python scripts/run_full_pipeline.py --help` for the complete set of options.
+Player feet and the ball are projected onto the court through a homography from four
+or more clicked court points, checked with RANSAC. Positions are smoothed before
+distances are measured, because far from the camera a pixel of wobble is tens of
+centimetres. Ball events come from a logistic regression on 14 features of the ball's
+path near each candidate, exported to JSON and run with NumPy. Optical flow can follow
+a slowly moving camera (`--track-calibration`). The app also has automatic and
+model-assisted calibration modes; they are experiments, with debug views that show why
+a proposal failed, and the clicked calibration is the one the results rely on.
 
 ## Outputs
 
-| Artifact | Purpose |
+| File | What it holds |
 | --- | --- |
-| `annotated.mp4` | Player IDs, ball trail, impact, bounce and wall-rebound markers, and calibration diagnostics |
-| `court_map.mp4` | Standalone synchronized top-down view (`--draw-court-map`) |
-| `court_map_annotated.mp4` | Broadcast and court map side by side |
-| `detections.csv` | Detector output suitable for replay with `--detections` |
-| `tracks_with_court_coords.csv` | Image, normalized, and metric court coordinates |
-| `teams.csv` | Each player's team, near or far, from the half they play in |
+| `annotated.mp4` | Player IDs, ball trail, and impact, bounce and wall-rebound markers |
+| `court_map.mp4`, `court_map_annotated.mp4` | The top-down court on its own, and beside the video |
+| `report.md`, `report.json` | The match report; every JSON key is described in [`report.schema.json`](src/courtvision/analytics/report.schema.json) |
+| `heatmaps.png`, `heatmaps.json` | Seconds each player spent in each square metre |
 | `movement.csv` | Per player: distance, average and top speed, time at the net, in the middle and at the back |
-| `heatmaps.json` | Per player: seconds spent in each square metre of the court |
-| `ball_events.csv` | Impacts (with the nearest player), bounces and wall rebounds (needs ball tracking) |
-| `shots.csv` | Shots with hitter, receiver, bounce and an approximate court-plane speed (needs ball tracking) |
-| `rallies.csv` | Each rally's start and end frame, duration and number of shots (needs ball tracking) |
-| `report.md`, `report.json` | Match report: who played the most shots, covered the most distance and reached the top speed, rallies, and how far to trust each number, including where the same team hit twice in a row; every JSON key is described in [`report.schema.json`](src/courtvision/analytics/report.schema.json) |
-| `heatmaps.png` | One small court per player, warmer where they stood |
-| `calibration.json` | Named landmarks and source metadata (written by `--create-calibration`) |
+| `teams.csv` | Each player's team, near or far |
+| `ball_events.csv` | Impacts with the nearest player, bounces and wall rebounds |
+| `shots.csv` | Hitter, receiver, bounce and approximate court speed of each shot |
+| `rallies.csv` | Start and end frame, length and shots of each rally |
+| `tracks_with_court_coords.csv` | Every player box with image and court coordinates |
+| `detections.csv` | Detector output, to replay with `--detections` |
 
-## Evaluation and Engineering Decisions
+## Decisions and evaluation
 
-Saved manual-calibration examples currently report:
+- [docs/evaluation.md](docs/evaluation.md): how the clips were labelled, the checks
+  that reject bad labels, and how each result is scored.
+- [reports/](reports/): each measured result, including the approaches that lost.
+- [docs/adr/](docs/adr/): the decisions behind the project, such as
+  [padel first](docs/adr/0003-padel-first.md),
+  [permissive dependencies only](docs/adr/0002-permissive-licences-only.md) and
+  [local player detection](docs/adr/0005-local-player-detection.md).
+- [docs/roadmap.md](docs/roadmap.md): v4.1 trains a padel court-keypoint model and a
+  padel ball model, and adds shot types; v5.0 is a personal edition for a camera behind
+  the glass, with an LLM coaching report.
+- [CONTEXT.md](CONTEXT.md): the domain terms (rally, impact, segment, and so on).
 
-| Example | RANSAC inliers | Mean error | Max error |
-| --- | ---: | ---: | ---: |
-| US Open tennis, frame 90 | 8/8 | 1.31 px | 1.70 px |
-| Qatar Major padel, frame 90 | 8/8 | 2.60 px | 3.43 px |
+## Credits
 
-These numbers measure consistency with the selected landmarks, not accuracy against a
-large labeled benchmark. A dataset-level evaluation is future work.
+Match footage is never stored in this repository. The clips used:
 
-An experimental constant-velocity Kalman tracker with Hungarian assignment is kept in
-the repository for comparison. On the tested padel clip it created more tracks and
-potential ID switches than the simpler tracker. Court players move nonlinearly, are
-frequently occluded, and can return far from a stale prediction, so the measured result
-did not justify replacing the simpler default.
-
-## Limitations
-
-- A homography maps one plane. Airborne ball positions are projected as if they were on
-  the floor, so they can be displaced on the map.
-- Shot speed is a 2D court-space, contact-to-contact estimate. It is not racket-exit
-  speed from radar and can be biased by missed ball frames or contact timing.
-- Hosted keypoint models can shift under unseen camera angles, resolutions, lighting,
-  glass reflections, and different court colors.
-- Padel color refinement requires a visible court-floor boundary. Off-frame boundaries
-  are rejected instead of invented.
-- Classical pixel and line thresholds are inspectable but remain scene-sensitive.
-- Optical flow can fail on broadcast cuts, heavy occlusion, blur, or parallax.
-- The default player tracker has no appearance-based re-identification.
-- Player detection runs offline, but ball tracking still depends on TrackNet weights
-  supplied separately, and the pipeline is not yet real-time.
-- Results have not yet been benchmarked across a diverse, labeled multi-camera dataset.
-
-## Future Work
-
-The plan lives in [docs/roadmap.md](docs/roadmap.md): v4.0 (Showcase edition: local
-player detection, stable player identity, measured shots and rallies, movement stats),
-v4.1 (trained court-keypoint and padel ball models, shot types) and v5.0 (Personal
-edition with an LLM coaching report). Point outcomes, forced and unforced errors, wall
-rebounds and 3D ball height are not planned yet. Design decisions are recorded in
-[docs/adr/](docs/adr/) and domain terms in [CONTEXT.md](CONTEXT.md).
+| Used for | Video | Channel |
+| --- | --- | --- |
+| The demo above and the report example | [THE BEST PADEL POINTS OF 2025... so far](https://www.youtube.com/watch?v=gFl3ADnFRtc) | [Daily Padel](https://www.youtube.com/channel/UCpNwqev9uCJkgH517mbOVTw) |
+| The hand labels behind every measured result | [Best of Agustín Tapia: Red Bull "out the court" padel points](https://www.youtube.com/watch?v=ZSneXJfDqjI) | Premier Padel |
 
 ## Licence
 
@@ -261,28 +208,18 @@ Nothing below is bundled in this repository. Each keeps its own licence.
 | [RF-DETR](https://github.com/roboflow/rf-detr) and its COCO weights (Nano, Small, Medium, Base) | Installed with the `local` extra; weights downloaded on first use | Apache-2.0 |
 | [yastrebksv/TrackNet](https://github.com/yastrebksv/TrackNet) | Cloned at runtime for ball tracking; weights supplied by the user | **None published** (all rights reserved); to be replaced, see [docs/roadmap.md](docs/roadmap.md) |
 | Roboflow hosted models (`tennis-v4d0h/2`, `padel-court-fmfv8/15`, `tennis-court-detection-onesd/10`) | Optional; called through Roboflow's API with your own key | Not verified |
-| Match footage | Never committed; clips are linked and credited to their source | Owned by the broadcaster |
 
-## Repository Layout
+## Repository layout
 
 ```text
-app.py                    Streamlit calibration and analysis UI
-src/courtvision/          Reusable detection, tracking, geometry, and analytics code
-scripts/                  CLI pipelines and debugging tools
-configs/                  Example configurations and saved calibrations
-tests/                    Focused unit and integration-style tests
-reports/                  Roadmaps, experiments, and failure analysis
-docs/assets/              Repository-owned README visuals
-data/ and outputs/        Local media and generated artifacts, ignored by Git
+app.py                    Streamlit app
+src/courtvision/          Detection, tracking, geometry, analytics and evaluation
+scripts/                  The pipeline, calibration, labelling and scoring tools
+evaluation/labels/        Hand labels (no footage)
+configs/calibrations/     Saved court calibrations
+tests/                    Unit tests, run by CI on Python 3.10–3.12
+reports/                  Measured results and experiments
+docs/                     Evaluation guide, roadmap, ADRs, README images
 ```
 
-## Portfolio Summary
-
-CourtVision demonstrates how learned models and classical computer vision can be
-combined in a failure-aware video analytics system. Its strongest result is not a
-single model score: it is the end-to-end engineering around coordinate systems,
-temporal state, validation, fallbacks, reproducible artifacts, and honest uncertainty.
-
-See [CHANGELOG.md](CHANGELOG.md) for release history and
-[reports/court_calibration_roadmap.md](reports/court_calibration_roadmap.md) for the
-calibration design history.
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
