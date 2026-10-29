@@ -2,6 +2,7 @@
 
 ## Unreleased (planned for v4.0)
 
+- the court map no longer labels a shot "received" by the hitter's own team, which meant one of its two impacts was false, and the label reads `P4 -> P1  ~99 km/h`
 - a match report per clip, as Markdown and JSON (`report.md`, `report.json`) with player heatmaps (`heatmaps.png`), built from the clip's stats with templates and shown in the app under the videos; each rally counts the places where the same team hit twice in a row, which the rules do not allow; every JSON key is described in `report.schema.json`, which the tests check reports against; the court map's running distance counter is removed in its favour
 - movement stats per player from smoothed court positions: distance, average and top speed, time at the net, in the middle and at the back (`movement.csv`), and a heatmap of seconds per square metre (`heatmaps.json`); tracking jumps such as ID swaps cut the track instead of counting as running (`reports/player_movement.md`); `player_distances.csv` is replaced by `movement.csv`
 - split a clip into rallies from its ball events (a rally starts at its first impact and ends at its last event; 5 s of silence ends it); the full pipeline writes `rallies.csv`; all 10 labelled rallies found, start and end within 0.2 s at the median (`reports/ball_events.md`)

@@ -437,8 +437,21 @@ def write_rallies_csv(path: Path, rallies: list[Rally], fps: float) -> None:
             )
 
 
-def map_speed_labels(shots: list[Shot]) -> list[ShotEvent]:
-    """Shots with a speed, in the form the court-map speed labels draw."""
+def map_speed_labels(
+    shots: list[Shot], teams: dict[int, str] | None = None
+) -> list[ShotEvent]:
+    """Shots with a speed, in the form the court-map speed labels draw.
+
+    A shot "received" by the hitter's own team is left out: partners never hit
+    in turn, so one of the two impacts is false and the speed between them means
+    nothing.
+    """
+    teams = teams or {}
+
+    def same_team(shot: Shot) -> bool:
+        hitter = teams.get(shot.hitter_track_id)
+        return hitter is not None and hitter == teams.get(shot.receiver_track_id)
+
     return [
         ShotEvent(
             event_type="shot",
@@ -452,7 +465,7 @@ def map_speed_labels(shots: list[Shot]) -> list[ShotEvent]:
             segment_duration_seconds=shot.duration_seconds or 0.0,
         )
         for shot in shots
-        if shot.court_speed_kmh is not None
+        if shot.court_speed_kmh is not None and not same_team(shot)
     ]
 
 
@@ -1145,7 +1158,7 @@ def main() -> None:
         render_events_on_video(
             output_dir / "annotated.mp4", events, ball_tracks_by_frame, fps
         )
-        shots = map_speed_labels(new_shots)
+        shots = map_speed_labels(new_shots, teams)
         shot_count = len(new_shots)
     else:
         shots = detect_shots(
