@@ -40,8 +40,13 @@ def build_report(
     movement: Mapping[int, MovementStats],
     shots: Sequence[Shot] = (),
     rallies: Sequence[Rally] = (),
+    ball_tracked: bool = True,
 ) -> dict:
-    """The report as plain data (JSON-ready)."""
+    """The report as plain data (JSON-ready).
+
+    ``ball_tracked=False`` marks a clip run without ball tracking, whose shots
+    and rallies were not measured rather than zero.
+    """
     shot_counts = Counter(s.hitter_track_id for s in shots if s.hitter_track_id)
     players = [
         {
@@ -71,6 +76,7 @@ def build_report(
         "schema_version": REPORT_SCHEMA_VERSION,
         "video": video,
         "seconds_analysed": round(frames / fps, 1),
+        "ball_tracked": ball_tracked,
         "players": players,
         "rallies": rally_list,
         "highlights": _highlights(players, rally_list, shots),
@@ -133,16 +139,37 @@ def _highlights(players: list[dict], rallies: list[dict], shots: Sequence[Shot])
     }
 
 
-def report_markdown(report: dict, heatmap_image: str | None = None) -> str:
-    """The report as Markdown, for people."""
-    highlights = report["highlights"]
-    lines = [f"# Match report: {report['video']}", ""]
-    rallies = highlights["rally_count"]
-    lines.append(
+PLAYER_COLUMNS = (
+    "Player",
+    "Team",
+    "Shots",
+    "Distance",
+    "Average speed",
+    "Top speed",
+    "At the net",
+    "Middle",
+    "At the back",
+)
+RALLY_COLUMNS = ("Rally", "Start frame", "Length", "Shots", "Same team twice")
+
+
+def summary_line(report: dict) -> str:
+    if not report.get("ball_tracked", True):
+        return (
+            f"{report['seconds_analysed']} s analysed, {len(report['players'])} "
+            "players. The ball was not tracked, so there are no shots or rallies."
+        )
+    rallies = report["highlights"]["rally_count"]
+    return (
         f"{report['seconds_analysed']} s analysed, {len(report['players'])} players, "
         f"{rallies} {'rally' if rallies == 1 else 'rallies'}."
     )
-    lines += ["", "## Highlights", ""]
+
+
+def highlight_items(report: dict) -> list[tuple[str, str]]:
+    """The highlights as (what, sentence) pairs, shared by every report format."""
+    highlights = report["highlights"]
+    items = []
     for key, unit, what in (
         ("most_shots", "shots", "Most shots"),
         ("most_distance", "distance_m", "Most distance"),
@@ -155,65 +182,96 @@ def report_markdown(report: dict, heatmap_image: str | None = None) -> str:
                 "distance_m": "{} m",
                 "top_speed_kmh": "{} km/h",
             }
-            lines.append(
-                f"- **{what}:** {_name(best)}, {value[unit].format(best[unit])}."
-            )
+            items.append((what, f"{_name(best)}, {value[unit].format(best[unit])}."))
     if highlights["rally_count"] == 1:
         only = report["rallies"][0]
-        lines.append(f"- **Rally:** {only['seconds']} s long, {only['shots']} shots.")
+        items.append(("Rally", f"{only['seconds']} s long, {only['shots']} shots."))
     elif highlights["rally_count"]:
-        lines.append(
-            f"- **Rallies:** {highlights['rally_count']}, "
-            f"{highlights['average_rally_seconds']} s on average, longest "
-            f"{highlights['longest_rally_seconds']} s, "
-            f"{highlights['average_shots_per_rally']} shots each on average."
+        items.append(
+            (
+                "Rallies",
+                f"{highlights['rally_count']}, "
+                f"{highlights['average_rally_seconds']} s on average, longest "
+                f"{highlights['longest_rally_seconds']} s, "
+                f"{highlights['average_shots_per_rally']} shots each on average.",
+            )
         )
     fastest = highlights["fastest_shot"]
     if fastest:
         route = f"Player {fastest['hitter_track_id']}"
         if fastest["receiver_track_id"]:
             route += f" to Player {fastest['receiver_track_id']}"
-        lines.append(
-            f"- **Fastest shot (approximate):** {route}, "
-            f"{fastest['approx_court_speed_kmh']} km/h along the court."
+        items.append(
+            (
+                "Fastest shot (approximate)",
+                f"{route}, {fastest['approx_court_speed_kmh']} km/h along the court.",
+            )
         )
-    lines += [
-        "",
-        "## Players",
-        "",
-        "| Player | Team | Shots | Distance | Average speed | Top speed "
-        "| At the net | Middle | At the back |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    return items
+
+
+def player_rows(report: dict) -> list[list[str]]:
+    return [
+        [
+            str(player["track_id"]),
+            player["team"] or "–",
+            str(player["shots"]),
+            f"{player['distance_m']} m",
+            f"{player['average_speed_kmh']} km/h",
+            f"{player['top_speed_kmh']} km/h",
+            f"{player['seconds_at_net']} s",
+            f"{player['seconds_in_middle']} s",
+            f"{player['seconds_at_back']} s",
+        ]
+        for player in report["players"]
     ]
-    for player in report["players"]:
-        lines.append(
-            f"| {player['track_id']} | {player['team'] or '–'} | {player['shots']} "
-            f"| {player['distance_m']} m | {player['average_speed_kmh']} km/h "
-            f"| {player['top_speed_kmh']} km/h | {player['seconds_at_net']} s "
-            f"| {player['seconds_in_middle']} s | {player['seconds_at_back']} s |"
+
+
+def rally_rows(report: dict) -> list[list[str]]:
+    return [
+        [
+            str(number),
+            str(rally["start_frame"]),
+            f"{rally['seconds']} s",
+            str(rally["shots"]),
+            str(rally["same_team_twice"]),
+        ]
+        for number, rally in enumerate(report["rallies"], start=1)
+    ]
+
+
+def trust_notes(report: dict) -> list[str]:
+    """What this clip's own checks found, then the measured accuracy notes."""
+    notes = []
+    repeats = report["highlights"]["same_team_twice"]
+    if repeats:
+        places = "1 place" if repeats == 1 else f"{repeats} places"
+        notes.append(
+            f"In {places}, the same team hit twice in a row, which the rules do not "
+            "allow: at each, a shot was missed, a false one was counted, or the "
+            "hitter is wrong."
         )
+    return notes + list(report["accuracy_notes"])
+
+
+def report_markdown(report: dict, heatmap_image: str | None = None) -> str:
+    """The report as Markdown, for people."""
+    lines = [f"# Match report: {report['video']}", "", summary_line(report)]
+    lines += ["", "## Highlights", ""]
+    lines += [f"- **{what}:** {text}" for what, text in highlight_items(report)]
+    lines += ["", "## Players", "", *_table(PLAYER_COLUMNS, player_rows(report))]
     if heatmap_image:
         lines += ["", "## Where each player stood", "", f"![Heatmaps]({heatmap_image})"]
     if report["rallies"]:
-        lines += ["", "## Rallies", ""]
-        lines.append("| Rally | Start frame | Length | Shots | Same team twice |")
-        lines.append("| --- | --- | --- | --- | --- |")
-        for number, rally in enumerate(report["rallies"], start=1):
-            lines.append(
-                f"| {number} | {rally['start_frame']} | {rally['seconds']} s "
-                f"| {rally['shots']} | {rally['same_team_twice']} |"
-            )
+        lines += ["", "## Rallies", "", *_table(RALLY_COLUMNS, rally_rows(report))]
     lines += ["", "## How far to trust these numbers", ""]
-    repeats = highlights["same_team_twice"]
-    if repeats:
-        places = "1 place" if repeats == 1 else f"{repeats} places"
-        lines.append(
-            f"- In {places}, the same team hit twice in a row, which the rules do "
-            "not allow: at each, a shot was missed, a false one was counted, or "
-            "the hitter is wrong."
-        )
-    lines += [f"- {note}" for note in report["accuracy_notes"]]
+    lines += [f"- {note}" for note in trust_notes(report)]
     return "\n".join(lines) + "\n"
+
+
+def _table(columns: Sequence[str], rows: list[list[str]]) -> list[str]:
+    lines = ["| " + " | ".join(columns) + " |", "|" + " --- |" * len(columns)]
+    return lines + ["| " + " | ".join(row) + " |" for row in rows]
 
 
 def _name(player: dict) -> str:

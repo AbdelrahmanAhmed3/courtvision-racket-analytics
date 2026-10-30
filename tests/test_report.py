@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pytest
 
@@ -86,12 +87,15 @@ def test_one_rally_is_described_on_its_own() -> None:
 
 
 def test_a_clip_without_ball_tracking_still_gets_a_report() -> None:
-    report = build_report("clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)})
+    report = build_report(
+        "clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)}, ball_tracked=False
+    )
 
     assert report["highlights"]["most_shots"] is None
     assert report["highlights"]["rally_count"] == 0
     text = report_markdown(report)
     assert "Most shots" not in text and "## Rallies" not in text
+    assert "The ball was not tracked, so there are no shots or rallies." in text
     assert "- **Most distance:** Player 1, 5.0 m." in text
 
 
@@ -124,7 +128,9 @@ def test_every_report_matches_its_schema() -> None:
     one_rally = Rally(10, 110, (shot(10, 1, None, 30.0),))
     for report in (
         clip_report(),
-        build_report("clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)}),
+        build_report(
+            "clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)}, ball_tracked=False
+        ),
         build_report("clip.mp4", FPS, 250, {}, {1: stats(5.0, 7.0)}, (), [one_rally]),
     ):
         jsonschema.validate(json.loads(json.dumps(report)), schema)
@@ -138,3 +144,26 @@ def test_heatmaps_draw_one_court_per_player() -> None:
     court_width = 10 * 16
     assert image.shape[1] == 2 * court_width + 12
     assert image.dtype == np.uint8
+
+
+def test_the_pdf_report_has_every_section(tmp_path) -> None:
+    pytest.importorskip("reportlab")
+    from courtvision.visualization.report_pdf import report_pdf
+
+    heatmaps = tmp_path / "heatmaps.png"
+    one = stats(1.0, 1.0).heatmap_seconds
+    cv2.imwrite(str(heatmaps), draw_heatmaps({1: one, 2: one}))
+
+    pdf = report_pdf(clip_report(), heatmaps, compress=False)
+
+    assert pdf.startswith(b"%PDF-")
+    for section in (
+        b"Highlights",
+        b"Players",
+        b"Where each player stood",
+        b"Rallies",
+        b"How far to trust these numbers",
+    ):
+        assert section in pdf
+    assert b"/Subtype /Image" in pdf
+    assert report_pdf(clip_report()).startswith(b"%PDF-")  # no heatmaps is fine
