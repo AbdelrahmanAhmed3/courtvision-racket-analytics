@@ -92,6 +92,7 @@ from courtvision.visualization.court_overlay import (  # noqa: E402
     draw_calibration_overlay,
 )
 from courtvision.visualization.heatmaps import draw_heatmaps  # noqa: E402
+from courtvision.visualization.report_pdf import report_pdf  # noqa: E402
 from courtvision.visualization.minimap import (  # noqa: E402
     draw_court_map,
     draw_projected_point,
@@ -1169,7 +1170,14 @@ def main() -> None:
         shot_count = len(shots)
     if movement:
         report = build_report(
-            input_path.name, fps, frame_index, teams, movement, new_shots, rallies
+            input_path.name,
+            fps,
+            frame_index,
+            teams,
+            movement,
+            new_shots,
+            rallies,
+            ball_tracked=bool(args.tracknet_model_path),
         )
         (output_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
         heatmap_image = draw_heatmaps(
@@ -1179,6 +1187,9 @@ def main() -> None:
         cv2.imwrite(str(output_dir / "heatmaps.png"), heatmap_image)
         (output_dir / "report.md").write_text(
             report_markdown(report, heatmap_image="heatmaps.png")
+        )
+        (output_dir / "report.pdf").write_bytes(
+            report_pdf(report, output_dir / "heatmaps.png")
         )
     if shots and map_writer is not None:
         render_shot_speeds_on_map_video(output_dir / "court_map.mp4", shots, fps)

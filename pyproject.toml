@@ -16,6 +16,8 @@ dependencies = [
     "pandas",
     "pyyaml",
     "python-dotenv",
+    # The PDF match report (BSD-3-Clause).
+    "reportlab>=4",
     "scipy",
     "tqdm",
 ]
