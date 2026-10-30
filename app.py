@@ -83,8 +83,9 @@ KEYPOINT_MAPPING_REVISION = "2026-08-19-padel-front-back-v2"
 
 
 def reset_calibration() -> None:
+    # The last click is kept: the image keeps returning it on every rerun, and
+    # forgetting it would add that point back.
     st.session_state.calibration_points = []
-    st.session_state.last_click = None
 
 
 def save_uploaded_video(uploaded_file) -> Path:
@@ -450,8 +451,8 @@ SECONDS_PER_CLIP_SECOND = 8  # about 2 minutes for a 15 s clip on an Apple M4
 
 
 def reset_quick_points() -> None:
+    # The last click is kept, as in reset_calibration().
     st.session_state.quick_points = []
-    st.session_state.quick_last_click = None
 
 
 def court_guide(next_index: int) -> np.ndarray:
@@ -660,7 +661,6 @@ def analyse_page() -> None:
     undo_column, reset_column, _ = st.columns([1, 1, 4])
     if undo_column.button("Undo last point", disabled=not points):
         st.session_state.quick_points.pop()
-        st.session_state.quick_last_click = None
         st.session_state.quick_result = None
         st.rerun()
     if reset_column.button("Start again", disabled=not points):
@@ -1498,15 +1498,14 @@ def advanced_page() -> None:
             use_column_width="always",
             cursor="crosshair",
         )
-    if click:
+    if click and click["unix_time"] != st.session_state.last_click:
         point = clicked_point(click, frame)
-        if point != st.session_state.last_click:
-            if calibration_input == "Assisted" and edit_index is not None:
-                st.session_state.calibration_points[edit_index] = point
-            elif next_index < len(landmark_names):
-                st.session_state.calibration_points.append(point)
-            st.session_state.last_click = point
-            st.rerun()
+        if calibration_input == "Assisted" and edit_index is not None:
+            st.session_state.calibration_points[edit_index] = point
+        elif next_index < len(landmark_names):
+            st.session_state.calibration_points.append(point)
+        st.session_state.last_click = click["unix_time"]
+        st.rerun()
 
     if points:
         labels = [display_landmark_name(name) for name in landmark_names[: len(points)]]
@@ -1526,7 +1525,6 @@ def advanced_page() -> None:
             disabled=not points or calibration_input != "Manual",
         ):
             st.session_state.calibration_points.pop()
-            st.session_state.last_click = None
             st.rerun()
     with reset_column:
         reset_label = (
@@ -1539,7 +1537,6 @@ def advanced_page() -> None:
                 st.session_state.calibration_points = list(proposal.landmarks.values())
             else:
                 reset_calibration()
-            st.session_state.last_click = None
             st.rerun()
 
     if len(points) != len(landmark_names):
