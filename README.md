@@ -35,8 +35,8 @@ results and their weak spots written up in [`reports/`](reports/).
 
   ![Where each of the four players stood, one small court each](docs/assets/heatmaps.png)
 
-- **A Streamlit app** to calibrate the court, run the pipeline, and watch the tracked
-  video and the court map side by side with the report underneath.
+- **A local app:** drop a clip, click six points on the court, press Analyse, and get
+  the tracked video beside the court map, the report, and a PDF to download.
 
 ## Measured results
 
@@ -67,6 +67,11 @@ source .venv/bin/activate
 pip install -e ".[ui,local,media]"
 streamlit run app.py
 ```
+
+The app opens in your browser. Drop a clip and click six court points on a frame: the
+two ends and the middle of each service line, with a guide showing where. Then press
+**Analyse**. All the options and the experimental automatic calibration are on the
+**Advanced** page.
 
 The first run downloads the RF-DETR weights (about 370 MB for Nano, cached in
 `~/.roboflow/models`). Generated files go to `outputs/`, which git ignores.
@@ -153,7 +158,7 @@ a proposal failed, and the clicked calibration is the one the results rely on.
 | --- | --- |
 | `annotated.mp4` | Player IDs, ball trail, and impact, bounce and wall-rebound markers |
 | `court_map.mp4`, `court_map_annotated.mp4` | The top-down court on its own, and beside the video |
-| `report.md`, `report.json` | The match report; every JSON key is described in [`report.schema.json`](src/courtvision/analytics/report.schema.json) |
+| `report.pdf`, `report.md`, `report.json` | The match report; every JSON key is described in [`report.schema.json`](src/courtvision/analytics/report.schema.json) |
 | `heatmaps.png`, `heatmaps.json` | Seconds each player spent in each square metre |
 | `movement.csv` | Per player: distance, average and top speed, time at the net, in the middle and at the back |
 | `teams.csv` | Each player's team, near or far |
