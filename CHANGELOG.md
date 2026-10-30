@@ -2,6 +2,7 @@
 
 ## Unreleased (planned for v4.0)
 
+- the pipeline writes the match report as a PDF too (`report.pdf`, with reportlab, BSD-3-Clause); the Markdown and the PDF share their wording; `report.json` says whether the ball was tracked (`ball_tracked`), so a clip without ball tracking no longer reports "0 rallies"
 - README rewritten around padel: a demo of the tracked video beside the court map, what you get from a clip, the measured results with links to `reports/`, a quick start, and known limitations; footage is credited, and the README may show one short excerpt of the pipeline's output (ADR 0006)
 - the court map no longer labels a shot "received" by the hitter's own team, which meant one of its two impacts was false, and the label reads `P4 -> P1  ~99 km/h`
 - a match report per clip, as Markdown and JSON (`report.md`, `report.json`) with player heatmaps (`heatmaps.png`), built from the clip's stats with templates and shown in the app under the videos; each rally counts the places where the same team hit twice in a row, which the rules do not allow; every JSON key is described in `report.schema.json`, which the tests check reports against; the court map's running distance counter is removed in its favour

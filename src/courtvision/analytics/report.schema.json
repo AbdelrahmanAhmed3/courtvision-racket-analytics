@@ -27,6 +27,10 @@
       "minimum": 0,
       "description": "Length of the clip that was processed, in seconds."
     },
+    "ball_tracked": {
+      "type": "boolean",
+      "description": "False when the clip was analysed without ball tracking: then shots and rallies were not measured, rather than zero. Missing in reports written before it was added; read that as true."
+    },
     "players": {
       "type": "array",
       "description": "One row per tracked player, by track ID.",
