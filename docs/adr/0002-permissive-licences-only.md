@@ -4,7 +4,7 @@ _Amended by [ADR 0004](0004-agpl-with-commercial-licence.md): CourtVision itself
 
 _Amended by [ADR 0005](0005-local-player-detection.md): the hosted Roboflow player model is dropped; hosted court-keypoint models remain optional._
 
-_Amended by [ADR 0006](0006-short-demo-excerpts.md): the README may show one short, credited excerpt of the pipeline's output on broadcast footage, hosted outside git._
+_Amended by [ADR 0006](0006-short-demo-excerpts.md): the README and launch posts may show one short, credited excerpt of the pipeline's output on broadcast footage, hosted outside git._
 
 CourtVision must be usable both under its open-source licence and under a commercial licence sold by its author, so that a product can grow from it later. Every model, weight file, dataset and library it ships or downloads must therefore be under a permissive licence (Apache-2.0, MIT, BSD, CC BY). This rules out the most common choices in open-source sports-analytics projects, which is why this is written down.
 

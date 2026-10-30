@@ -1,32 +1,58 @@
 # Changelog
 
-## Unreleased (planned for v4.0)
+## v4.0 - Showcase Edition
 
-- README rewritten around padel: a demo of the tracked video beside the court map, what you get from a clip, the measured results with links to `reports/`, a quick start, and known limitations; footage is credited, and the README may show one short excerpt of the pipeline's output (ADR 0006)
-- the court map no longer labels a shot "received" by the hitter's own team, which meant one of its two impacts was false, and the label reads `P4 -> P1  ~99 km/h`
-- a match report per clip, as Markdown and JSON (`report.md`, `report.json`) with player heatmaps (`heatmaps.png`), built from the clip's stats with templates and shown in the app under the videos; each rally counts the places where the same team hit twice in a row, which the rules do not allow; every JSON key is described in `report.schema.json`, which the tests check reports against; the court map's running distance counter is removed in its favour
-- movement stats per player from smoothed court positions: distance, average and top speed, time at the net, in the middle and at the back (`movement.csv`), and a heatmap of seconds per square metre (`heatmaps.json`); tracking jumps such as ID swaps cut the track instead of counting as running (`reports/player_movement.md`); `player_distances.csv` is replaced by `movement.csv`
-- split a clip into rallies from its ball events (a rally starts at its first impact and ends at its last event; 5 s of silence ends it); the full pipeline writes `rallies.csv`; all 10 labelled rallies found, start and end within 0.2 s at the median (`reports/ball_events.md`)
-- detect impacts, bounces and wall rebounds with a small trained model (`--events classifier`, the default; `--events legacy` for the older tennis-tuned shot code); the full pipeline writes `ball_events.csv`, shots with hitter, receiver and bounce in `shots.csv` (speed column `approx_court_speed_kmh`: the ball's height is not modelled), and marks each event on `annotated.mp4`; impact F1 0.41, hitter right for 65% of impacts found (`reports/ball_events.md`)
-- assign each tracked player to the near or far team by the half of the court they play in; the full pipeline writes `teams.csv` (all labelled players on the right team, `reports/player_identity.md`)
-- track players with at most as many IDs as the court has players (4 for padel, 2 for tennis): a player who is hidden or whose box changes shape gets their ID back instead of a new one (`--tracker fixed`, the default; `--tracker simple` for the old greedy tracker); IDF1 0.96 → 0.97 and ID switches 8 → 5 on the labelled rallies (`reports/player_identity.md`)
-- `scripts/label_clip.py`: label rallies, impacts, bounces, wall rebounds and player boxes for evaluation, with RF-DETR box proposals; format and guide in `docs/evaluation.md`
+Padel analytics on a laptop, measured against hand labels: four players with
+stable identities and teams, impacts, bounces and wall rebounds, shots and
+rallies, movement stats and heatmaps, and a match report that says how far to
+trust each number. Player detection runs locally with no API key. The
+measured results are in the README and `reports/`.
+
+### Players
+
 - detect players locally with RF-DETR (Apache-2.0 COCO weights, Nano by default) instead of the hosted API: `--detector rfdetr|roboflow`, `--rfdetr-size`, and a detector choice in the app; install with the `local` extra
 - drop people standing off the court before tracking (0.5 m margin for padel; 4 m sides and 7 m ends for tennis)
-- `scripts/benchmark_detector.py` (calibration or image-space court outline, speed, players kept, track IDs) and results on four clips in `reports/model_comparison.md`
-- remove the unused Ultralytics adapter and the `gpu` extra (AGPL, ADR 0002)
-- set Roboflow player detection confidence explicitly to `0.30`
+- track players with at most as many IDs as the court has players (4 for padel, 2 for tennis): a player who is hidden or whose box changes shape gets their ID back instead of a new one (`--tracker fixed`, the default; `--tracker simple` for the old greedy tracker); IDF1 0.96 → 0.97 and ID switches 8 → 5 on the labelled rallies (`reports/player_identity.md`)
+- assign each tracked player to the near or far team by the half of the court they play in; the full pipeline writes `teams.csv` (all labelled players on the right team, `reports/player_identity.md`)
+- optionally keep only the most confident players (2 for tennis, 4 for padel)
 - replace frame-count track expiry with a three-second missing-player window
 - reassociate returning dormant tracks by a conservative center-distance gate
-- expose confidence, recovery time, and reassociation distance in the local app
-- retry temporary hosted-inference failures with backoff; send confidence and overlap to the hosted API
-- optionally keep only the most confident players (2 for tennis, 4 for padel)
-- add an experimental Kalman IoU tracker and `scripts/compare_trackers.py`; add `scipy` dependency
 - remove `--max-missing-frames` in favour of the time-based missing-player window
-- per-player distance in court metres; experimental shots, bounces and court-plane ball speed (tuned on tennis)
+- set Roboflow player detection confidence explicitly to `0.30`
+- retry temporary hosted-inference failures with backoff; send confidence and overlap to the hosted API
+- add an experimental Kalman IoU tracker and `scripts/compare_trackers.py`; add `scipy` dependency
+- `scripts/benchmark_detector.py` (calibration or image-space court outline, speed, players kept, track IDs) and results on four clips in `reports/model_comparison.md`
+
+### Ball events, shots and rallies
+
+- detect impacts, bounces and wall rebounds with a small trained model (`--events classifier`, the default; `--events legacy` for the older tennis-tuned shot code); the full pipeline writes `ball_events.csv`, shots with hitter, receiver and bounce in `shots.csv` (speed column `approx_court_speed_kmh`: the ball's height is not modelled), and marks each event on `annotated.mp4`; impact F1 0.41, hitter right for 65% of impacts found (`reports/ball_events.md`)
+- split a clip into rallies from its ball events (a rally starts at its first impact and ends at its last event; 5 s of silence ends it); the full pipeline writes `rallies.csv`; all 10 labelled rallies found, start and end within 0.2 s at the median (`reports/ball_events.md`)
+- experimental shots, bounces and court-plane ball speed (tuned on tennis; kept as `--events legacy`)
+- the court map no longer labels a shot "received" by the hitter's own team, which meant one of its two impacts was false, and the label reads `P4 -> P1  ~99 km/h`
+
+### Movement and the match report
+
+- movement stats per player from smoothed court positions: distance, average and top speed, time at the net, in the middle and at the back (`movement.csv`), and a heatmap of seconds per square metre (`heatmaps.json`); tracking jumps such as ID swaps cut the track instead of counting as running (`reports/player_movement.md`)
+- a match report per clip, as Markdown and JSON (`report.md`, `report.json`) with player heatmaps (`heatmaps.png`), built from the clip's stats with templates and shown in the app under the videos; each rally counts the places where the same team hit twice in a row, which the rules do not allow; every JSON key is described in `report.schema.json`, which the tests check reports against; the court map's running distance counter is removed in its favour
+
+### Court calibration
+
 - experimental automatic calibration: RANSAC court lines, padel surface colour, and a hosted court-keypoint model with line refinement
 - `net_center` and service-centre landmarks for padel and tennis
-- full pipeline writes `player_distances.csv` and `shots.csv`; the app gains an automatic calibration lab
+- the app gains an automatic calibration lab
+
+### Evaluation
+
+- `scripts/label_clip.py`: label rallies, impacts, bounces, wall rebounds and player boxes for evaluation, with RF-DETR box proposals; format and guide in `docs/evaluation.md`
+
+### App and docs
+
+- expose confidence, recovery time, and reassociation distance in the local app
+- README rewritten around padel: a demo of the tracked video beside the court map, what you get from a clip, the measured results with links to `reports/`, a quick start, and known limitations; footage is credited, and the README may show one short excerpt of the pipeline's output (ADR 0006)
+
+### Removed
+
+- remove the unused Ultralytics adapter and the `gpu` extra (AGPL, ADR 0002)
 
 ## v3.0 - Temporal Court Calibration
 
