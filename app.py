@@ -1,4 +1,4 @@
-"""Local Streamlit interface for CourtVision calibration and mapping."""
+"""CourtVision's local app: analyse a clip in a few clicks, or use every option."""
 
 # ruff: noqa: E402, I001
 
@@ -64,6 +64,9 @@ from courtvision.calibration.keypoint_refinement import (  # noqa: E402
     draw_keypoint_refinement,
 )
 from courtvision.calibration.validation import validate_homography  # noqa: E402
+from courtvision.visualization.court_overlay import (  # noqa: E402
+    draw_calibration_overlay,
+)
 from courtvision.detectors.rfdetr_detector import (  # noqa: E402
     DEFAULT_SIZE as DEFAULT_RFDETR_SIZE,
 )
@@ -170,6 +173,16 @@ def draw_selected_points(
             cv2.LINE_AA,
         )
     return annotated
+
+
+def clicked_point(click: dict, frame) -> tuple[float, float]:
+    """A click on the frame as shown, in the frame's own pixels.
+
+    The frame is drawn to fit its column, so a 1280-pixel frame on a laptop
+    screen is shown smaller than it is.
+    """
+    scale = frame.shape[1] / click["width"] if click.get("width") else 1.0
+    return float(click["x"]) * scale, float(click["y"]) * scale
 
 
 def build_calibration(
@@ -310,7 +323,9 @@ def show_match_report(output_dir: Path) -> None:
     if not report_path.exists():
         return
     st.subheader("Match report")
-    before, _, after = report_path.read_text().partition(HEATMAP_LINE)
+    # Its sections sit under the subheader, so they are a level smaller.
+    text = report_path.read_text().replace("\n## ", "\n#### ")
+    before, _, after = text.partition(HEATMAP_LINE)
     # The report's own title repeats the file name; the subheader replaces it.
     st.markdown(before.split("\n", 1)[1] if before.startswith("# ") else before)
     heatmaps = output_dir / "heatmaps.png"
@@ -319,7 +334,15 @@ def show_match_report(output_dir: Path) -> None:
             str(heatmaps), caption="Seconds per square metre; far baseline at the top"
         )
         st.markdown(after)
-    download_report, download_json = st.columns(2)
+    download_pdf, download_report, download_json = st.columns(3)
+    if (output_dir / "report.pdf").exists():
+        download_pdf.download_button(
+            "Download report (PDF)",
+            data=(output_dir / "report.pdf").read_bytes(),
+            file_name="report.pdf",
+            mime="application/pdf",
+            type="primary",
+        )
     download_report.download_button(
         "Download report (Markdown)",
         data=report_path.read_bytes(),
@@ -403,6 +426,290 @@ def render_synchronized_videos(tracked_video: Path, court_map_video: Path) -> No
     )
 
 
+# The "Analyse a clip" page: drop a clip, mark the court, get the report.
+QUICK_LANDMARKS = (
+    "far_left_service_intersection",
+    "far_service_center",
+    "far_right_service_intersection",
+    "near_right_service_intersection",
+    "near_service_center",
+    "near_left_service_intersection",
+)
+QUICK_POINT_HINTS = (
+    "far service line, left end",
+    "far service line, middle (where the centre line meets it)",
+    "far service line, right end",
+    "near service line, right end",
+    "near service line, middle (where the centre line meets it)",
+    "near service line, left end",
+)
+# The guide's points in metres: across the court, then from the far back wall.
+QUICK_GUIDE_POINTS_M = ((0, 3), (5, 3), (10, 3), (10, 17), (5, 17), (0, 17))
+VIDEO_TYPES = ("mp4", "mov", "avi", "mkv")
+SECONDS_PER_CLIP_SECOND = 8  # about 2 minutes for a 15 s clip on an Apple M4
+
+
+def reset_quick_points() -> None:
+    st.session_state.quick_points = []
+    st.session_state.quick_last_click = None
+
+
+def court_guide(next_index: int) -> np.ndarray:
+    """A small top-down padel court with the points to click, the next one ringed."""
+    scale, margin = 14, 16
+    width, height = 10 * scale + 2 * margin, 20 * scale + 2 * margin
+    image = np.full((height, width, 3), (60, 110, 60), np.uint8)
+
+    def at(x_m: float, y_m: float) -> tuple[int, int]:
+        return margin + round(x_m * scale), margin + round(y_m * scale)
+
+    white = (235, 240, 235)
+    cv2.rectangle(image, at(0, 0), at(10, 20), white, 1)
+    cv2.line(image, at(0, 10), at(10, 10), white, 2)
+    for y_m in (3, 17):
+        cv2.line(image, at(0, y_m), at(10, y_m), white, 1)
+    cv2.line(image, at(5, 3), at(5, 17), white, 1)
+    for index, (x_m, y_m) in enumerate(QUICK_GUIDE_POINTS_M):
+        done = index < next_index
+        colour = (255, 0, 255) if done else (0, 220, 255)
+        cv2.circle(image, at(x_m, y_m), 5, colour, -1)
+        if index == next_index:
+            cv2.circle(image, at(x_m, y_m), 10, (0, 220, 255), 2)
+        x, y = at(x_m, y_m)
+        cv2.putText(
+            image,
+            str(index + 1),
+            (x - 4, y - 9 if y_m < 10 else y + 21),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
+    cv2.putText(
+        image, "far side", at(3.2, -0.4), cv2.FONT_HERSHEY_SIMPLEX, 0.4, white, 1
+    )
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+
+def choose_clip() -> Path | None:
+    uploaded = st.file_uploader("Drop a padel clip", type=list(VIDEO_TYPES))
+    if uploaded is not None:
+        return save_uploaded_video(uploaded)
+    local = sorted(
+        path
+        for path in (REPO_ROOT / "data" / "raw").glob("*")
+        if path.suffix.lower().lstrip(".") in VIDEO_TYPES
+    )
+    if not local:
+        return None
+    choice = st.selectbox(
+        "...or pick a clip from data/raw/",
+        [None, *local],
+        format_func=lambda path: "Choose a clip" if path is None else path.name,
+    )
+    return choice
+
+
+def quick_pipeline_command(
+    video_path: Path, output_dir: Path, calibration_path: Path, ball: bool
+) -> list[str]:
+    command = [
+        sys.executable,
+        "scripts/run_full_pipeline.py",
+        "--input",
+        str(video_path),
+        "--output-dir",
+        str(output_dir),
+        "--calibration",
+        str(calibration_path),
+        "--draw-court-map",
+    ]
+    if ball:
+        command += [
+            "--tracknet-dir",
+            str(DEFAULT_TRACKNET_DIR),
+            "--tracknet-model-path",
+            str(DEFAULT_TRACKNET_WEIGHTS),
+        ]
+    return command
+
+
+def run_with_progress(command: list[str]) -> tuple[int, str]:
+    """Run the pipeline, showing its latest output line while it works."""
+    log: list[str] = []
+    with st.status("Analysing the clip...", expanded=True) as status:
+        latest = st.empty()
+        # Text mode reads tqdm's carriage-return updates as lines too.
+        process = subprocess.Popen(
+            command,
+            cwd=REPO_ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        assert process.stdout is not None
+        for line in process.stdout:
+            line = line.strip()
+            if line:
+                log.append(line)
+                latest.caption(line[:160])
+        code = process.wait()
+        status.update(
+            label="Done." if code == 0 else "The analysis stopped with an error.",
+            state="complete" if code == 0 else "error",
+            expanded=code != 0,
+        )
+    return code, "\n".join(log[-40:])
+
+
+def show_results(output_dir: Path) -> None:
+    try:
+        tracked_video = transcode_for_browser(output_dir / "annotated.mp4")
+        court_map_video = transcode_for_browser(output_dir / "court_map.mp4")
+    except RuntimeError as error:
+        st.error(f"Could not prepare the videos for the browser: {error}")
+    else:
+        render_synchronized_videos(tracked_video, court_map_video)
+    if (output_dir / "report.md").exists():
+        show_match_report(output_dir)
+    else:
+        st.warning("No report: no player was tracked long enough on the court.")
+    st.caption(f"Every output is in {output_dir.relative_to(REPO_ROOT)}.")
+
+
+def analyse_page() -> None:
+    st.title("CourtVision")
+    st.caption(
+        "Drop a padel clip filmed from one high camera, without cuts. CourtVision "
+        "tracks the four players and the ball, maps them onto the court, and writes "
+        "a match report you can download as a PDF."
+    )
+    video_path = choose_clip()
+    if video_path is None:
+        return
+    try:
+        fps, frame_count, width, height = video_metadata(video_path)
+    except ValueError as error:
+        st.error(str(error))
+        return
+    duration = frame_count / fps
+    minutes = max(1, round(duration * SECONDS_PER_CLIP_SECOND / 60))
+    st.caption(
+        f"{video_path.name}: {width} x {height}, {fps:.0f} fps, {duration:.1f} s. "
+        f"Analysing it takes about {minutes} min."
+    )
+
+    st.subheader("1. Mark the court")
+    frame_seconds = st.slider(
+        "Frame to mark",
+        min_value=0.0,
+        max_value=max(0.0, duration - 1 / fps),
+        value=min(3.0, max(0.0, duration - 1 / fps)),
+        step=0.5,
+        help="Pick a frame where both service lines are clear of players.",
+    )
+    frame_index = min(int(round(frame_seconds * fps)), frame_count - 1)
+    frame_key = (str(video_path), frame_index)
+    if st.session_state.get("quick_frame_key") != frame_key:
+        reset_quick_points()
+        st.session_state.quick_frame_key = frame_key
+        st.session_state.quick_result = None
+    frame = read_frame(video_path, frame_index)
+    points = st.session_state.quick_points
+    next_index = len(points)
+
+    calibration = estimate = validation = None
+    if next_index == len(QUICK_LANDMARKS):
+        calibration = build_calibration(
+            video_path,
+            "padel",
+            frame_index,
+            frame,
+            points,
+            list(QUICK_LANDMARKS),
+            source="quick-ui",
+        )
+        estimate = estimate_template_homography(calibration)
+        validation = validate_homography(estimate)
+
+    guide_column, frame_column = st.columns([1, 5])
+    with guide_column:
+        st.image(court_guide(next_index), caption="Click these points in order.")
+    with frame_column:
+        if calibration is None:
+            st.markdown(
+                f"Click point **{next_index + 1} of {len(QUICK_LANDMARKS)}**: the "
+                f"{QUICK_POINT_HINTS[next_index]}."
+            )
+            shown = draw_selected_points(frame, list(QUICK_LANDMARKS), points)
+        else:
+            st.markdown("The court lines below should sit on the painted lines.")
+            shown = draw_calibration_overlay(frame, calibration, estimate, validation)
+        click = streamlit_image_coordinates(
+            cv2.cvtColor(shown, cv2.COLOR_BGR2RGB),
+            key=f"quick-frame-{frame_key}",
+            use_column_width="always",
+            cursor="crosshair",
+        )
+    if click and calibration is None:
+        if click["unix_time"] != st.session_state.quick_last_click:
+            st.session_state.quick_points.append(clicked_point(click, frame))
+            st.session_state.quick_last_click = click["unix_time"]
+            st.rerun()
+    undo_column, reset_column, _ = st.columns([1, 1, 4])
+    if undo_column.button("Undo last point", disabled=not points):
+        st.session_state.quick_points.pop()
+        st.session_state.quick_last_click = None
+        st.session_state.quick_result = None
+        st.rerun()
+    if reset_column.button("Start again", disabled=not points):
+        reset_quick_points()
+        st.session_state.quick_result = None
+        st.rerun()
+    if calibration is None:
+        return
+    if validation.status == "bad":
+        worst = max(
+            validation.per_landmark_error_px, key=validation.per_landmark_error_px.get
+        )
+        st.error(
+            "These points don't fit a court. The one furthest off is the "
+            f"{QUICK_POINT_HINTS[QUICK_LANDMARKS.index(worst)]}: undo back to it, "
+            "or start again."
+        )
+        return
+    st.success(
+        f"Court marked: the points fit within "
+        f"{validation.max_reprojection_error_px:.1f} px."
+    )
+
+    st.subheader("2. Analyse")
+    ball = DEFAULT_TRACKNET_WEIGHTS.exists() and DEFAULT_TRACKNET_DIR.exists()
+    if not ball:
+        st.info(
+            "Ball tracking is off: no TrackNet weights at "
+            "tracknet-model/model_best.pt. You'll get the players, teams, movement "
+            "and heatmaps, but no shots or rallies. The README explains how to add "
+            "them."
+        )
+    if st.button("Analyse", type="primary"):
+        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = REPO_ROOT / "outputs" / "ui_runs" / f"{video_path.stem}_{run_id}"
+        calibration_path = output_dir / "calibration.json"
+        save_calibration(calibration_path, calibration)
+        code, log = run_with_progress(
+            quick_pipeline_command(video_path, output_dir, calibration_path, ball)
+        )
+        if code != 0:
+            st.code(log)
+            return
+        st.session_state.quick_result = str(output_dir)
+    if st.session_state.get("quick_result"):
+        st.subheader("3. Results")
+        show_results(Path(st.session_state.quick_result))
+
+
 def initialize_state() -> None:
     st.session_state.setdefault("calibration_points", [])
     st.session_state.setdefault("last_click", None)
@@ -411,11 +718,12 @@ def initialize_state() -> None:
     st.session_state.setdefault("auto_search_result", None)
 
 
-def main() -> None:
-    st.set_page_config(page_title="CourtVision", layout="wide")
-    initialize_state()
-    st.title("CourtVision")
-    st.caption("Calibrate a court, track players, and map movement onto the court.")
+def advanced_page() -> None:
+    st.title("CourtVision: advanced")
+    st.caption(
+        "Every option: tennis or padel, detector and tracking settings, and the "
+        "experimental automatic calibration."
+    )
 
     with st.sidebar:
         st.header("Run setup")
@@ -1187,9 +1495,11 @@ def main() -> None:
         click = streamlit_image_coordinates(
             cv2.cvtColor(clickable_frame, cv2.COLOR_BGR2RGB),
             key=f"court-frame-{frame_key}",
+            use_column_width="always",
+            cursor="crosshair",
         )
     if click:
-        point = (float(click["x"]), float(click["y"]))
+        point = clicked_point(click, frame)
         if point != st.session_state.last_click:
             if calibration_input == "Assisted" and edit_index is not None:
                 st.session_state.calibration_points[edit_index] = point
@@ -1342,6 +1652,20 @@ def main() -> None:
                 file_name="shots.csv",
                 mime="text/csv",
             )
+
+
+def main() -> None:
+    st.set_page_config(page_title="CourtVision", layout="wide")
+    initialize_state()
+    reset = {"quick_points": [], "quick_last_click": None, "quick_result": None}
+    for key, value in reset.items():
+        st.session_state.setdefault(key, value)
+    st.navigation(
+        [
+            st.Page(analyse_page, title="Analyse a clip", default=True),
+            st.Page(advanced_page, title="Advanced"),
+        ]
+    ).run()
 
 
 if __name__ == "__main__":
