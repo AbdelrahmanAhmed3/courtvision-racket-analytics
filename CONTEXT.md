@@ -15,8 +15,8 @@ The edition for high-angle or broadcast-style footage where all four players and
 The edition for a fixed, low camera behind one back glass, where only the near-side players are reliably visible.
 
 **Clip**:
-A continuous piece of match video with no cuts, the unit CourtVision analyses in one run.
-_Avoid_: video (when meaning the analysed unit), footage
+A continuous piece of match video with no cuts, the unit CourtVision analyzes in one run.
+_Avoid_: video (when meaning the analyzed unit), footage
 
 **Source video**:
 A match recording as filmed or downloaded, which may contain camera cuts, replays and close-ups.
