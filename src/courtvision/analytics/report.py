@@ -75,7 +75,7 @@ def build_report(
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "video": video,
-        "seconds_analysed": round(frames / fps, 1),
+        "seconds_analyzed": round(frames / fps, 1),
         "ball_tracked": ball_tracked,
         "players": players,
         "rallies": rally_list,
@@ -156,12 +156,12 @@ RALLY_COLUMNS = ("Rally", "Start frame", "Length", "Shots", "Same team twice")
 def summary_line(report: dict) -> str:
     if not report.get("ball_tracked", True):
         return (
-            f"{report['seconds_analysed']} s analysed, {len(report['players'])} "
+            f"{report['seconds_analyzed']} s analyzed, {len(report['players'])} "
             "players. The ball was not tracked, so there are no shots or rallies."
         )
     rallies = report["highlights"]["rally_count"]
     return (
-        f"{report['seconds_analysed']} s analysed, {len(report['players'])} players, "
+        f"{report['seconds_analyzed']} s analyzed, {len(report['players'])} players, "
         f"{rallies} {'rally' if rallies == 1 else 'rallies'}."
     )
 

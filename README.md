@@ -35,7 +35,7 @@ results and their weak spots written up in [`reports/`](reports/).
 
   ![Where each of the four players stood, one small court each](docs/assets/heatmaps.png)
 
-- **A local app:** drop a clip, click six points on the court, press Analyse, and get
+- **A local app:** drop a clip, click six points on the court, press Analyze, and get
   the tracked video beside the court map, the report, and a PDF to download.
 
 ## Measured results
@@ -70,7 +70,7 @@ streamlit run app.py
 
 The app opens in your browser. Drop a clip and click six court points on a frame: the
 two ends and the middle of each service line, with a guide showing where. Then press
-**Analyse**. All the options and the experimental automatic calibration are on the
+**Analyze**. All the options and the experimental automatic calibration are on the
 **Advanced** page.
 
 The first run downloads the RF-DETR weights (about 370 MB for Nano, cached in

@@ -1,4 +1,4 @@
-"""CourtVision's local app: analyse a clip in a few clicks, or use every option."""
+"""CourtVision's local app: analyze a clip in a few clicks, or use every option."""
 
 # ruff: noqa: E402, I001
 
@@ -427,7 +427,7 @@ def render_synchronized_videos(tracked_video: Path, court_map_video: Path) -> No
     )
 
 
-# The "Analyse a clip" page: drop a clip, mark the court, get the report.
+# The "Analyze a clip" page: drop a clip, mark the court, get the report.
 QUICK_LANDMARKS = (
     "far_left_service_intersection",
     "far_service_center",
@@ -539,7 +539,7 @@ def quick_pipeline_command(
 def run_with_progress(command: list[str]) -> tuple[int, str]:
     """Run the pipeline, showing its latest output line while it works."""
     log: list[str] = []
-    with st.status("Analysing the clip...", expanded=True) as status:
+    with st.status("Analyzing the clip...", expanded=True) as status:
         latest = st.empty()
         # Text mode reads tqdm's carriage-return updates as lines too.
         process = subprocess.Popen(
@@ -579,7 +579,7 @@ def show_results(output_dir: Path) -> None:
     st.caption(f"Every output is in {output_dir.relative_to(REPO_ROOT)}.")
 
 
-def analyse_page() -> None:
+def analyze_page() -> None:
     st.title("CourtVision")
     st.caption(
         "Drop a padel clip filmed from one high camera, without cuts. CourtVision "
@@ -598,7 +598,7 @@ def analyse_page() -> None:
     minutes = max(1, round(duration * SECONDS_PER_CLIP_SECOND / 60))
     st.caption(
         f"{video_path.name}: {width} x {height}, {fps:.0f} fps, {duration:.1f} s. "
-        f"Analysing it takes about {minutes} min."
+        f"Analyzing it takes about {minutes} min."
     )
 
     st.subheader("1. Mark the court")
@@ -684,7 +684,7 @@ def analyse_page() -> None:
         f"{validation.max_reprojection_error_px:.1f} px."
     )
 
-    st.subheader("2. Analyse")
+    st.subheader("2. Analyze")
     ball = DEFAULT_TRACKNET_WEIGHTS.exists() and DEFAULT_TRACKNET_DIR.exists()
     if not ball:
         st.info(
@@ -693,7 +693,7 @@ def analyse_page() -> None:
             "and heatmaps, but no shots or rallies. The README explains how to add "
             "them."
         )
-    if st.button("Analyse", type="primary"):
+    if st.button("Analyze", type="primary"):
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = REPO_ROOT / "outputs" / "ui_runs" / f"{video_path.stem}_{run_id}"
         calibration_path = output_dir / "calibration.json"
@@ -1659,7 +1659,7 @@ def main() -> None:
         st.session_state.setdefault(key, value)
     st.navigation(
         [
-            st.Page(analyse_page, title="Analyse a clip", default=True),
+            st.Page(analyze_page, title="Analyze a clip", default=True),
             st.Page(advanced_page, title="Advanced"),
         ]
     ).run()
