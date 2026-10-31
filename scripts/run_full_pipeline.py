@@ -30,6 +30,7 @@ from courtvision.analytics.ball_events import (  # noqa: E402
     BallEvent,
     Shot,
     detect_ball_events,
+    has_credible_speed,
     shots_from_events,
 )
 from courtvision.analytics.movement import movement_stats  # noqa: E402
@@ -441,18 +442,7 @@ def write_rallies_csv(path: Path, rallies: list[Rally], fps: float) -> None:
 def map_speed_labels(
     shots: list[Shot], teams: dict[int, str] | None = None
 ) -> list[ShotEvent]:
-    """Shots with a speed, in the form the court-map speed labels draw.
-
-    A shot "received" by the hitter's own team is left out: partners never hit
-    in turn, so one of the two impacts is false and the speed between them means
-    nothing.
-    """
-    teams = teams or {}
-
-    def same_team(shot: Shot) -> bool:
-        hitter = teams.get(shot.hitter_track_id)
-        return hitter is not None and hitter == teams.get(shot.receiver_track_id)
-
+    """Shots with a credible speed, in the form the court-map labels draw."""
     return [
         ShotEvent(
             event_type="shot",
@@ -466,7 +456,7 @@ def map_speed_labels(
             segment_duration_seconds=shot.duration_seconds or 0.0,
         )
         for shot in shots
-        if shot.court_speed_kmh is not None and not same_team(shot)
+        if has_credible_speed(shot, teams)
     ]
 
 

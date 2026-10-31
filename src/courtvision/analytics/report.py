@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Mapping, Sequence
 
-from courtvision.analytics.ball_events import Shot
+from courtvision.analytics.ball_events import Shot, has_credible_speed
 from courtvision.analytics.movement import MovementStats
 from courtvision.analytics.rallies import Rally
 
@@ -106,8 +106,9 @@ def _highlights(players: list[dict], rallies: list[dict], shots: Sequence[Shot])
             return None
         return {"track_id": best["track_id"], "team": best["team"], key: best[key]}
 
+    teams = {player["track_id"]: player["team"] for player in players}
     fastest = max(
-        (shot for shot in shots if shot.court_speed_kmh is not None),
+        (shot for shot in shots if has_credible_speed(shot, teams)),
         key=lambda shot: shot.court_speed_kmh,
         default=None,
     )

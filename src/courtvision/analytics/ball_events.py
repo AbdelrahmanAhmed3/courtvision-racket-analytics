@@ -233,6 +233,31 @@ class Shot:
     court_speed_kmh: float | None  # approximate: floor-plane distance over time
 
 
+# The longest a ball can travel along a padel court floor: corner to corner.
+COURT_DIAGONAL_M = hypot(10.0, 20.0)
+
+
+def has_credible_speed(shot: Shot, teams: Mapping[int, str] | None = None) -> bool:
+    """Whether a shot's speed is worth showing, or comes from a wrong pair.
+
+    Partners never hit in turn, so a shot "received" by the hitter's own team
+    pairs two impacts of which one is false; so does a receiving impact with no
+    player near it. A floor distance longer than the court's diagonal means the
+    ball was in the air and projected far off the court, or the impacts are
+    mismatched. Either way the speed means nothing. A shot timed to its bounce,
+    with nobody receiving it, keeps its speed.
+    """
+    if shot.court_speed_kmh is None:
+        return False
+    if shot.receive_frame is not None and shot.receiver_track_id is None:
+        return False
+    if shot.distance_m is not None and shot.distance_m > COURT_DIAGONAL_M:
+        return False
+    teams = teams or {}
+    hitter = teams.get(shot.hitter_track_id)
+    return hitter is None or hitter != teams.get(shot.receiver_track_id)
+
+
 def shots_from_events(
     events: Iterable[BallEvent],
     ball_points: Iterable[BallPoint],
