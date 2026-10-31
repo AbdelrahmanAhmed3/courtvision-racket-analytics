@@ -21,12 +21,12 @@ Analysis takes about 7 to 8 seconds per second of video on an Apple M4.
 
 ### What breaks
 
-1. **Camera cuts ([#64](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/64)).** The Tapia clip cuts to a replay from a side camera, then to a point on another court in Brussels. The one calibration is applied to every frame:
+1. **A clip with camera cuts, as the known limitations warn.** The Tapia clip cuts to a replay from a side camera, then to a point on another court in Brussels. The one calibration is applied to every frame:
    - the replay's players land on the court map as if seen from the main camera;
    - the Brussels point is mapped with the wrong court;
    - the report joins everything into one 29.4 s "rally" with 20 shots.
 
-   Highlight clips are what most people will try first, and nearly all of them have cuts. #64 skips the frames that don't look like the calibrated view.
+   CourtVision analyzes one continuous view of one court: the app asks for a clip "filmed from one high camera, without cuts", and the README lists it as a known limitation. Compilations are out of scope; their first point, before any cut, comes out right.
 2. **Impossible shot speeds, fixed in #59.** The "fastest shot" was 232 km/h on the WPT clip and 183.5 km/h on the Tapia clip. Both came from pairs of hits that can't be one shot:
    - a floor distance longer than the court's diagonal (24.2 and 21.1 m on a 20 m court), meaning the ball was in the air and projected far off the court;
    - a shot "received" by the hitter's own partner;
