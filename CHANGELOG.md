@@ -29,11 +29,13 @@ measured results are in the README and `reports/`.
 - split a clip into rallies from its ball events (a rally starts at its first impact and ends at its last event; 5 s of silence ends it); the full pipeline writes `rallies.csv`; all 10 labelled rallies found, start and end within 0.2 s at the median (`reports/ball_events.md`)
 - experimental shots, bounces and court-plane ball speed (tuned on tennis; kept as `--events legacy`)
 - the court map no longer labels a shot "received" by the hitter's own team, which meant one of its two impacts was false, and the label reads `P4 -> P1  ~99 km/h`
+- shot speeds from pairs of hits that can't be one shot are no longer shown on the court map or as the report's fastest shot: received by the hitter's partner, received by a hit with no player near it, or longer along the floor than the court's diagonal (a 232 km/h "fastest shot" on a 480p clip; `reports/app_trial.md`)
 
 ### Movement and the match report
 
 - movement stats per player from smoothed court positions: distance, average and top speed, time at the net, in the middle and at the back (`movement.csv`), and a heatmap of seconds per square metre (`heatmaps.json`); tracking jumps such as ID swaps cut the track instead of counting as running (`reports/player_movement.md`)
 - a match report per clip, as Markdown and JSON (`report.md`, `report.json`) with player heatmaps (`heatmaps.png`), built from the clip's stats with templates and shown in the app under the videos; each rally counts the places where the same team hit twice in a row, which the rules do not allow; every JSON key is described in `report.schema.json`, which the tests check reports against; the court map's running distance counter is removed in its favour
+- the pipeline writes the match report as a PDF too (`report.pdf`, with reportlab, BSD-3-Clause); the Markdown and the PDF share their wording; `report.json` says whether the ball was tracked (`ball_tracked`), so a clip without ball tracking no longer reports "0 rallies"
 
 ### Court calibration
 
@@ -49,6 +51,7 @@ measured results are in the README and `reports/`.
 
 - expose confidence, recovery time, and reassociation distance in the local app
 - README rewritten around padel: a demo of the tracked video beside the court map, what you get from a clip, the measured results with links to `reports/`, a quick start, and known limitations; footage is credited, and the README may show one short excerpt of the pipeline's output (ADR 0006)
+- the app opens on **Analyze a clip**: drop a clip, click six court points (with a guide), press Analyze, and get the tracked video beside the court map, the report, and a PDF; the old page is now **Advanced**; clicks land correctly when the frame is shown smaller than its size, and undoing or resetting points no longer brings the last click back (on both pages)
 
 ### Removed
 
