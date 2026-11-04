@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import csv
 import hashlib
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -536,32 +537,64 @@ def quick_pipeline_command(
     return command
 
 
-def run_with_progress(command: list[str]) -> tuple[int, str]:
-    """Run the pipeline, showing its latest output line while it works."""
-    log: list[str] = []
-    with st.status("Analyzing the clip...", expanded=True) as status:
-        latest = st.empty()
-        # Text mode reads tqdm's carriage-return updates as lines too.
+def log_lines(log_path: Path, last: int, tail_bytes: int | None = None) -> list[str]:
+    """The last lines of a pipeline log; tqdm's carriage-return updates count too."""
+    try:
+        with log_path.open("rb") as log:
+            if tail_bytes is not None:
+                log.seek(0, 2)
+                log.seek(max(0, log.tell() - tail_bytes))
+            text = log.read().decode(errors="replace")
+    except FileNotFoundError:
+        return []
+    lines = [line.strip() for line in text.replace("\r", "\n").splitlines()]
+    return [line for line in lines if line][-last:]
+
+
+def start_analysis(command: list[str], output_dir: Path) -> None:
+    """Start the pipeline in the background and remember it in the session.
+
+    Streamlit reruns the page on any widget event, and a rerun stops the page's
+    code mid-way. Run in the page, the pipeline was forgotten by the rerun but kept
+    going, and pressing Analyze again started a second one (#67).
+    """
+    log_path = output_dir / "pipeline.log"
+    with log_path.open("w") as log:
+        # Unbuffered, so the log shows progress as it happens, not in bursts.
         process = subprocess.Popen(
             command,
             cwd=REPO_ROOT,
-            stdout=subprocess.PIPE,
+            stdout=log,
             stderr=subprocess.STDOUT,
-            text=True,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
         )
-        assert process.stdout is not None
-        for line in process.stdout:
-            line = line.strip()
-            if line:
-                log.append(line)
-                latest.caption(line[:160])
-        code = process.wait()
-        status.update(
-            label="Done." if code == 0 else "The analysis stopped with an error.",
-            state="complete" if code == 0 else "error",
-            expanded=code != 0,
-        )
-    return code, "\n".join(log[-40:])
+    st.session_state.quick_run = {
+        "process": process,
+        "output_dir": str(output_dir),
+        "log": str(log_path),
+    }
+    st.session_state.quick_result = None
+    st.session_state.quick_error = None
+
+
+@st.fragment(run_every=1.0)
+def analysis_progress() -> None:
+    """Show the running analysis every second; rerun the page when it ends."""
+    run = st.session_state.get("quick_run")
+    if run is None:
+        return
+    code = run["process"].poll()
+    if code is None:
+        status = st.status("Analyzing the clip...", expanded=True, state="running")
+        latest = log_lines(Path(run["log"]), last=1, tail_bytes=4096)
+        status.caption(latest[0][:160] if latest else "Starting...")
+        return
+    st.session_state.quick_run = None
+    if code == 0:
+        st.session_state.quick_result = run["output_dir"]
+    else:
+        st.session_state.quick_error = "\n".join(log_lines(Path(run["log"]), last=40))
+    st.rerun()
 
 
 def show_results(output_dir: Path) -> None:
@@ -616,6 +649,7 @@ def analyze_page() -> None:
         reset_quick_points()
         st.session_state.quick_frame_key = frame_key
         st.session_state.quick_result = None
+        st.session_state.quick_error = None
     frame = read_frame(video_path, frame_index)
     points = st.session_state.quick_points
     next_index = len(points)
@@ -662,10 +696,12 @@ def analyze_page() -> None:
     if undo_column.button("Undo last point", disabled=not points):
         st.session_state.quick_points.pop()
         st.session_state.quick_result = None
+        st.session_state.quick_error = None
         st.rerun()
     if reset_column.button("Start again", disabled=not points):
         reset_quick_points()
         st.session_state.quick_result = None
+        st.session_state.quick_error = None
         st.rerun()
     if calibration is None:
         return
@@ -693,18 +729,23 @@ def analyze_page() -> None:
             "and heatmaps, but no shots or rallies. The README explains how to add "
             "them."
         )
-    if st.button("Analyze", type="primary"):
+    running = st.session_state.get("quick_run") is not None
+    if st.button("Analyze", type="primary", disabled=running) and not running:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = REPO_ROOT / "outputs" / "ui_runs" / f"{video_path.stem}_{run_id}"
         calibration_path = output_dir / "calibration.json"
         save_calibration(calibration_path, calibration)
-        code, log = run_with_progress(
-            quick_pipeline_command(video_path, output_dir, calibration_path, ball)
+        start_analysis(
+            quick_pipeline_command(video_path, output_dir, calibration_path, ball),
+            output_dir,
         )
-        if code != 0:
-            st.code(log)
-            return
-        st.session_state.quick_result = str(output_dir)
+        st.rerun()
+    if running:
+        analysis_progress()
+    if st.session_state.get("quick_error"):
+        st.error("The analysis stopped with an error.")
+        st.code(st.session_state.quick_error)
+        return
     if st.session_state.get("quick_result"):
         st.subheader("3. Results")
         show_results(Path(st.session_state.quick_result))
@@ -1654,7 +1695,13 @@ def advanced_page() -> None:
 def main() -> None:
     st.set_page_config(page_title="CourtVision", layout="wide")
     initialize_state()
-    reset = {"quick_points": [], "quick_last_click": None, "quick_result": None}
+    reset = {
+        "quick_points": [],
+        "quick_last_click": None,
+        "quick_result": None,
+        "quick_run": None,
+        "quick_error": None,
+    }
     for key, value in reset.items():
         st.session_state.setdefault(key, value)
     st.navigation(

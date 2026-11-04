@@ -52,6 +52,7 @@ measured results are in the README and `reports/`.
 - expose confidence, recovery time, and reassociation distance in the local app
 - README rewritten around padel: a demo of the tracked video beside the court map, what you get from a clip, the measured results with links to `reports/`, a quick start, and known limitations; footage is credited, and the README may show one short excerpt of the pipeline's output (ADR 0006)
 - the app opens on **Analyze a clip**: drop a clip, click six court points (with a guide), press Analyze, and get the tracked video beside the court map, the report, and a PDF; the old page is now **Advanced**; clicks land correctly when the frame is shown smaller than its size, and undoing or resetting points no longer brings the last click back (on both pages)
+- Analyze runs the clip once: the analysis runs in the background with its progress on the page, so a rerun of the page no longer hides it or starts a second one (#67)
 
 ### Removed
 
