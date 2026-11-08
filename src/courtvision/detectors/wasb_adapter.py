@@ -1,14 +1,16 @@
-"""Optional adapter for the WASB ball tracker (nttcom/WASB-SBDT, MIT licence).
+"""The WASB ball tracker (nttcom/WASB-SBDT, MIT licence).
 
 WASB, like TrackNet, reads three frames in a row and paints a heat map of where
-the ball is, but it paints one for each of the three frames. Its model code is
-loaded from a local copy of the WASB repository; the weights are downloaded
-separately (MODEL_ZOO.md there).
+the ball is, but it paints one for each of the three frames. Its network is in
+wasb_hrnet.py; its weights, trained on tennis, are downloaded on first use.
 """
 
 from __future__ import annotations
 
-import importlib.util
+import hashlib
+import shutil
+import tempfile
+import urllib.request
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -17,6 +19,14 @@ import numpy as np
 
 from courtvision.detectors.tracknet_adapter import BallPoint, _get_torch
 
+# The tennis weights linked from WASB-SBDT's MODEL_ZOO.md.
+WASB_WEIGHTS_URL = (
+    "https://drive.google.com/uc?export=download&id=14AeyIOCQ2UaQmbZLNQJa1H_eSwxUXk7z"
+)
+WASB_WEIGHTS_SHA256 = "9d391239ab10c733f8e5bfadf16ab72838e7a8ebc88e8ae2038501c03d42b4bb"
+DEFAULT_WASB_WEIGHTS = (
+    Path.home() / ".cache" / "courtvision" / "wasb_tennis_best.pth.tar"
+)
 WASB_INPUT_SIZE = (512, 288)
 WASB_FRAMES = 3
 WASB_SCORE_THRESHOLD = 0.5
@@ -73,40 +83,65 @@ WASB_HRNET_CONFIG = {
 }
 
 
-class _Config(dict):
-    """A dict whose keys can also be read as attributes, as WASB's HRNet does."""
+def ensure_wasb_weights(path: str | Path = DEFAULT_WASB_WEIGHTS) -> Path:
+    """The weights file, downloaded and checked against its SHA-256 if missing."""
+    path = Path(path)
+    if path.exists():
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Downloading the WASB ball tracker weights (6 MB) to {path}")
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as download:
+        with urllib.request.urlopen(WASB_WEIGHTS_URL, timeout=60) as response:
+            shutil.copyfileobj(response, download)
+    temporary = Path(download.name)
+    digest = hashlib.sha256(temporary.read_bytes()).hexdigest()
+    if digest != WASB_WEIGHTS_SHA256:
+        temporary.unlink()
+        raise ValueError(
+            "The downloaded WASB weights don't match the expected file. Download "
+            f"them by hand from {WASB_WEIGHTS_URL} to {path}."
+        )
+    temporary.replace(path)
+    return path
 
-    def __getattr__(self, name):
-        try:
-            value = self[name]
-        except KeyError as error:
-            raise AttributeError(name) from error
-        return _Config(value) if isinstance(value, dict) else value
 
+def load_wasb_model(model_path: str | Path, device):
+    """WASB's HRNet with trained weights, ready to run."""
+    from courtvision.detectors.wasb_hrnet import HRNet
 
-def load_wasb_model(wasb_dir: str | Path, model_path: str | Path, device):
-    """WASB's HRNet from a local copy of its repository, with trained weights."""
     torch = _get_torch()
-    hrnet_path = Path(wasb_dir) / "src" / "models" / "hrnet.py"
     model_path = Path(model_path)
     if not model_path.exists():
         raise FileNotFoundError(f"WASB weights not found: {model_path}")
-    if not hrnet_path.exists():
-        raise FileNotFoundError(
-            "WASB's hrnet.py not found. Download nttcom/WASB-SBDT and pass its "
-            f"directory. Missing: {hrnet_path}"
-        )
-    # Load the one file, so WASB's models package and its other models stay out.
-    spec = importlib.util.spec_from_file_location("wasb_hrnet", hrnet_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    model = module.HRNet(_Config(WASB_HRNET_CONFIG))
+    model = HRNet(WASB_HRNET_CONFIG)
     checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
     model.load_state_dict(checkpoint.get("model_state_dict", checkpoint))
     model.to(device)
     model.eval()
     return model
+
+
+def infer_ball_track(
+    video_path: str | Path, model, device, max_frames: int | None = None
+) -> list[BallPoint]:
+    """Run WASB on a video, returning the ball on every frame read."""
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        raise ValueError(f"Could not open input video: {video_path}")
+
+    def frames():
+        read = 0
+        while max_frames is None or read < max_frames:
+            ok, frame = capture.read()
+            if not ok:
+                return
+            read += 1
+            yield frame
+
+    try:
+        return infer_ball_track_frames(frames(), 0, model, device)
+    finally:
+        capture.release()
 
 
 def infer_ball_track_frames(

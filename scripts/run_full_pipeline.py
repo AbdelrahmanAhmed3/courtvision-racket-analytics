@@ -75,11 +75,13 @@ from courtvision.detectors.roboflow_detector import (  # noqa: E402
 )
 from courtvision.detectors.tracknet_adapter import (  # noqa: E402
     BallPoint,
-    DEFAULT_TRACKNET_REPO_URL,
-    ensure_tracknet_repo,
-    get_device as get_tracknet_device,
+    get_device,
+)
+from courtvision.detectors.wasb_adapter import (  # noqa: E402
+    DEFAULT_WASB_WEIGHTS,
+    ensure_wasb_weights,
     infer_ball_track,
-    load_tracknet_model,
+    load_wasb_model,
 )
 from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 from courtvision.tracking.simple_tracker import (  # noqa: E402
@@ -642,27 +644,20 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_REASSOCIATION_DISTANCE_PX,
     )
     parser.add_argument(
-        "--tracknet-model-path",
-        help="TrackNet weights path. Enables ball tracking and ball projection.",
-    )
-    parser.add_argument(
-        "--tracknet-dir",
-        help="Directory containing yastrebksv/TrackNet model.py.",
-    )
-    parser.add_argument(
-        "--tracknet-device",
-        default="auto",
-        help="TrackNet device: auto, cuda, mps, or cpu.",
-    )
-    parser.add_argument(
-        "--clone-tracknet",
+        "--no-ball",
         action="store_true",
-        help="Clone yastrebksv/TrackNet into --tracknet-dir when model.py is missing.",
+        help="Skip ball tracking: no shots, rallies or ball on the court map.",
     )
     parser.add_argument(
-        "--tracknet-repo-url",
-        default=DEFAULT_TRACKNET_REPO_URL,
-        help="TrackNet source repository used with --clone-tracknet.",
+        "--ball-weights",
+        default=str(DEFAULT_WASB_WEIGHTS),
+        help="WASB ball tracker weights; downloaded here on first use "
+        "(default: %(default)s).",
+    )
+    parser.add_argument(
+        "--ball-device",
+        default="auto",
+        help="Ball tracker device: auto, cuda, mps, or cpu.",
     )
     parser.add_argument(
         "--ball-trace",
@@ -805,8 +800,6 @@ def main() -> None:
         raise ValueError("--court-type is only used with --create-calibration")
     if args.max_seconds is not None and args.max_seconds <= 0:
         raise ValueError("--max-seconds must be greater than zero")
-    if args.tracknet_model_path and not args.tracknet_dir:
-        raise ValueError("--tracknet-model-path requires --tracknet-dir")
     if args.ball_trace < 0:
         raise ValueError("--ball-trace cannot be negative")
     if args.track_calibration and not (args.calibration or args.create_calibration):
@@ -881,29 +874,21 @@ def main() -> None:
         )
 
     ball_tracks_by_frame: dict[int, BallPoint] = {}
-    if args.tracknet_model_path:
-        if args.clone_tracknet:
-            ensure_tracknet_repo(args.tracknet_dir, args.tracknet_repo_url)
-        tracknet_device = get_tracknet_device(args.tracknet_device)
-        print(f"Running TrackNet ball tracking on: {tracknet_device}")
-        tracknet_model = load_tracknet_model(
-            args.tracknet_dir,
-            args.tracknet_model_path,
-            tracknet_device,
-        )
+    if not args.no_ball:
+        ball_device = get_device(args.ball_device)
+        print(f"Running WASB ball tracking on: {ball_device}")
+        weights = ensure_wasb_weights(args.ball_weights)
+        ball_model = load_wasb_model(weights, ball_device)
         ball_tracks_by_frame = {
             point.frame: point
             for point in infer_ball_track(
-                input_path,
-                tracknet_model,
-                tracknet_device,
-                max_frames=max_frames,
+                input_path, ball_model, ball_device, max_frames=max_frames
             )
         }
         visible_ball_count = sum(
             point.visible for point in ball_tracks_by_frame.values()
         )
-        print(f"TrackNet visible ball observations: {visible_ball_count}/{max_frames}")
+        print(f"Ball found on {visible_ball_count}/{max_frames} frames")
 
     source_writer = cv2.VideoWriter(
         str(output_dir / "annotated.mp4"),
@@ -1167,7 +1152,7 @@ def main() -> None:
             movement,
             new_shots,
             rallies,
-            ball_tracked=bool(args.tracknet_model_path),
+            ball_tracked=not args.no_ball,
         )
         (output_dir / "report.json").write_text(json.dumps(report, indent=1) + "\n")
         heatmap_image = draw_heatmaps(

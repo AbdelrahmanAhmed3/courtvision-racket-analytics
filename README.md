@@ -17,7 +17,7 @@ results and their weak spots written up in [`reports/`](reports/).
 - **Four players with stable identities and teams.** RF-DETR finds people, a court
   filter keeps the players, and a tracker that never gives out more than four IDs keeps
   each player's ID through the clip.
-- **The ball and its events.** TrackNet follows the ball; a small classifier marks
+- **The ball and its events.** WASB follows the ball; a small classifier marks
   impacts, bounces and wall rebounds.
 - **Shots and rallies.** Each impact becomes a shot with a hitter, a receiver, the
   bounce and an approximate speed; rallies are split from the gaps in play.
@@ -47,14 +47,17 @@ boxes); how the labels were made and scored is in [docs/evaluation.md](docs/eval
 | --- | --- | --- |
 | Players found (RF-DETR Nano) | precision 1.00, recall 0.97 | [model_comparison.md](reports/model_comparison.md) |
 | Player identity | IDF1 0.97, 5 switches (all at crossings); teams 100 % right | [player_identity.md](reports/player_identity.md) |
-| Impacts | precision 0.44, recall 0.38 (±2 frames) | [ball_events.md](reports/ball_events.md) |
-| Bounces / wall rebounds | recall 0.33 / 0.51 | [ball_events.md](reports/ball_events.md) |
-| Hitter of a found impact | right 65 % of the time | [ball_events.md](reports/ball_events.md#shots-and-hitters-2026-10-25) |
-| Rallies | 10 of 10 found; start and end within 0.2 s (median) | [ball_events.md](reports/ball_events.md) |
+| Ball found during rallies | 70 % of frames | [ball_tracker.md](reports/ball_tracker.md) |
+| Impacts | precision 0.50, recall 0.43 (±2 frames) | [ball_tracker.md](reports/ball_tracker.md) |
+| Bounces / wall rebounds | recall 0.46 / 0.21 | [ball_tracker.md](reports/ball_tracker.md) |
+| Hitter of a found impact | right 86 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
+| Rallies | 10 of 10 found; start within 0.02 s and end within 0.12 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
 | Distance and speed | no ground truth; checked on synthetic tracks | [player_movement.md](reports/player_movement.md) |
 
 Ball events are the weakest part: the ball tracker was trained on tennis and misses
-the padel ball on about 3 frames in 10. Improving them is tracked in
+the padel ball on about 3 frames in 10. Training it on padel is tracked in
+[#61](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/61), and
+the events in
 [#52](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/52).
 
 ## Quick start
@@ -73,19 +76,9 @@ two ends and the middle of each service line, with a guide showing where. Then p
 **Analyze**. All the options and the experimental automatic calibration are on the
 **Advanced** page.
 
-The first run downloads the RF-DETR weights (about 370 MB for Nano, cached in
-`~/.roboflow/models`). Generated files go to `outputs/`, which git ignores.
-
-**Ball tracking** needs TrackNet, whose weights are not distributed with CourtVision
-(see [Third-party components](#third-party-components)):
-
-```bash
-pip install -e ".[tracknet]"
-```
-
-Put the TrackNet source in `tracknet-model/TrackNet` and the weights at
-`tracknet-model/model_best.pt`; the app finds them there. Without them, you still get
-players, teams, movement and the report, without shots or rallies.
+The first run downloads the RF-DETR player weights (about 370 MB for Nano, cached in
+`~/.roboflow/models`) and the WASB ball tracker weights (6 MB, cached in
+`~/.cache/courtvision`). Generated files go to `outputs/`, which git ignores.
 
 **From the command line,** calibrate the court once by clicking named points, then run
 the whole pipeline:
@@ -95,13 +88,12 @@ python scripts/calibrate_court.py --input data/raw/clip.mp4 --court-type padel \
   --frame 90 --output configs/calibrations/clip.json
 python scripts/run_full_pipeline.py --input data/raw/clip.mp4 \
   --calibration configs/calibrations/clip.json --output-dir outputs/clip \
-  --tracknet-dir tracknet-model/TrackNet \
-  --tracknet-model-path tracknet-model/model_best.pt --draw-court-map
+  --draw-court-map
 ```
 
 A 15-second clip takes about 2 minutes on an Apple M4. Run
 `python scripts/run_full_pipeline.py --help` for every option, including replaying
-saved detections without running the detector again.
+saved detections without running the detector again, and `--no-ball` to skip the ball.
 
 ## Known limitations
 
@@ -113,8 +105,11 @@ saved detections without running the detector again.
   along the court floor from one hit to the next. It is not a radar speed.
 - **No point outcomes yet.** CourtVision does not know who won a point, or whether it
   ended in a winner or an error.
-- **About 4 in 10 impacts are found,** and fewer than half of the impacts it reports are
+- **About 4 in 10 impacts are found,** and about half of the impacts it reports are
   real, so shot counts per player can be off either way. The report says so.
+- **Wall rebounds are unreliable:** 2 in 10 are found, and most of those marked are
+  wrong ([ball_tracker.md](reports/ball_tracker.md)). They don't change the shots, but a
+  false one can stretch the end of a rally.
 - **Players who cross can swap IDs,** and a false detection near one player can hand
   their ID to their partner ([#47](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/47)).
 - **Players who run out of the court are dropped** by the court filter ([#38](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/38)).
@@ -128,7 +123,7 @@ saved detections without running the detector again.
 ```mermaid
 flowchart LR
     V[Video] --> PD[RF-DETR players]
-    V --> BT[TrackNet ball]
+    V --> BT[WASB ball]
     PD --> PT[Four-ID tracker and teams]
     V --> C[Court calibration]
     C --> H[Homography]
@@ -205,13 +200,16 @@ Only permissively licensed components may be bundled or downloaded by default
 
 ### Third-party components
 
-Nothing below is bundled in this repository. Each keeps its own licence.
+Only the WASB network file is bundled in this repository, with its notices. Each keeps
+its own licence.
 
 | Component | How it is used | Licence |
 | --- | --- | --- |
 | Python dependencies (NumPy, OpenCV, SciPy, pandas, and others) | Installed from PyPI | Their own permissive licences |
 | [RF-DETR](https://github.com/roboflow/rf-detr) and its COCO weights (Nano, Small, Medium, Base) | Installed with the `local` extra; weights downloaded on first use | Apache-2.0 |
-| [yastrebksv/TrackNet](https://github.com/yastrebksv/TrackNet) | Cloned at runtime for ball tracking; weights supplied by the user | **None published** (all rights reserved); to be replaced, see [docs/roadmap.md](docs/roadmap.md) |
+| [WASB-SBDT](https://github.com/nttcom/WASB-SBDT) network | Copied into `src/courtvision/detectors/wasb_hrnet.py` | MIT (NTT Communications; built on Microsoft's HRNet, MIT) |
+| WASB tennis weights | Downloaded on first use | MIT, as published with WASB-SBDT. They were trained on the TrackNet tennis dataset, whose own terms are not confirmed, so check them before commercial use |
+| [yastrebksv/TrackNet](https://github.com/yastrebksv/TrackNet) | No longer used by the app or the pipeline; only older evaluation scripts, until it is removed | **None published** (all rights reserved) |
 | Roboflow hosted models (`tennis-v4d0h/2`, `padel-court-fmfv8/15`, `tennis-court-detection-onesd/10`) | Optional; called through Roboflow's API with your own key | Not verified |
 
 ## Repository layout
