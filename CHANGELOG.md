@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Ball
+
+- compare ball trackers on the labelled rallies: WASB (MIT), run with its tennis weights, finds more of the ball than TrackNet and lifts hits, hitters and rally starts; `detectors/wasb_adapter.py`, `scripts/compare_ball_trackers.py`, results in `reports/ball_tracker.md` (#61)
+
 ## v4.0 - Showcase Edition
 
 Padel analytics on a laptop, measured against hand labels: four players with
