@@ -21,10 +21,10 @@ from courtvision.analytics.rallies import Rally
 REPORT_SCHEMA_VERSION = 1
 ACCURACY_NOTES = (
     "Shots are counted from detected impacts: about 4 in 10 real impacts are "
-    "found, and fewer than half of the detected ones are real, so a count can be "
-    "off either way (reports/ball_events.md).",
-    "The hitter is the player nearest the ball at the impact, right about 2 times "
-    "in 3.",
+    "found, and about half of the detected ones are real, so a count can be off "
+    "either way (reports/ball_tracker.md).",
+    "The hitter is the player nearest the ball at the impact, right more than 8 "
+    "times in 10.",
     "Shot speeds are measured on the court floor; the ball's height is not "
     "modelled, so they are approximate.",
     "Distances and speeds come from smoothed positions of each player's feet "

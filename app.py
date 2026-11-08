@@ -76,8 +76,6 @@ from courtvision.detectors.rfdetr_detector import RFDETR_SIZES  # noqa: E402
 DEFAULT_MODEL_ID = "tennis-v4d0h/2"
 LOCAL_DETECTOR = "RF-DETR (local)"
 HOSTED_DETECTOR = "Roboflow (hosted)"
-DEFAULT_TRACKNET_DIR = REPO_ROOT / "tracknet-model" / "TrackNet"
-DEFAULT_TRACKNET_WEIGHTS = REPO_ROOT / "tracknet-model" / "model_best.pt"
 AUTO_SEARCH_WINDOW_SECONDS = 6.0
 # Invalidates only Streamlit's cached keypoint proposal after a point-order fix.
 KEYPOINT_MAPPING_REVISION = "2026-08-19-padel-front-back-v2"
@@ -225,10 +223,8 @@ def run_pipeline(
     calibration_path: Path,
     detector_args: list[str],
     seconds: float,
-    tracknet_dir: str | None,
-    tracknet_model_path: str | None,
-    tracknet_device: str,
-    clone_tracknet: bool,
+    track_ball: bool,
+    ball_device: str,
     track_calibration: bool,
     confidence: float,
     max_missing_seconds: float,
@@ -256,19 +252,10 @@ def run_pipeline(
         "--draw-court-map",
         "--draw-calibration-overlay",
     ]
-    if tracknet_model_path:
-        command.extend(
-            [
-                "--tracknet-dir",
-                tracknet_dir or "",
-                "--tracknet-model-path",
-                tracknet_model_path,
-                "--tracknet-device",
-                tracknet_device,
-            ]
-        )
-        if clone_tracknet:
-            command.append("--clone-tracknet")
+    if track_ball:
+        command += ["--ball-device", ball_device]
+    else:
+        command.append("--no-ball")
     if track_calibration:
         command.append("--track-calibration")
     if allow_calibration_warning:
@@ -514,9 +501,9 @@ def choose_clip() -> Path | None:
 
 
 def quick_pipeline_command(
-    video_path: Path, output_dir: Path, calibration_path: Path, ball: bool
+    video_path: Path, output_dir: Path, calibration_path: Path
 ) -> list[str]:
-    command = [
+    return [
         sys.executable,
         "scripts/run_full_pipeline.py",
         "--input",
@@ -527,14 +514,6 @@ def quick_pipeline_command(
         str(calibration_path),
         "--draw-court-map",
     ]
-    if ball:
-        command += [
-            "--tracknet-dir",
-            str(DEFAULT_TRACKNET_DIR),
-            "--tracknet-model-path",
-            str(DEFAULT_TRACKNET_WEIGHTS),
-        ]
-    return command
 
 
 def log_lines(log_path: Path, last: int, tail_bytes: int | None = None) -> list[str]:
@@ -721,14 +700,6 @@ def analyze_page() -> None:
     )
 
     st.subheader("2. Analyze")
-    ball = DEFAULT_TRACKNET_WEIGHTS.exists() and DEFAULT_TRACKNET_DIR.exists()
-    if not ball:
-        st.info(
-            "Ball tracking is off: no TrackNet weights at "
-            "tracknet-model/model_best.pt. You'll get the players, teams, movement "
-            "and heatmaps, but no shots or rallies. The README explains how to add "
-            "them."
-        )
     running = st.session_state.get("quick_run") is not None
     if st.button("Analyze", type="primary", disabled=running) and not running:
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -736,7 +707,7 @@ def analyze_page() -> None:
         calibration_path = output_dir / "calibration.json"
         save_calibration(calibration_path, calibration)
         start_analysis(
-            quick_pipeline_command(video_path, output_dir, calibration_path, ball),
+            quick_pipeline_command(video_path, output_dir, calibration_path),
             output_dir,
         )
         st.rerun()
@@ -819,32 +790,16 @@ def advanced_page() -> None:
             ),
         )
         track_ball = st.checkbox(
-            "Include TrackNet ball projection",
-            value=DEFAULT_TRACKNET_WEIGHTS.exists(),
+            "Track the ball",
+            value=True,
+            help="WASB ball tracking, for shots, rallies and the ball on the court "
+            "map. Its weights (6 MB) download on the first run.",
         )
-        tracknet_dir = None
-        tracknet_model_path = None
-        tracknet_device = "auto"
-        clone_tracknet = False
+        ball_device = "auto"
         if track_ball:
-            st.caption(
-                "Runs player and ball projection together on the same court map."
-            )
-            tracknet_dir = st.text_input(
-                "TrackNet source directory",
-                value=str(DEFAULT_TRACKNET_DIR),
-            )
-            tracknet_model_path = st.text_input(
-                "TrackNet weights",
-                value=str(DEFAULT_TRACKNET_WEIGHTS),
-            )
-            tracknet_device = st.selectbox(
-                "TrackNet device",
+            ball_device = st.selectbox(
+                "Ball tracker device",
                 ["auto", "mps", "cuda", "cpu"],
-            )
-            clone_tracknet = st.checkbox(
-                "Download TrackNet source if missing",
-                value=True,
             )
 
     if uploaded_video is None:
@@ -1624,11 +1579,6 @@ def advanced_page() -> None:
         "Run player + ball projection" if track_ball else "Run player projection"
     )
     if st.button(run_label, type="primary"):
-        if track_ball and (not tracknet_dir or not tracknet_model_path):
-            st.error(
-                "Ball tracking requires both the TrackNet directory and weights path."
-            )
-            return
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = REPO_ROOT / "outputs" / "ui_runs" / f"{video_path.stem}_{run_id}"
         calibration_path = output_dir / "calibration.json"
@@ -1640,10 +1590,8 @@ def advanced_page() -> None:
                 calibration_path,
                 detector_args,
                 run_seconds,
-                tracknet_dir,
-                tracknet_model_path,
-                tracknet_device,
-                clone_tracknet,
+                track_ball,
+                ball_device,
                 track_calibration and not use_four_corner_fallback,
                 confidence,
                 max_missing_seconds,
@@ -1666,7 +1614,7 @@ def advanced_page() -> None:
             )
         if track_ball and counts["ball"] == 0:
             st.warning(
-                "TrackNet found no visible ball in this time range. Increase the run "
+                "The ball tracker found no ball in this time range. Increase the run "
                 "duration or choose a segment where the ball is visible."
             )
         try:

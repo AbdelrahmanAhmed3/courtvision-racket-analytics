@@ -40,6 +40,8 @@ from courtvision.analytics.ball_events import candidate_features  # noqa: E402
 from courtvision.detectors.base import Detection  # noqa: E402
 from courtvision.detectors.tracknet_adapter import BallPoint, get_device  # noqa: E402
 from courtvision.detectors.wasb_adapter import (  # noqa: E402
+    DEFAULT_WASB_WEIGHTS,
+    ensure_wasb_weights,
     infer_ball_track_frames,
     load_wasb_model,
 )
@@ -49,8 +51,6 @@ from courtvision.evaluation.labels import load_labels  # noqa: E402
 from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 
 PREDICTIONS_DIR = REPO_ROOT / "outputs" / "predictions"
-WASB_DIR = REPO_ROOT / "wasb-model" / "WASB-SBDT"
-WASB_WEIGHTS = REPO_ROOT / "wasb-model" / "wasb_tennis_best.pth.tar"
 # Two or three ball widths on the 720p labelled video.
 NEAR_PX = 15.0
 CANDIDATE_FRAMES = 2
@@ -60,8 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--labels", required=True, help="Labels JSON.")
     parser.add_argument("--video", required=True, help="The labelled video.")
-    parser.add_argument("--wasb-dir", default=str(WASB_DIR))
-    parser.add_argument("--wasb-weights", default=str(WASB_WEIGHTS))
+    parser.add_argument("--wasb-weights", default=str(DEFAULT_WASB_WEIGHTS))
     parser.add_argument("--device", default="auto")
     return parser.parse_args()
 
@@ -88,7 +87,7 @@ def main() -> None:
 def run_wasb(args: argparse.Namespace, labels, tracknet: dict) -> dict:
     """WASB's ball on every frame of each labelled rally, with TrackNet's players."""
     device = get_device(args.device)
-    model = load_wasb_model(args.wasb_dir, args.wasb_weights, device)
+    model = load_wasb_model(ensure_wasb_weights(args.wasb_weights), device)
     capture = cv2.VideoCapture(args.video)
     segments = {}
     labelled = [s for s in labels.segments if s.status == "label"]

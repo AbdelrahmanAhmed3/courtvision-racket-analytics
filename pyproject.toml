@@ -62,6 +62,8 @@ where = ["src"]
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+# Copied from WASB-SBDT (MIT) and kept as published; see its header.
+extend-exclude = ["src/courtvision/detectors/wasb_hrnet.py"]
 
 [tool.ruff.format]
 # Black-compatible layout; line length and target version come from [tool.ruff].

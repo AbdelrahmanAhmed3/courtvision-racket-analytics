@@ -61,19 +61,44 @@ WASB runs at about 40 frames a second on an Apple M4.
   designed on TrackNet's tracks, which if anything favours TrackNet. A few points
   either way are noise; the gains in impacts and hitters are not.
 
-### Next
-
-- **Use WASB in the pipeline** and drop TrackNet: retrain the event model that ships
-  on WASB's candidates, and look again at boosted trees, which now do best on
-  impacts.
-- **Fine-tune WASB on padel.** That needs padel frames with the ball labelled on
-  every frame: the PadelTracker100 labels (CC BY 4.0) refer to video clips that are
-  not public, so the first padel labels will be our own.
-
 ### Reproducing
 
-WASB is not bundled. Put its code in `wasb-model/WASB-SBDT` (from
-[nttcom/WASB-SBDT](https://github.com/nttcom/WASB-SBDT)) and its tennis weights at
-`wasb-model/wasb_tennis_best.pth.tar` (from its `MODEL_ZOO.md`); git ignores
-`wasb-model/`. TrackNet's ball comes from the cache of
-`scripts/predict_shot_events.py`.
+TrackNet's ball comes from the cache of `scripts/predict_shot_events.py`. WASB's
+weights download to `~/.cache/courtvision/` on first use.
+
+## The pipeline uses WASB (2026-11-08)
+
+Part of #61. The app and `scripts/run_full_pipeline.py` now track the ball with WASB,
+on by default (`--no-ball` skips it). The network is copied into
+`src/courtvision/detectors/wasb_hrnet.py` with its MIT notices; the tennis weights
+(6 MB) download on first use and are checked against their SHA-256. On the first
+rally, the copy gives the same ball as WASB's own file on all 280 frames.
+
+The event model that ships (`analytics/ball_events_model.json`) is retrained on WASB's
+candidates from all 10 rallies, so the scores above for logistic regression with
+WASB are the ones the pipeline gets: impacts 0.50 / 0.43, the hitter right 86 % of
+the time.
+
+On the Qatar Major clip, with the same six court points:
+
+| | TrackNet | WASB |
+| --- | --- | --- |
+| Shots | 12 | 11 |
+| Same team twice in a row | 4 | 4 |
+| Bounces / impacts / wall rebounds marked | 16 / 12 / 8 | 16 / 11 / **19** |
+
+- **Wall rebounds are now over-reported** on this clip: 19 in a 12-second rally. On the
+  labelled rallies only 1 in 5 reported wall rebounds is real (precision 0.19), so most
+  of these are false. Shots don't use them, but a rally ends at its last ball event of
+  any kind, so a false one can stretch a rally's end; the rally scores above include
+  that.
+
+### Next
+
+- **Steady the ball between frames.** WASB's full method adds a tracking step that
+  picks, on each frame, the spot that fits the ball's motion; the adapter takes the
+  strongest spot. Its one-frame jumps are the likely source of the false wall
+  rebounds.
+- **Fine-tune WASB on padel,** which needs padel frames with the ball labelled on every
+  frame. The PadelTracker100 labels refer to clips that are not public, so the first
+  padel labels will be our own.
