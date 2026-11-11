@@ -1,4 +1,4 @@
-"""Impacts, bounces and wall rebounds from the ball track, decided by a small model.
+"""Impacts and bounces from the ball track, decided by a small model.
 
 Candidates (``ball_track.event_candidates``) are moments where something may
 have happened. Each gets the numbers in ``FEATURES`` from the ball track, the
@@ -59,7 +59,7 @@ class Candidate:
 
 @dataclass(frozen=True)
 class BallEvent:
-    kind: str  # "impact", "bounce" or "wall_rebound"
+    kind: str  # "impact" or "bounce"; wall rebounds are not learned yet (#74)
     frame: int
     track_id: int | None  # for an impact, the player nearest the ball
 
@@ -110,7 +110,7 @@ def detect_ball_events(
     estimate: HomographyEstimate,
     model: EventModel | None = None,
 ) -> list[BallEvent]:
-    """Every candidate the model calls an impact, bounce or wall rebound."""
+    """Every candidate the model calls an impact or a bounce."""
     candidates = candidate_features(ball_points, players_by_frame, estimate)
     if not candidates:
         return []

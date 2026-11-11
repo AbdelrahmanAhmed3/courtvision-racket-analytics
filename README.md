@@ -18,7 +18,7 @@ results and their weak spots written up in [`reports/`](reports/).
   filter keeps the players, and a tracker that never gives out more than four IDs keeps
   each player's ID through the clip.
 - **The ball and its events.** WASB follows the ball; a small classifier marks
-  impacts, bounces and wall rebounds.
+  impacts and bounces.
 - **Shots and rallies.** Each impact becomes a shot with a hitter, a receiver, the
   bounce and an approximate speed; rallies are split from the gaps in play.
 - **Movement.** Distance, average and top speed, time at the net, in the middle and at
@@ -48,9 +48,9 @@ boxes); how the labels were made and scored is in [docs/evaluation.md](docs/eval
 | Players found (RF-DETR Nano) | precision 1.00, recall 0.97 | [model_comparison.md](reports/model_comparison.md) |
 | Player identity | IDF1 0.97, 5 switches (all at crossings); teams 100 % right | [player_identity.md](reports/player_identity.md) |
 | Ball found during rallies | 70 % of frames | [ball_tracker.md](reports/ball_tracker.md) |
-| Impacts | precision 0.50, recall 0.43 (±2 frames) | [ball_tracker.md](reports/ball_tracker.md) |
-| Bounces / wall rebounds | recall 0.46 / 0.21 | [ball_tracker.md](reports/ball_tracker.md) |
-| Hitter of a found impact | right 86 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
+| Impacts | precision 0.49, recall 0.50 (±2 frames) | [ball_tracker.md](reports/ball_tracker.md) |
+| Bounces | precision 0.34, recall 0.51 | [ball_tracker.md](reports/ball_tracker.md) |
+| Hitter of a found impact | right 88 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
 | Rallies | 10 of 10 found; start within 0.02 s and end within 0.12 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
 | Distance and speed | no ground truth; checked on synthetic tracks | [player_movement.md](reports/player_movement.md) |
 
@@ -105,11 +105,11 @@ saved detections without running the detector again, and `--no-ball` to skip the
   along the court floor from one hit to the next. It is not a radar speed.
 - **No point outcomes yet.** CourtVision does not know who won a point, or whether it
   ended in a winner or an error.
-- **About 4 in 10 impacts are found,** and about half of the impacts it reports are
-  real, so shot counts per player can be off either way. The report says so.
-- **Wall rebounds are unreliable:** 2 in 10 are found, and most of those marked are
-  wrong ([ball_tracker.md](reports/ball_tracker.md)). They don't change the shots, but a
-  false one can stretch the end of a rally.
+- **About half of the impacts are found,** and about half of the impacts it reports
+  are real, so shot counts per player can be off either way. The report says so.
+- **Wall rebounds are not reported.** From a high camera, a ball turning off the glass
+  looks like one bouncing on the floor next to it; telling them apart needs the ball's
+  height ([#73](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/73)).
 - **Players who cross can swap IDs,** and a false detection near one player can hand
   their ID to their partner ([#47](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/47)).
 - **Players who run out of the court are dropped** by the court filter ([#38](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/38)).
@@ -151,13 +151,13 @@ a proposal failed, and the clicked calibration is the one the results rely on.
 
 | File | What it holds |
 | --- | --- |
-| `annotated.mp4` | Player IDs, ball trail, and impact, bounce and wall-rebound markers |
+| `annotated.mp4` | Player IDs, ball trail, and impact and bounce markers |
 | `court_map.mp4`, `court_map_annotated.mp4` | The top-down court on its own, and beside the video |
 | `report.pdf`, `report.md`, `report.json` | The match report; every JSON key is described in [`report.schema.json`](src/courtvision/analytics/report.schema.json) |
 | `heatmaps.png`, `heatmaps.json` | Seconds each player spent in each square metre |
 | `movement.csv` | Per player: distance, average and top speed, time at the net, in the middle and at the back |
 | `teams.csv` | Each player's team, near or far |
-| `ball_events.csv` | Impacts with the nearest player, bounces and wall rebounds |
+| `ball_events.csv` | Impacts with the nearest player, and bounces |
 | `shots.csv` | Hitter, receiver, bounce and approximate court speed of each shot |
 | `rallies.csv` | Start and end frame, length and shots of each rally |
 | `tracks_with_court_coords.csv` | Every player box with image and court coordinates |

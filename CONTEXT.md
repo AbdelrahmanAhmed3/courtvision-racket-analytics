@@ -75,7 +75,8 @@ The ball touching the court floor.
 _Avoid_: rebound (reserved for Wall rebound)
 
 **Wall rebound**:
-The ball touching a glass or mesh wall (padel only).
+The ball touching a glass or mesh wall (padel only). Labelled, but not detected yet:
+from the image alone it looks like a bounce (#74).
 _Avoid_: bounce
 
 **Rally**:

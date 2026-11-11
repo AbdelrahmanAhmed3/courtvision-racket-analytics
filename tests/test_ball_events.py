@@ -102,4 +102,8 @@ def test_the_shipped_model_runs_on_a_track() -> None:
     events = detect_ball_events(bounce_track(), {}, COURT)
 
     assert all(isinstance(event, BallEvent) for event in events)
-    assert {event.kind for event in events} <= {"impact", "bounce", "wall_rebound"}
+    assert {event.kind for event in events} <= {"impact", "bounce"}
+
+
+def test_the_shipped_model_does_not_answer_wall_rebound() -> None:
+    assert set(EventModel.load().classes) == {"impact", "bounce", "none"}
