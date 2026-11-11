@@ -466,7 +466,6 @@ EVENT_DISPLAY_SECONDS = 0.6
 EVENT_COLOURS = {
     "impact": (0, 200, 255),
     "bounce": (80, 255, 80),
-    "wall_rebound": (255, 120, 255),
 }
 
 
@@ -476,7 +475,7 @@ def render_events_on_video(
     ball_by_frame: dict[int, BallPoint],
     fps: float,
 ) -> None:
-    """Mark each impact, bounce and wall rebound on the video for a moment."""
+    """Mark each impact and bounce on the video for a moment."""
     if not events:
         return
     capture = cv2.VideoCapture(str(video_path))
@@ -510,7 +509,7 @@ def render_events_on_video(
 
 def _draw_event(image, event: BallEvent, ball_by_frame: dict[int, BallPoint]) -> None:
     colour = EVENT_COLOURS[event.kind]
-    label = {"impact": "IMPACT", "bounce": "BOUNCE", "wall_rebound": "WALL"}[event.kind]
+    label = {"impact": "IMPACT", "bounce": "BOUNCE"}[event.kind]
     if event.kind == "impact" and event.track_id is not None:
         label += f" P{event.track_id}"
     nearby = [
@@ -619,7 +618,7 @@ def parse_args() -> argparse.Namespace:
         "--events",
         choices=("classifier", "legacy"),
         default="classifier",
-        help="classifier: impacts, bounces and wall rebounds from the trained "
+        help="classifier: impacts and bounces from the trained "
         "model in analytics/ball_events.py, written to ball_events.csv and shown "
         "on annotated.mp4 (reports/ball_events.md); legacy: the older shot code "
         "tuned on tennis.",

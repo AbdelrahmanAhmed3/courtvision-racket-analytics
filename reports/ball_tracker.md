@@ -97,8 +97,64 @@ On the Qatar Major clip, with the same six court points:
 
 - **Steady the ball between frames.** WASB's full method adds a tracking step that
   picks, on each frame, the spot that fits the ball's motion; the adapter takes the
-  strongest spot. Its one-frame jumps are the likely source of the false wall
-  rebounds.
+  strongest spot. Its one-frame jumps looked like the source of the false wall
+  rebounds; they turned out not to be (next section).
 - **Fine-tune WASB on padel,** which needs padel frames with the ball labelled on every
   frame. The PadelTracker100 labels refer to clips that are not public, so the first
   padel labels will be our own.
+
+## Wall rebounds switched off (2026-11-11)
+
+#74. The event model no longer answers "wall rebound". Wall rebounds stay in the labels, but candidates take the label of the nearest impact or bounce only.
+
+### Why
+
+On the labelled rallies, with the logistic regression that shipped:
+
+| | TrackNet | WASB |
+| --- | --- | --- |
+| Wall rebounds reported | 99 | 54 |
+| ... really wall rebounds | 25 | 10 |
+| ... really hits | 22 | 20 |
+| ... really nothing | 45 | 21 |
+| One-frame jumps of the ball during the rallies | 92 | 20 |
+
+- **TrackNet wasn't better at walls.** It found more of them (51 % against 21 %) only
+  because it answered "wall" almost twice as often. Either way, 3 or 4 in 5 of the
+  wall rebounds reported were wrong.
+- **Not WASB's jumps,** the guess above: WASB jumps a quarter as often as TrackNet, and
+  only 4 of its 21 false wall rebounds are within 3 frames of a jump.
+- **Not fixable with a confidence bar:** real and false wall rebounds get the same
+  confidence (median 0.54 against 0.56), so precision stays near 0.18 at any bar.
+- **The likely reasons.** From a high camera, a ball turning off the back glass and one
+  bouncing on the floor next to it make the same shape on screen; what tells them
+  apart is the ball's height, which isn't measured yet. And players often hit the ball
+  just after it leaves the glass, so a wall rebound and a hit are a few frames apart.
+  There are also only 47 labelled wall rebounds to learn from.
+
+### Without wall rebounds
+
+Each rally scored by a model trained on the other half, ±2 frames:
+
+| Logistic regression (ships) | Impact P / R | Bounce P / R | Hitter right |
+| --- | --- | --- | --- |
+| With wall rebounds | 0.50 / 0.43 | 0.34 / 0.46 | 86 % |
+| Without | 0.49 / **0.50** | 0.34 / **0.51** | **88 %** |
+
+Rallies are unchanged: 10 of 10, start within 0.02 s and end within 0.12 s (median).
+Boosted trees without wall rebounds: impacts 0.62 / 0.63, bounces 0.56 / 0.37 (#75).
+
+On the Qatar Major clip, same six court points:
+
+| | TrackNet | WASB, with walls | WASB, without |
+| --- | --- | --- | --- |
+| Shots | 12 | 11 | 12 |
+| Same team twice in a row | 4 | 4 | 4 |
+| Bounces / impacts / wall rebounds | 16 / 12 / 8 | 16 / 11 / 19 | 19 / 12 / – |
+
+Some of the candidates that were called wall rebounds are now called bounces (16 → 19).
+Bounce precision is 0.34, so most extra bounces are probably false too. A shot uses
+only the first bounce after its hit: it is recorded as the shot's bounce, and ends the
+speed measurement when no next hit is found.
+
+Wall rebounds come back with the ball's height (#72, #73).

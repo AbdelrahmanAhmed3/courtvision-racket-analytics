@@ -6,6 +6,7 @@
 
 - compare ball trackers on the labelled rallies: WASB (MIT), run with its tennis weights, finds more of the ball than TrackNet and lifts hits, hitters and rally starts; `detectors/wasb_adapter.py`, `scripts/compare_ball_trackers.py`, results in `reports/ball_tracker.md` (#61)
 - the app and the pipeline track the ball with WASB instead of TrackNet, on by default (`--no-ball` skips it): its network is copied in with its MIT notices (`detectors/wasb_hrnet.py`, NOTICE), its tennis weights (6 MB) download on first use and are checked, and the event model is retrained on its candidates; the `--tracknet-*` options are gone (#61)
+- stop reporting wall rebounds until they can be learned: the classifier couldn't tell them from bounces (4 in 5 reported were wrong), and without them it finds half the impacts instead of 4 in 10; they come back with the ball's height (#73, #74)
 
 ## v4.0 - Showcase Edition
 

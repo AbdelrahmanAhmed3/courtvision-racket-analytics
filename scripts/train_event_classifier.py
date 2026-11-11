@@ -1,4 +1,4 @@
-"""Train a small classifier for impacts, bounces and wall rebounds, and score it.
+"""Train a small classifier for impacts and bounces, and score it.
 
 Example (after scripts/predict_shot_events.py has cached the players and ball):
     python scripts/train_event_classifier.py \
@@ -6,7 +6,8 @@ Example (after scripts/predict_shot_events.py has cached the players and ball):
 
 Candidates come from analytics.ball_track.event_candidates. Each gets a few
 numbers computed from the ball track, the player boxes and the hand-marked
-court, and the label of the nearest labelled event within 2 frames (or none).
+court, and the label of the nearest labelled impact or bounce within 2 frames
+(or none). Wall rebounds are labelled but not learned (#74).
 The rallies are split in two halves; a model trained on one half predicts the
 other, so every rally is scored by a model that never saw it. Needs the train
 extra (scikit-learn).
@@ -51,7 +52,10 @@ from courtvision.evaluation.scoring import (  # noqa: E402
 )
 from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: E402
 
-CLASSES = ("impact", "bounce", "wall_rebound", "none")
+# Wall rebounds are labelled but not learned: from the image alone they look like
+# bounces, and 4 in 5 of those reported were wrong. They come back with the ball's
+# height (#73, #74).
+CLASSES = ("impact", "bounce", "none")
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,7 +92,7 @@ def candidate_rows(segment, cached: dict, players: dict) -> list[tuple]:
         near_events = [
             (abs(event.frame - frame), event.kind)
             for event in segment.events
-            if abs(event.frame - frame) <= 2
+            if abs(event.frame - frame) <= 2 and event.kind in CLASSES
         ]
         label = min(near_events)[1] if near_events else "none"
         rows.append(
@@ -192,7 +196,7 @@ def main() -> None:
     methods.update(predicted)
 
     print(f"{labels.video}: ±2 frames; every rally scored by a model that never saw it")
-    print(f"{'method':36}{'impact P/R':>13}{'bounce P/R':>13}{'wall P/R':>13}")
+    print(f"{'method':36}{'impact P/R':>13}{'bounce P/R':>13}")
     for name, events in methods.items():
         scores = score_events(labels, events, 2)
 
@@ -202,9 +206,7 @@ def main() -> None:
                 f"{score.precision:.2f}/{score.recall:.2f}" if score.predicted else "-"
             )
 
-        print(
-            f"{name:36}{cell('impact'):>13}{cell('bounce'):>13}{cell('wall_rebound'):>13}"
-        )
+        print(f"{name:36}{cell('impact'):>13}{cell('bounce'):>13}")
 
     print("\nBoosted trees on the candidates (rows: label, columns: answer)")
     print(f"{'':14}" + "".join(f"{name:>14}" for name in CLASSES))
