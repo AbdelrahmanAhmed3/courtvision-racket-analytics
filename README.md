@@ -26,11 +26,11 @@ results and their weak spots written up in [`reports/`](reports/).
 - **A match report** in Markdown and JSON, with a section on how far to trust each
   number. On the clip above:
 
-  > - **Most shots:** Player 3 (near team), 4 shots.
-  > - **Most distance:** Player 3 (near team), 16.7 m.
-  > - **Top speed:** Player 3 (near team), 11.4 km/h.
-  > - **Rally:** 13.9 s long, 12 shots.
-  > - In 4 places, the same team hit twice in a row, which the rules do not allow: at
+  > - **Most shots:** Player 1 (near team), 6 shots.
+  > - **Most distance:** Player 3 (near team), 16.6 m.
+  > - **Top speed:** Player 3 (near team), 11.3 km/h.
+  > - **Rally:** 14.6 s long, 17 shots.
+  > - In 7 places, the same team hit twice in a row, which the rules do not allow: at
   >   each, a shot was missed, a false one was counted, or the hitter is wrong.
 
   ![Where each of the four players stood, one small court each](docs/assets/heatmaps.png)
@@ -48,10 +48,10 @@ boxes); how the labels were made and scored is in [docs/evaluation.md](docs/eval
 | Players found (RF-DETR Nano) | precision 1.00, recall 0.97 | [model_comparison.md](reports/model_comparison.md) |
 | Player identity | IDF1 0.97, 5 switches (all at crossings); teams 100 % right | [player_identity.md](reports/player_identity.md) |
 | Ball found during rallies | 70 % of frames | [ball_tracker.md](reports/ball_tracker.md) |
-| Impacts | precision 0.49, recall 0.50 (±2 frames) | [ball_tracker.md](reports/ball_tracker.md) |
-| Bounces | precision 0.34, recall 0.51 | [ball_tracker.md](reports/ball_tracker.md) |
-| Hitter of a found impact | right 88 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
-| Rallies | 10 of 10 found; start within 0.02 s and end within 0.12 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
+| Impacts | precision 0.62, recall 0.63 (±2 frames) | [ball_tracker.md](reports/ball_tracker.md) |
+| Bounces | precision 0.56, recall 0.37 | [ball_tracker.md](reports/ball_tracker.md) |
+| Hitter of a found impact | right 89 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
+| Rallies | 10 of 10 found; start within 0.06 s and end within 0.50 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
 | Distance and speed | no ground truth; checked on synthetic tracks | [player_movement.md](reports/player_movement.md) |
 
 Ball events are the weakest part: the ball tracker was trained on tennis and misses
@@ -105,8 +105,10 @@ saved detections without running the detector again, and `--no-ball` to skip the
   along the court floor from one hit to the next. It is not a radar speed.
 - **No point outcomes yet.** CourtVision does not know who won a point, or whether it
   ended in a winner or an error.
-- **About half of the impacts are found,** and about half of the impacts it reports
-  are real, so shot counts per player can be off either way. The report says so.
+- **About 6 in 10 impacts are found,** and about 6 in 10 of the impacts it reports
+  are real, so shot counts per player can be off either way. The report says so. All
+  the labelled rallies come from one video, so other events may do worse
+  ([ball_tracker.md](reports/ball_tracker.md)).
 - **Wall rebounds are not reported.** From a high camera, a ball turning off the glass
   looks like one bouncing on the floor next to it; telling them apart needs the ball's
   height ([#73](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/73)).
@@ -141,7 +143,7 @@ flowchart LR
 Player feet and the ball are projected onto the court through a homography from four
 or more clicked court points, checked with RANSAC. Positions are smoothed before
 distances are measured, because far from the camera a pixel of wobble is tens of
-centimetres. Ball events come from a logistic regression on 14 features of the ball's
+centimetres. Ball events come from boosted decision trees on 14 features of the ball's
 path near each candidate, exported to JSON and run with NumPy. Optical flow can follow
 a slowly moving camera (`--track-calibration`). The app also has automatic and
 model-assisted calibration modes; they are experiments, with debug views that show why
