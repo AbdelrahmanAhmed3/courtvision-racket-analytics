@@ -158,3 +158,95 @@ only the first bounce after its hit: it is recorded as the shot's bounce, and en
 speed measurement when no next hit is found.
 
 Wall rebounds come back with the ball's height (#72, #73).
+
+## Boosted trees ship (2026-11-13)
+
+#75, part of #52. The event model is now boosted decision trees instead of logistic
+regression: the trees found more impacts, and more of the impacts they report are
+real.
+
+### On the labelled rallies
+
+Each rally scored by a model that never saw it, ±2 frames:
+
+| Split | Model | Impact P / R | Bounce P / R | Hitter right |
+| --- | --- | --- | --- | --- |
+| Halves | Logistic regression | 0.49 / 0.50 | 0.34 / 0.51 | 61 / 69 = 88 % |
+| Halves | **Boosted trees** | **0.62 / 0.63** | **0.56** / 0.37 | 77 / 87 = 89 % |
+| One rally at a time | Logistic regression | 0.49 / 0.51 | 0.32 / 0.52 | – |
+| One rally at a time | **Boosted trees** | **0.65 / 0.62** | **0.64** / 0.43 | 75 / 85 = 88 % |
+
+- **Not a lucky split.** The trees also won on six more splits tried by hand (first
+  five rallies against the last five, and five random halvings). Their impact F1 was
+  0.56 to 0.64, against 0.41 to 0.53 for logistic regression.
+- **This meets #52's first target:** impact precision above 0.6 with recall at least
+  0.38.
+- **Bounces:** the trees report fewer bounces, and more of them are real. F1 is 0.45
+  against 0.41.
+- **The hitter** is right as often as before, on 18 more impacts.
+
+### What got worse: rally ends
+
+Rallies are still all found (10 of 10), and they start within 0.06 s (median, from
+0.02 s). But they end within 0.50 s instead of 0.12 s, and early on average (−1.1 s).
+
+- **The cause.** A rally ends at its last event, and that event is often the ball's
+  last bounce, which the trees miss more often (recall 0.37). In two rallies they end
+  on the bounce before.
+- **The worst rally** is a 4-second one where the trees miss everything after the
+  serve: the rally ends 4.1 s early.
+
+Rally length in the report is therefore a little short. Ending a rally when the ball
+stops being seen would not depend on finding that bounce.
+
+### Run with NumPy
+
+- **The export.** The trees are exported to JSON (450 trees, 4,992 nodes, 178 KB)
+  and walked with NumPy. The pipeline still needs no scikit-learn, and 1,000
+  candidates take 17 ms.
+- **Same answers as scikit-learn.** Scores are added in scikit-learn's order, so the
+  answers are exactly the same. The training script stops if they differ on any
+  candidate, and a test checks it on random data with missing numbers.
+- **CI** now installs the train extra, so that test runs on every pull request.
+
+### On the Qatar Major clip
+
+Same six court points; no labels:
+
+| | Logistic regression | Boosted trees |
+| --- | --- | --- |
+| Shots | 12 | 17 |
+| Same team twice in a row | 4 of 11 pairs | 7 of 16 pairs |
+| Bounces / impacts | 19 / 12 | 7 / 17 |
+| Rally | 14.1 s, from frame 21 | 14.6 s, from frame 6 |
+
+Looking at the frames where the two models disagree:
+
+- **Two false impacts from the trees.** They call the server's bounce before the serve
+  an impact (frame 6, which also starts the rally too early). They also call one
+  while the ball is over the net (frame 69).
+- **Mistakes both models make.** Both count the serve twice, three frames apart, the
+  second time for the server's partner. Both also count one volley twice, a few frames
+  apart.
+
+On the labelled rallies, the same check points the other way: the same team hits twice
+in 46 % of pairs with the trees, against 56 % with logistic regression. One 15-second
+clip doesn't outweigh 138 labelled impacts. But every labelled rally comes from one
+video, so the trees may have learned that video's look. The missing test is a labelled
+clip from another event.
+
+### Reproducing
+
+```bash
+L=evaluation/labels/BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.json
+python scripts/train_event_classifier.py --labels $L --size wasb \
+    --save-model src/courtvision/analytics/ball_events_model.json
+python scripts/train_event_classifier.py --labels $L --size wasb --split rallies
+```
+
+### Next
+
+- **Label a clip from another event,** such as the 15-second Qatar clip (about 15
+  hits), to test the trees away from the video they learned from.
+- **#52's other ideas:** keep only one of two hits by the same player a few frames
+  apart, and try "a team never hits twice" again for the hitter.
