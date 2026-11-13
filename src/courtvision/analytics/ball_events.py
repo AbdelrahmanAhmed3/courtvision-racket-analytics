@@ -2,11 +2,10 @@
 
 Candidates (``ball_track.event_candidates``) are moments where something may
 have happened. Each gets the numbers in ``FEATURES`` from the ball track, the
-player boxes and the court; a logistic regression trained on the labelled
-rallies (``scripts/train_event_classifier.py``) says which event it was, if
-any. The model ships as JSON (weights, feature means and scales, fill-in values
-for missing numbers) and is applied with numpy, so running it needs no
-scikit-learn. Results: reports/ball_events.md.
+player boxes and the court; boosted decision trees trained on the labelled
+rallies (``scripts/train_event_classifier.py``) say which event it was, if
+any. The trees ship as JSON and are walked with numpy, so running them needs
+no scikit-learn. Results: reports/ball_events.md and reports/ball_tracker.md.
 """
 
 from __future__ import annotations
@@ -66,20 +65,77 @@ class BallEvent:
 
 @dataclass(frozen=True)
 class EventModel:
-    """Logistic regression over FEATURES, as exported by the training script."""
+    """Boosted decision trees over FEATURES, as exported by the training script.
+
+    Every tree adds a score to one class; the class with the highest total wins.
+    The nodes of all the trees are stored in flat arrays: a split sends a row
+    left when its feature is at most the threshold, and a missing number the
+    way the training data's missing numbers went (or the busier way if it had
+    none). The scores are added in scikit-learn's order, so the answers match
+    its own exactly.
+    """
 
     classes: tuple[str, ...]
-    fill: np.ndarray  # replaces a missing number (the training median)
-    mean: np.ndarray
-    scale: np.ndarray
-    coef: np.ndarray  # one row of weights per class
-    intercept: np.ndarray
+    baseline: np.ndarray  # the starting score of each class
+    roots: np.ndarray  # the first node of each tree; tree i scores class i % classes
+    feature: np.ndarray  # per node; -1 for a leaf
+    threshold: np.ndarray
+    missing_left: np.ndarray  # 1 if a missing number goes left
+    left: np.ndarray
+    right: np.ndarray
+    value: np.ndarray  # a leaf's score
 
     def predict(self, rows: np.ndarray) -> list[str]:
         rows = np.atleast_2d(np.asarray(rows, dtype=float))
-        rows = np.where(np.isnan(rows), self.fill, rows)
-        scores = ((rows - self.mean) / self.scale) @ self.coef.T + self.intercept
+        everyone = np.arange(len(rows))
+        scores = np.zeros((len(rows), len(self.classes))) + self.baseline
+        for tree, root in enumerate(self.roots):
+            node = np.full(len(rows), root)
+            while (split := self.feature[node] >= 0).any():
+                number = rows[everyone, np.where(split, self.feature[node], 0)]
+                go_left = np.where(
+                    np.isnan(number),
+                    self.missing_left[node] == 1,
+                    number <= self.threshold[node],
+                )
+                child = np.where(go_left, self.left[node], self.right[node])
+                node = np.where(split, child, node)
+            scores[:, tree % len(self.classes)] += self.value[node]
         return [self.classes[i] for i in scores.argmax(axis=1)]
+
+    @classmethod
+    def from_scikit_learn(cls, model) -> EventModel:
+        """Export a fitted HistGradientBoostingClassifier.
+
+        Reads scikit-learn's private tree arrays; the tests check that the
+        answers still match when scikit-learn is upgraded.
+        """
+        nodes, roots = [], []
+        for iteration in model._predictors:
+            if len(iteration) != len(model.classes_):
+                raise ValueError("Expected one tree per class in each iteration")
+            for tree in iteration:
+                if tree.nodes["is_categorical"].any():
+                    raise ValueError("Categorical splits are not supported")
+                offset = sum(len(n) for n in nodes)
+                roots.append(offset)
+                tree_nodes = tree.nodes.copy()
+                tree_nodes["left"] += offset
+                tree_nodes["right"] += offset
+                nodes.append(tree_nodes)
+        nodes = np.concatenate(nodes)
+        leaf = nodes["is_leaf"] == 1
+        return cls(
+            classes=tuple(str(c) for c in model.classes_),
+            baseline=np.asarray(model._baseline_prediction, dtype=float).ravel(),
+            roots=np.array(roots),
+            feature=np.where(leaf, -1, nodes["feature_idx"]),
+            threshold=np.where(leaf, 0.0, nodes["num_threshold"]),
+            missing_left=np.where(leaf, 0, nodes["missing_go_to_left"]),
+            left=np.where(leaf, 0, nodes["left"]),
+            right=np.where(leaf, 0, nodes["right"]),
+            value=np.where(leaf, nodes["value"], 0.0),
+        )
 
     @classmethod
     def load(cls, path: str | Path = DEFAULT_MODEL_PATH) -> EventModel:
@@ -88,7 +144,9 @@ class EventModel:
             raise ValueError("The model was trained on different features")
         return cls(
             classes=tuple(data["classes"]),
-            **{key: np.array(data[key], dtype=float) for key in _ARRAYS},
+            baseline=np.array(data["baseline"], dtype=float),
+            **{key: np.array(data[key], dtype=int) for key in _NODE_INTEGERS},
+            **{key: np.array(data[key], dtype=float) for key in _NODE_NUMBERS},
         )
 
     def save(self, path: str | Path, about: str = "") -> None:
@@ -96,12 +154,15 @@ class EventModel:
             "about": about,
             "features": list(FEATURES),
             "classes": list(self.classes),
+            "baseline": self.baseline.tolist(),
         }
-        data |= {key: getattr(self, key).tolist() for key in _ARRAYS}
-        Path(path).write_text(json.dumps(data, indent=1) + "\n")
+        data |= {key: getattr(self, key).tolist() for key in _NODE_INTEGERS}
+        data |= {key: getattr(self, key).tolist() for key in _NODE_NUMBERS}
+        Path(path).write_text(json.dumps(data, separators=(",", ":")) + "\n")
 
 
-_ARRAYS = ("fill", "mean", "scale", "coef", "intercept")
+_NODE_INTEGERS = ("roots", "feature", "missing_left", "left", "right")
+_NODE_NUMBERS = ("threshold", "value")
 
 
 def detect_ball_events(

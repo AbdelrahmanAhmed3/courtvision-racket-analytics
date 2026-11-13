@@ -8,9 +8,10 @@ Candidates come from analytics.ball_track.event_candidates. Each gets a few
 numbers computed from the ball track, the player boxes and the hand-marked
 court, and the label of the nearest labelled impact or bounce within 2 frames
 (or none). Wall rebounds are labelled but not learned (#74).
-The rallies are split in two halves; a model trained on one half predicts the
-other, so every rally is scored by a model that never saw it. Needs the train
-extra (scikit-learn).
+The rallies are split in two halves (or one rally at a time, with
+--split rallies); a model trained on the others predicts each part, so every
+rally is scored by a model that never saw it. Needs the train extra
+(scikit-learn).
 """
 
 from __future__ import annotations
@@ -56,6 +57,9 @@ from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: 
 # bounces, and 4 in 5 of those reported were wrong. They come back with the ball's
 # height (#73, #74).
 CLASSES = ("impact", "bounce", "none")
+# The model the pipeline runs: it found the most impacts on every split of the
+# rallies tried (#75). The hitter and rally scores below are for it.
+SHIPPED = "boosted trees"
 
 
 def parse_args() -> argparse.Namespace:
@@ -63,9 +67,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--labels", required=True, help="Labels JSON.")
     parser.add_argument("--size", default="nano", help="RF-DETR size of the cache.")
     parser.add_argument(
+        "--split",
+        choices=("halves", "rallies"),
+        default="halves",
+        help="Score each half of the rallies with a model trained on the other "
+        "half, or each rally with a model trained on the other nine.",
+    )
+    parser.add_argument(
         "--save-model",
-        help="Also train logistic regression on every labelled rally and save it "
-        "as JSON for analytics.ball_events (e.g. "
+        help=f"Also train {SHIPPED} on every labelled rally and save them as JSON "
+        "for analytics.ball_events (e.g. "
         "src/courtvision/analytics/ball_events_model.json).",
     )
     return parser.parse_args()
@@ -144,13 +155,17 @@ def main() -> None:
         s.start: candidate_rows(s, tracks["segments"][str(s.start)], players[s.start])
         for s in segments
     }
-    halves = [[s.start for s in segments[0::2]], [s.start for s in segments[1::2]]]
+    if args.split == "halves":
+        folds = [[s.start for s in segments[0::2]], [s.start for s in segments[1::2]]]
+    else:
+        folds = [[s.start] for s in segments]
 
     predicted = defaultdict(list)
     hitters = defaultdict(list)  # segment -> (frame, track ID) of predicted impacts
     found_events = defaultdict(list)  # segment -> events of the shipped model
     truth, boosted, importances = [], [], defaultdict(list)
-    for test, train in (halves, halves[::-1]):
+    for test in folds:
+        train = [s.start for s in segments if s.start not in test]
         x_train = np.array([row[1] for s in train for row in rows[s]])
         y_train = [row[2] for s in train for row in rows[s]]
         x_test = np.array([row[1] for s in test for row in rows[s]])
@@ -164,7 +179,7 @@ def main() -> None:
                 for (_, frame, _), kind in zip(tested, answers, strict=True)
                 if kind != "none"
             ]
-            if name == "logistic regression":  # the model that ships
+            if name == SHIPPED:
                 for (segment, frame, track_id), kind in zip(
                     tested, answers, strict=True
                 ):
@@ -195,7 +210,10 @@ def main() -> None:
     methods["rule: tracklet ends near a player"] = _rule_predictions(segments, tracks)
     methods.update(predicted)
 
-    print(f"{labels.video}: ±2 frames; every rally scored by a model that never saw it")
+    print(
+        f"{labels.video}: ±2 frames; every rally scored by a model that never saw "
+        f"it (split: {args.split})"
+    )
     print(f"{'method':36}{'impact P/R':>13}{'bounce P/R':>13}")
     for name, events in methods.items():
         scores = score_events(labels, events, 2)
@@ -220,10 +238,13 @@ def main() -> None:
         print(f"  {feature:16}{np.mean(values):+.3f}")
     right, scored = score_hitters(labels, hitters, players)
     print(
-        f"\nHitter of the impacts found (logistic regression, four-ID tracker, "
+        f"\nHitter of the impacts found ({SHIPPED}, four-ID tracker, "
         f"nearest player): {right}/{scored} = {right / scored:.2f}"
     )
-    print("\nRallies from those events (seconds; error is predicted minus labelled)")
+    print(
+        f"\nRallies from the events of {SHIPPED} (seconds; error is predicted "
+        "minus labelled)"
+    )
     for gap in (3.0, DEFAULT_MAX_GAP_SECONDS, 8.0):
         rallies = {
             s: segment_rallies(found_events[s], labels.fps, max_gap_seconds=gap)
@@ -242,25 +263,20 @@ def main() -> None:
 
 
 def save_model(path: str, rows: dict, labels) -> None:
-    """Logistic regression trained on every candidate, exported for numpy."""
-    model = build_models()["logistic regression"]
+    """The shipped model trained on every candidate, exported for numpy."""
+    model = build_models()[SHIPPED]
     x = np.array([row[1] for segment_rows in rows.values() for row in segment_rows])
     y = [row[2] for segment_rows in rows.values() for row in segment_rows]
     model.fit(x, y)
-    imputer, scaler, regression = (step for _, step in model.steps)
-    EventModel(
-        classes=tuple(str(c) for c in regression.classes_),
-        fill=imputer.statistics_,
-        mean=scaler.mean_,
-        scale=scaler.scale_,
-        coef=regression.coef_,
-        intercept=regression.intercept_,
-    ).save(
+    exported = EventModel.from_scikit_learn(model)
+    if exported.predict(x) != list(model.predict(x)):
+        raise RuntimeError("The exported trees disagree with scikit-learn")
+    exported.save(
         path,
-        about=f"Logistic regression on {len(y)} candidates from the {len(rows)} "
+        about=f"Boosted trees on {len(y)} candidates from the {len(rows)} "
         f"labelled rallies of {labels.video} (scripts/train_event_classifier.py).",
     )
-    print(f"\nSaved the model trained on all {len(rows)} rallies to {path}")
+    print(f"\nSaved {SHIPPED} trained on all {len(rows)} rallies to {path}")
 
 
 def _rule_predictions(segments, tracks: dict) -> list[PredictedEvent]:

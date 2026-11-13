@@ -27,7 +27,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install package
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,train]"
       - name: Lint
         run: ruff check .
       - name: Check formatting
