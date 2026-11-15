@@ -159,11 +159,12 @@ speed measurement when no next hit is found.
 
 Wall rebounds come back with the ball's height (#72, #73).
 
-## Boosted trees ship (2026-11-13)
+## Boosted trees: better on the labelled rallies, not on Qatar (2026-11-15)
 
-#75, part of #52. The event model is now boosted decision trees instead of logistic
-regression: the trees found more impacts, and more of the impacts they report are
-real.
+#75, part of #52. On the labelled rallies, boosted trees found more impacts than
+logistic regression, and more of the ones they reported were real. On the Qatar clip,
+the one other event we checked, they reported far too many. Logistic regression keeps
+shipping.
 
 ### On the labelled rallies
 
@@ -172,81 +173,72 @@ Each rally scored by a model that never saw it, ±2 frames:
 | Split | Model | Impact P / R | Bounce P / R | Hitter right |
 | --- | --- | --- | --- | --- |
 | Halves | Logistic regression | 0.49 / 0.50 | 0.34 / 0.51 | 61 / 69 = 88 % |
-| Halves | **Boosted trees** | **0.62 / 0.63** | **0.56** / 0.37 | 77 / 87 = 89 % |
+| Halves | Boosted trees | **0.62 / 0.63** | **0.56** / 0.37 | 77 / 87 = 89 % |
 | One rally at a time | Logistic regression | 0.49 / 0.51 | 0.32 / 0.52 | – |
-| One rally at a time | **Boosted trees** | **0.65 / 0.62** | **0.64** / 0.43 | 75 / 85 = 88 % |
+| One rally at a time | Boosted trees | **0.65 / 0.62** | **0.64** / 0.43 | 75 / 85 = 88 % |
 
-- **Not a lucky split.** The trees also won on six more splits tried by hand (first
-  five rallies against the last five, and five random halvings). Their impact F1 was
-  0.56 to 0.64, against 0.41 to 0.53 for logistic regression.
-- **This meets #52's first target:** impact precision above 0.6 with recall at least
-  0.38.
-- **Bounces:** the trees report fewer bounces, and more of them are real. F1 is 0.45
-  against 0.41.
-- **The hitter** is right as often as before, on 18 more impacts.
-
-### What got worse: rally ends
-
-Rallies are still all found (10 of 10), and they start within 0.06 s (median, from
-0.02 s). But they end within 0.50 s instead of 0.12 s, and early on average (−1.1 s).
-
-- **The cause.** A rally ends at its last event, and that event is often the ball's
-  last bounce, which the trees miss more often (recall 0.37). In two rallies they end
-  on the bounce before.
-- **The worst rally** is a 4-second one where the trees miss everything after the
-  serve: the rally ends 4.1 s early.
-
-Rally length in the report is therefore a little short. Ending a rally when the ball
-stops being seen would not depend on finding that bounce.
-
-### Run with NumPy
-
-- **The export.** The trees are exported to JSON (450 trees, 4,992 nodes, 178 KB)
-  and walked with NumPy. The pipeline still needs no scikit-learn, and 1,000
-  candidates take 17 ms.
-- **Same answers as scikit-learn.** Scores are added in scikit-learn's order, so the
-  answers are exactly the same. The training script stops if they differ on any
-  candidate, and a test checks it on random data with missing numbers.
-- **CI** now installs the train extra, so that test runs on every pull request.
+- **Every split agreed.** The trees also won on six more splits tried by hand (first
+  five rallies against the last five, and five random halvings), with impact F1 0.56 to
+  0.64 against 0.41 to 0.53.
+- **Rallies ended early.** With the trees they ended within 0.50 s instead of 0.12 s
+  (median), and early on average (−1.1 s). A rally ends at its last event, often the
+  ball's last bounce, and the trees missed more of those (recall 0.37).
 
 ### On the Qatar Major clip
 
-Same six court points; no labels:
+The author counted 12 shots in its one rally:
 
 | | Logistic regression | Boosted trees |
 | --- | --- | --- |
-| Shots | 12 | 17 |
+| Shots (12 counted by hand) | 12 | 17 |
 | Same team twice in a row | 4 of 11 pairs | 7 of 16 pairs |
-| Bounces / impacts | 19 / 12 | 7 / 17 |
 | Rally | 14.1 s, from frame 21 | 14.6 s, from frame 6 |
 
 Looking at the frames where the two models disagree:
 
-- **Two false impacts from the trees.** They call the server's bounce before the serve
-  an impact (frame 6, which also starts the rally too early). They also call one
-  while the ball is over the net (frame 69).
-- **Mistakes both models make.** Both count the serve twice, three frames apart, the
-  second time for the server's partner. Both also count one volley twice, a few frames
-  apart.
+- **False hits from the trees.** They call the server's bounce before the serve a hit
+  (frame 6, which also starts the rally too early). They call another while the ball
+  is over the net (frame 69).
+- **Mistakes both models make.** Both count the serve twice, three frames apart. The
+  second time the ball has passed the server's partner at the net, so the hitter, the
+  player nearest the ball, is the partner. Both also count one volley twice.
 
-On the labelled rallies, the same check points the other way: the same team hits twice
-in 46 % of pairs with the trees, against 56 % with logistic regression. One 15-second
-clip doesn't outweigh 138 labelled impacts. But every labelled rally comes from one
-video, so the trees may have learned that video's look. The missing test is a labelled
-clip from another event.
+So logistic regression's 12 aren't 12 right hits either: it reports some false ones
+and misses about as many real ones.
+
+### Why the labelled score didn't carry over
+
+- **One video.** All 10 labelled rallies come from one video. Halves, or one rally at
+  a time, test the model on rallies it never saw, not on a video it never saw. The
+  trees, 450 small trees against one weight per input for each event, have more room
+  to learn details of that video that don't hold elsewhere. That is likely, not
+  measured.
+- **Before the serve.** Training only uses candidates inside the labelled rallies, but
+  the pipeline asks about every moment of the clip. Neither model has seen a bounce
+  before a serve.
+
+### Kept from this work
+
+- **`--split rallies`** scores one rally at a time.
+- **CI installs the train extra,** so the test that the NumPy model answers exactly as
+  scikit-learn now runs on every pull request. It was skipped before.
+- **The trees' export to JSON and NumPy** gives exactly scikit-learn's answers, takes
+  178 KB, and runs 1,000 candidates in 17 ms. It is in commit 368d539 on PR #82, to
+  bring back if a second labelled clip shows the trees winning there too.
 
 ### Reproducing
 
 ```bash
 L=evaluation/labels/BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.json
-python scripts/train_event_classifier.py --labels $L --size wasb \
-    --save-model src/courtvision/analytics/ball_events_model.json
+python scripts/train_event_classifier.py --labels $L --size wasb
 python scripts/train_event_classifier.py --labels $L --size wasb --split rallies
 ```
 
 ### Next
 
-- **Label a clip from another event,** such as the 15-second Qatar clip (about 15
-  hits), to test the trees away from the video they learned from.
-- **#52's other ideas:** keep only one of two hits by the same player a few frames
-  apart, and try "a team never hits twice" again for the hitter.
+- **Label the Qatar clip's 12 hits** with `scripts/label_clip.py`: a test from another
+  event, and more to train on.
+- **Train on candidates outside the rallies too,** before the serve and after the
+  point, as "none".
+- **#52: two hits a few frames apart are one hit.** Nobody hits twice in a tenth of a
+  second, so keeping only the first would remove the doubled serve and volley.
