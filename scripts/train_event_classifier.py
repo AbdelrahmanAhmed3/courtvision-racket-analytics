@@ -57,9 +57,10 @@ from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: 
 # bounces, and 4 in 5 of those reported were wrong. They come back with the ball's
 # height (#73, #74).
 CLASSES = ("impact", "bounce", "none")
-# The model the pipeline runs: it found the most impacts on every split of the
-# rallies tried (#75). The hitter and rally scores below are for it.
-SHIPPED = "boosted trees"
+# The model the pipeline runs; the hitter and rally scores below are for it.
+# Boosted trees found more impacts on these rallies, but far too many on the
+# Qatar clip, the one other event checked (#75, reports/ball_tracker.md).
+SHIPPED = "logistic regression"
 
 
 def parse_args() -> argparse.Namespace:
@@ -263,17 +264,22 @@ def main() -> None:
 
 
 def save_model(path: str, rows: dict, labels) -> None:
-    """The shipped model trained on every candidate, exported for numpy."""
+    """Logistic regression trained on every candidate, exported for numpy."""
     model = build_models()[SHIPPED]
     x = np.array([row[1] for segment_rows in rows.values() for row in segment_rows])
     y = [row[2] for segment_rows in rows.values() for row in segment_rows]
     model.fit(x, y)
-    exported = EventModel.from_scikit_learn(model)
-    if exported.predict(x) != list(model.predict(x)):
-        raise RuntimeError("The exported trees disagree with scikit-learn")
-    exported.save(
+    imputer, scaler, regression = (step for _, step in model.steps)
+    EventModel(
+        classes=tuple(str(c) for c in regression.classes_),
+        fill=imputer.statistics_,
+        mean=scaler.mean_,
+        scale=scaler.scale_,
+        coef=regression.coef_,
+        intercept=regression.intercept_,
+    ).save(
         path,
-        about=f"Boosted trees on {len(y)} candidates from the {len(rows)} "
+        about=f"Logistic regression on {len(y)} candidates from the {len(rows)} "
         f"labelled rallies of {labels.video} (scripts/train_event_classifier.py).",
     )
     print(f"\nSaved {SHIPPED} trained on all {len(rows)} rallies to {path}")
