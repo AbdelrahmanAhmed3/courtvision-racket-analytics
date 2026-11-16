@@ -1124,7 +1124,7 @@ def main() -> None:
     shot_count = 0
     if args.events == "classifier" and estimate is not None and ball_tracks_by_frame:
         ball_points = list(ball_tracks_by_frame.values())
-        events = detect_ball_events(ball_points, players_by_frame, estimate)
+        events = detect_ball_events(ball_points, players_by_frame, estimate, fps)
         new_shots = shots_from_events(events, ball_points, estimate, fps)
         write_ball_events_csv(output_dir / "ball_events.csv", events)
         write_ball_shots_csv(output_dir / "shots.csv", new_shots)

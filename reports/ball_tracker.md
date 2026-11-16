@@ -223,7 +223,7 @@ and misses about as many real ones.
 - **CI installs the train extra,** so the test that the NumPy model answers exactly as
   scikit-learn now runs on every pull request. It was skipped before.
 - **The trees' export to JSON and NumPy** gives exactly scikit-learn's answers, takes
-  178 KB, and runs 1,000 candidates in 17 ms. It is in commit 368d539 on PR #82, to
+  178 KB, and runs 1,000 candidates in 17 ms. It is in commit 3c8f8e4 (PR #82), to
   bring back if a second labelled clip shows the trees winning there too.
 
 ### Reproducing
@@ -242,3 +242,79 @@ python scripts/train_event_classifier.py --labels $L --size wasb --split rallies
   point, as "none".
 - **#52: two hits a few frames apart are one hit.** Nobody hits twice in a tenth of a
   second, so keeping only the first would remove the doubled serve and volley.
+
+## One hit, found twice, counts once (2026-11-16)
+
+#83, part of #52. The event model often reports one hit twice, a few frames apart:
+on the Qatar clip it counted the serve twice and gave the copy to the server's
+partner. Real hits are never that close. On the labelled rallies they are at least
+0.32 s apart, and the ball cannot go from one racket to another faster. So impacts
+within 0.2 s of the one before now count as one, in the pipeline and in the training
+script's scores. Bounces are left alone: merging them lifted their F1 only from 0.40
+to 0.41 and lost some real ones.
+
+The Qatar clip is now hand-labelled too (12 impacts, `evaluation/labels/`), so it
+tests the model on another event, scored like the labelled rallies.
+
+### Which copy to keep
+
+Impact precision / recall at ±2 frames. On the Tapia rallies each rally is scored by
+a model that never saw it. On Qatar, the shipped model, trained on all ten Tapia
+rallies, is scored on its rally:
+
+| Keep | Tapia, halves | Tapia, one rally at a time | Qatar |
+| --- | --- | --- | --- |
+| Both (before) | 0.49 / 0.50 | 0.49 / 0.51 | 0.50 / 0.50 |
+| The first | 0.50 / 0.46 | 0.50 / 0.46 | 0.60 / 0.50 |
+| The last | 0.54 / 0.49 | 0.56 / 0.51 | 0.40 / 0.33 |
+| **The one the model is surest of** | **0.54 / 0.49** | **0.54 / 0.49** | **0.60 / 0.50** |
+
+The first and the last each win on one video and lose on the other. On Tapia the
+extra copy tends to come a few frames before the hit, and on Qatar a few frames
+after it. Keeping the
+copy the model is surest of is close to the best on both, so that is what ships.
+When it is equally sure of both, the first is kept.
+
+Hitters stay as good: 88 % of the found impacts on Tapia (59 of 67), and all 6 on
+Qatar, where the serve now goes to the server again. Rallies barely move: one start
+on Tapia moves 0.12 s later. On the Qatar clip the pipeline now reports 10 shots
+instead of 12, and the same team hitting twice drops from 4 of 11 pairs to 2 of 8.
+
+### The trees were better on Qatar after all
+
+The hand labels show that matching the count of 12 was not the same as being right:
+
+| Qatar, scored against the labels | Real hits found | False hits | Precision / recall | Hitter |
+| --- | --- | --- | --- | --- |
+| Logistic regression (ships) | 6 of 12 | 6 | 0.50 / 0.50 | 6 of 6 |
+| Logistic regression, close hits merged | 6 of 12 | 4 | 0.60 / 0.50 | 6 of 6 |
+| Boosted trees, close hits merged | 10 of 12 | 5 | 0.67 / 0.83 | 10 of 10 |
+
+Logistic regression's 12 shots included 6 false ones: the copies of the serve and
+of a volley, a wall rebound and a bounce called hits, and two real hits placed 3 and
+4 frames off. It missed 6 real ones. The trees found 19 hits on the rally, and the
+merge removed 4 of them as copies. With the merge, the trees also lead
+on the Tapia rallies: 0.67 / 0.61 (halves) and 0.72 / 0.61 (one rally at a time).
+
+These scores only count the labelled rally, from the serve on. The trees' other
+mistake on Qatar, calling the server's bounce before the serve a hit (frame 6), is
+not scored, and it still starts the rally too early. Switching to the trees needs
+that fixed or measured first.
+
+### Reproducing
+
+```bash
+T=evaluation/labels/BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.json
+Q=evaluation/labels/youtube_gFl3ADnFRtc_15s.json
+python scripts/predict_shot_events.py --labels $Q --video data/raw/youtube_gFl3ADnFRtc_15s.mp4
+python scripts/compare_ball_trackers.py --labels $Q --video data/raw/youtube_gFl3ADnFRtc_15s.mp4
+python scripts/train_event_classifier.py --labels $T --size wasb --test-labels $Q
+python scripts/train_event_classifier.py --labels $T --size wasb --split rallies
+```
+
+### Next
+
+- **Bring the boosted trees back,** with the merge, and measure the rally start on
+  Qatar: the bounce before the serve must not become a hit.
+- **Train on candidates outside the rallies too,** before the serve and after the
+  point, as "none". That is the likely fix for the pre-serve hit.

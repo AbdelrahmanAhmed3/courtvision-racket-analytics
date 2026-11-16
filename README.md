@@ -26,11 +26,11 @@ results and their weak spots written up in [`reports/`](reports/).
 - **A match report** in Markdown and JSON, with a section on how far to trust each
   number. On the clip above:
 
-  > - **Most shots:** Player 1 (near team), 4 shots.
+  > - **Most shots:** Player 1 (near team), 3 shots.
   > - **Most distance:** Player 3 (near team), 16.6 m.
   > - **Top speed:** Player 3 (near team), 11.3 km/h.
-  > - **Rally:** 14.1 s long, 12 shots.
-  > - In 4 places, the same team hit twice in a row, which the rules do not allow: at
+  > - **Rally:** 14.1 s long, 10 shots.
+  > - In 2 places, the same team hit twice in a row, which the rules do not allow: at
   >   each, a shot was missed, a false one was counted, or the hitter is wrong.
 
   ![Where each of the four players stood, one small court each](docs/assets/heatmaps.png)
@@ -48,7 +48,7 @@ boxes); how the labels were made and scored is in [docs/evaluation.md](docs/eval
 | Players found (RF-DETR Nano) | precision 1.00, recall 0.97 | [model_comparison.md](reports/model_comparison.md) |
 | Player identity | IDF1 0.97, 5 switches (all at crossings); teams 100 % right | [player_identity.md](reports/player_identity.md) |
 | Ball found during rallies | 70 % of frames | [ball_tracker.md](reports/ball_tracker.md) |
-| Impacts | precision 0.49, recall 0.50 (±2 frames) | [ball_tracker.md](reports/ball_tracker.md) |
+| Impacts | precision 0.54, recall 0.49 (±2 frames); 0.60 and 0.50 on a clip from another event | [ball_tracker.md](reports/ball_tracker.md) |
 | Bounces | precision 0.34, recall 0.51 | [ball_tracker.md](reports/ball_tracker.md) |
 | Hitter of a found impact | right 88 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
 | Rallies | 10 of 10 found; start within 0.02 s and end within 0.12 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
@@ -106,8 +106,8 @@ saved detections without running the detector again, and `--no-ball` to skip the
 - **No point outcomes yet.** CourtVision does not know who won a point, or whether it
   ended in a winner or an error.
 - **About half of the impacts are found,** and about half of the impacts it reports
-  are real, so shot counts per player can be off either way. The report says so. All
-  the labelled rallies come from one video, so clips from other events can do worse
+  are real, so shot counts per player can be off either way. The report says so. The
+  model learns from one video; on a clip from another event it found 6 of 12 hits
   ([ball_tracker.md](reports/ball_tracker.md)).
 - **Wall rebounds are not reported.** From a high camera, a ball turning off the glass
   looks like one bouncing on the floor next to it; telling them apart needs the ball's

@@ -7,7 +7,8 @@ Example (after scripts/predict_shot_events.py has cached the players and ball):
 Candidates come from analytics.ball_track.event_candidates. Each gets a few
 numbers computed from the ball track, the player boxes and the hand-marked
 court, and the label of the nearest labelled impact or bounce within 2 frames
-(or none). Wall rebounds are labelled but not learned (#74).
+(or none). Wall rebounds are labelled but not learned (#74). Impacts a few
+frames apart are merged into one, as the pipeline does.
 The rallies are split in two halves (or one rally at a time, with
 --split rallies); a model trained on the others predicts each part, so every
 rally is scored by a model that never saw it. Needs the train extra
@@ -34,6 +35,7 @@ from courtvision.analytics.ball_events import (  # noqa: E402
     BallEvent,
     EventModel,
     candidate_features,
+    merge_close_impacts,
 )
 from courtvision.analytics.ball_track import detect_impacts  # noqa: E402
 from courtvision.analytics.rallies import (  # noqa: E402
@@ -61,6 +63,7 @@ CLASSES = ("impact", "bounce", "none")
 # Boosted trees found more impacts on these rallies, but far too many on the
 # Qatar clip, the one other event checked (#75, reports/ball_tracker.md).
 SHIPPED = "logistic regression"
+PREDICTIONS_DIR = REPO_ROOT / "outputs" / "predictions"
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,12 +78,31 @@ def parse_args() -> argparse.Namespace:
         "half, or each rally with a model trained on the other nine.",
     )
     parser.add_argument(
+        "--test-labels",
+        help="Another labelled video, cached the same way: train on every rally of "
+        "--labels and score on its rallies.",
+    )
+    parser.add_argument(
         "--save-model",
         help=f"Also train {SHIPPED} on every labelled rally and save them as JSON "
         "for analytics.ball_events (e.g. "
         "src/courtvision/analytics/ball_events_model.json).",
     )
     return parser.parse_args()
+
+
+def load_rallies(path: str, size: str) -> tuple:
+    """A labelled video, its cached players and ball, and its rallies' candidates."""
+    labels = load_labels(path)
+    cache = PREDICTIONS_DIR / f"{Path(path).stem}--tracks-{size}.json"
+    tracks = json.loads(cache.read_text())
+    segments = [s for s in labels.segments if s.status == "label"]
+    players, rows = {}, {}
+    for segment in segments:
+        cached = tracks["segments"][str(segment.start)]
+        players[segment.start] = tracked_players(segment, cached, labels.fps)
+        rows[segment.start] = candidate_rows(segment, cached, players[segment.start])
+    return labels, tracks, segments, players, rows
 
 
 def tracked_players(segment, cached: dict, fps: float) -> dict:
@@ -113,6 +135,18 @@ def candidate_rows(segment, cached: dict, players: dict) -> list[tuple]:
     return rows
 
 
+def found_events_of(model, segment_rows: list[tuple]) -> list[BallEvent]:
+    """A fitted model's impacts and bounces, with how sure it is of each."""
+    probabilities = model.predict_proba(np.array([row[1] for row in segment_rows]))
+    events = []
+    for (frame, _, _, track_id), row in zip(segment_rows, probabilities, strict=True):
+        kind = str(model.classes_[row.argmax()])
+        if kind != "none":
+            track_id = track_id if kind == "impact" else None
+            events.append(BallEvent(kind, frame, track_id, float(row.max())))
+    return events
+
+
 def build_models() -> dict:
     from sklearn.ensemble import HistGradientBoostingClassifier
     from sklearn.impute import SimpleImputer
@@ -141,27 +175,14 @@ def main() -> None:
     from sklearn.metrics import confusion_matrix
 
     args = parse_args()
-    labels = load_labels(args.labels)
-    stem = Path(args.labels).stem
-    predictions_dir = REPO_ROOT / "outputs" / "predictions"
-    tracks = json.loads(
-        (predictions_dir / f"{stem}--tracks-{args.size}.json").read_text()
-    )
-    segments = [s for s in labels.segments if s.status == "label"]
-    players = {
-        s.start: tracked_players(s, tracks["segments"][str(s.start)], labels.fps)
-        for s in segments
-    }
-    rows = {
-        s.start: candidate_rows(s, tracks["segments"][str(s.start)], players[s.start])
-        for s in segments
-    }
+    labels, tracks, segments, players, rows = load_rallies(args.labels, args.size)
     if args.split == "halves":
         folds = [[s.start for s in segments[0::2]], [s.start for s in segments[1::2]]]
     else:
         folds = [[s.start] for s in segments]
 
-    predicted = defaultdict(list)
+    predicted = defaultdict(list)  # close impacts merged, as the pipeline does
+    unmerged = []  # the shipped model's events before merging close impacts
     hitters = defaultdict(list)  # segment -> (frame, track ID) of predicted impacts
     found_events = defaultdict(list)  # segment -> events of the shipped model
     truth, boosted, importances = [], [], defaultdict(list)
@@ -171,26 +192,22 @@ def main() -> None:
         y_train = [row[2] for s in train for row in rows[s]]
         x_test = np.array([row[1] for s in test for row in rows[s]])
         y_test = [row[2] for s in test for row in rows[s]]
-        tested = [(s, row[0], row[3]) for s in test for row in rows[s]]
         for name, model in build_models().items():
             model.fit(x_train, y_train)
-            answers = model.predict(x_test)
-            predicted[name] += [
-                PredictedEvent(kind, frame)
-                for (_, frame, _), kind in zip(tested, answers, strict=True)
-                if kind != "none"
-            ]
-            if name == SHIPPED:
-                for (segment, frame, track_id), kind in zip(
-                    tested, answers, strict=True
-                ):
-                    if kind == "impact":
-                        hitters[segment].append((frame, track_id))
-                    if kind != "none":
-                        found_events[segment].append(BallEvent(kind, frame, track_id))
+            for segment in test:
+                found = found_events_of(model, rows[segment])
+                if name == SHIPPED:
+                    unmerged += [PredictedEvent(e.kind, e.frame) for e in found]
+                found = merge_close_impacts(found, labels.fps)
+                predicted[name] += [PredictedEvent(e.kind, e.frame) for e in found]
+                if name == SHIPPED:
+                    found_events[segment] = found
+                    hitters[segment] = [
+                        (e.frame, e.track_id) for e in found if e.kind == "impact"
+                    ]
             if name == "boosted trees":
                 truth += y_test
-                boosted += list(answers)
+                boosted += list(model.predict(x_test))
                 result = permutation_importance(
                     model,
                     x_test,
@@ -205,27 +222,21 @@ def main() -> None:
                     importances[feature].append(value)
 
     methods = {}
-    shots = predictions_dir / f"{stem}--shots.json"
+    shots = PREDICTIONS_DIR / f"{Path(args.labels).stem}--shots.json"
     if shots.exists():
         methods["today's shot code"] = load_predictions(shots)
     methods["rule: tracklet ends near a player"] = _rule_predictions(segments, tracks)
+    methods[f"{SHIPPED}, hits not merged"] = unmerged
     methods.update(predicted)
 
     print(
         f"{labels.video}: ±2 frames; every rally scored by a model that never saw "
         f"it (split: {args.split})"
     )
-    print(f"{'method':36}{'impact P/R':>13}{'bounce P/R':>13}")
+    print(f"{'method':40}{'impact P/R':>13}{'bounce P/R':>13}")
     for name, events in methods.items():
         scores = score_events(labels, events, 2)
-
-        def cell(kind, scores=scores):
-            score = scores[kind]
-            return (
-                f"{score.precision:.2f}/{score.recall:.2f}" if score.predicted else "-"
-            )
-
-        print(f"{name:36}{cell('impact'):>13}{cell('bounce'):>13}")
+        print(f"{name:40}{_cell(scores['impact']):>13}{_cell(scores['bounce']):>13}")
 
     print("\nBoosted trees on the candidates (rows: label, columns: answer)")
     print(f"{'':14}" + "".join(f"{name:>14}" for name in CLASSES))
@@ -259,8 +270,45 @@ def main() -> None:
             f"(mean signed {np.mean(score.start_errors):+.2f}), end error median "
             f"{np.median(end):.2f} (mean signed {np.mean(score.end_errors):+.2f})"
         )
+    if args.test_labels:
+        score_other_video(args.test_labels, args.size, rows)
     if args.save_model:
         save_model(args.save_model, rows, labels)
+
+
+def score_other_video(path: str, size: str, rows: dict) -> None:
+    """Train each model on every rally above, then score it on another video."""
+    other, _, segments, players, other_rows = load_rallies(path, size)
+    x = np.array([row[1] for segment_rows in rows.values() for row in segment_rows])
+    y = [row[2] for segment_rows in rows.values() for row in segment_rows]
+    print(f"\n{other.video}: every model trained on all the rallies above, ±2 frames")
+    print(f"{'method':40}{'impact P/R':>13}{'bounce P/R':>13}{'hitter':>9}")
+    for name, model in build_models().items():
+        model.fit(x, y)
+        found = {s.start: found_events_of(model, other_rows[s.start]) for s in segments}
+        versions = {f"{name}, hits not merged": found} if name == SHIPPED else {}
+        versions[name] = {
+            segment: merge_close_impacts(events, other.fps)
+            for segment, events in found.items()
+        }
+        for label, by_segment in versions.items():
+            events = [e for each in by_segment.values() for e in each]
+            scores = score_events(
+                other, [PredictedEvent(e.kind, e.frame) for e in events], 2
+            )
+            hitters = {
+                segment: [(e.frame, e.track_id) for e in each if e.kind == "impact"]
+                for segment, each in by_segment.items()
+            }
+            right, scored = score_hitters(other, hitters, players)
+            print(
+                f"{label:40}{_cell(scores['impact']):>13}{_cell(scores['bounce']):>13}"
+                f"{f'{right}/{scored}':>9}"
+            )
+
+
+def _cell(score) -> str:
+    return f"{score.precision:.2f}/{score.recall:.2f}" if score.predicted else "-"
 
 
 def save_model(path: str, rows: dict, labels) -> None:
