@@ -12,6 +12,7 @@ no timestamps are needed: segments record their own frame ranges.
 | Video file | Source | Notes |
 | --- | --- | --- |
 | `BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4` | [Premier Padel on YouTube](https://www.youtube.com/watch?v=ZSneXJfDqjI), 720p | 7.5 min compilation: many courts, lighting and shirt colours, points played outside the court |
+| `youtube_gFl3ADnFRtc_15s.mp4` | [Daily Padel on YouTube](https://www.youtube.com/watch?v=gFl3ADnFRtc), 720p, 30 fps | 15 s, one rally at the Qatar Major (12 impacts), the README's demo clip. A test from another event: the event model never trains on it. Where the 15 s start in the video is not recorded yet |
 
 Download a video into `data/raw/` (ignored by git), for example:
 
