@@ -26,11 +26,11 @@ results and their weak spots written up in [`reports/`](reports/).
 - **A match report** in Markdown and JSON, with a section on how far to trust each
   number. On the clip above:
 
-  > - **Most shots:** Player 1 (near team), 3 shots.
+  > - **Most shots:** Player 2 (far team), 3 shots.
   > - **Most distance:** Player 3 (near team), 16.6 m.
   > - **Top speed:** Player 3 (near team), 11.3 km/h.
-  > - **Rally:** 14.1 s long, 10 shots.
-  > - In 2 places, the same team hit twice in a row, which the rules do not allow: at
+  > - **Rally:** 11.8 s long, 10 shots.
+  > - In 3 places, the same team hit twice in a row, which the rules do not allow: at
   >   each, a shot was missed, a false one was counted, or the hitter is wrong.
 
   ![Where each of the four players stood, one small court each](docs/assets/heatmaps.png)
@@ -48,10 +48,10 @@ boxes); how the labels were made and scored is in [docs/evaluation.md](docs/eval
 | Players found (RF-DETR Nano) | precision 1.00, recall 0.97 | [model_comparison.md](reports/model_comparison.md) |
 | Player identity | IDF1 0.97, 5 switches (all at crossings); teams 100 % right | [player_identity.md](reports/player_identity.md) |
 | Ball found during rallies | 70 % of frames | [ball_tracker.md](reports/ball_tracker.md) |
-| Impacts | precision 0.54, recall 0.49 (±2 frames); 0.60 and 0.50 on a clip from another event | [ball_tracker.md](reports/ball_tracker.md) |
-| Bounces | precision 0.34, recall 0.51 | [ball_tracker.md](reports/ball_tracker.md) |
-| Hitter of a found impact | right 88 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
-| Rallies | 10 of 10 found; start within 0.02 s and end within 0.12 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
+| Impacts | precision 0.69, recall 0.54 (±2 frames); 0.60 and 0.50 on a clip from another event | [ball_tracker.md](reports/ball_tracker.md) |
+| Bounces | precision 0.55, recall 0.34 | [ball_tracker.md](reports/ball_tracker.md) |
+| Hitter of a found impact | right 85 % of the time | [ball_tracker.md](reports/ball_tracker.md) |
+| Rallies | 9 of 10 found; start within 0.00 s and end within 0.68 s (median) | [ball_tracker.md](reports/ball_tracker.md) |
 | Distance and speed | no ground truth; checked on synthetic tracks | [player_movement.md](reports/player_movement.md) |
 
 Ball events are the weakest part: the ball tracker was trained on tennis and misses
@@ -105,10 +105,10 @@ saved detections without running the detector again, and `--no-ball` to skip the
   along the court floor from one hit to the next. It is not a radar speed.
 - **No point outcomes yet.** CourtVision does not know who won a point, or whether it
   ended in a winner or an error.
-- **About half of the impacts are found,** and about half of the impacts it reports
+- **About half of the impacts are found,** and 6 or 7 in 10 of the impacts it reports
   are real, so shot counts per player can be off either way. The report says so. The
-  model learns from one video; on a clip from another event it found 6 of 12 hits
-  ([ball_tracker.md](reports/ball_tracker.md)).
+  model learns from one video; on a clip from another event it found 6 of 12 hits and
+  ended the rally 2.4 s early ([ball_tracker.md](reports/ball_tracker.md)).
 - **Wall rebounds are not reported.** From a high camera, a ball turning off the glass
   looks like one bouncing on the floor next to it; telling them apart needs the ball's
   height ([#73](https://github.com/AbdelrahmanAhmed3/courtvision-racket-analytics/issues/73)).
@@ -143,8 +143,9 @@ flowchart LR
 Player feet and the ball are projected onto the court through a homography from four
 or more clicked court points, checked with RANSAC. Positions are smoothed before
 distances are measured, because far from the camera a pixel of wobble is tens of
-centimetres. Ball events come from a logistic regression on 14 features of the ball's
-path near each candidate, exported to JSON and run with NumPy. Optical flow can follow
+centimetres. Ball events come from boosted decision trees on 14 features of the ball's
+path near each candidate, exported to JSON and run with NumPy; a hit found twice a few
+frames apart counts once. Optical flow can follow
 a slowly moving camera (`--track-calibration`). The app also has automatic and
 model-assisted calibration modes; they are experiments, with debug views that show why
 a proposal failed, and the clicked calibration is the one the results rely on.

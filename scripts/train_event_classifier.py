@@ -7,8 +7,10 @@ Example (after scripts/predict_shot_events.py has cached the players and ball):
 Candidates come from analytics.ball_track.event_candidates. Each gets a few
 numbers computed from the ball track, the player boxes and the hand-marked
 court, and the label of the nearest labelled impact or bounce within 2 frames
-(or none). Wall rebounds are labelled but not learned (#74). Impacts a few
-frames apart are merged into one, as the pipeline does.
+(or none). Candidates before the serve and after the point are "none" too, so
+the models learn that the server's bounce before serving is not a hit. Wall
+rebounds are labelled but not learned (#74). Impacts a few frames apart are
+merged into one, as the pipeline does.
 The rallies are split in two halves (or one rally at a time, with
 --split rallies); a model trained on the others predicts each part, so every
 rally is scored by a model that never saw it. Needs the train extra
@@ -60,9 +62,10 @@ from courtvision.tracking.fixed_count_tracker import FixedCountTracker  # noqa: 
 # height (#73, #74).
 CLASSES = ("impact", "bounce", "none")
 # The model the pipeline runs; the hitter and rally scores below are for it.
-# Boosted trees found more impacts on these rallies, but far too many on the
-# Qatar clip, the one other event checked (#75, reports/ball_tracker.md).
-SHIPPED = "logistic regression"
+# With close hits merged and trained on the moments outside the rallies too, the
+# trees beat logistic regression on the Tapia rallies and tie with it on the
+# Qatar clip (#85, reports/ball_tracker.md).
+SHIPPED = "boosted trees"
 PREDICTIONS_DIR = REPO_ROOT / "outputs" / "predictions"
 
 
@@ -115,20 +118,23 @@ def tracked_players(segment, cached: dict, fps: float) -> dict:
 
 
 def candidate_rows(segment, cached: dict, players: dict) -> list[tuple]:
-    """(frame, features, label, nearest track ID) per candidate in the rally."""
+    """(frame, features, label, nearest track ID) per candidate in the segment.
+
+    Outside the rally nothing is labelled, so every candidate there is "none".
+    """
     ball = [BallPoint(f, x, y, 0.0 if x is None else 1.0) for f, x, y in cached["ball"]]
     rows = []
     estimate = court_estimate(segment.court_points)
     for candidate in candidate_features(ball, players, estimate):
         frame = candidate.frame
-        if not segment.rally_start - 2 <= frame <= segment.rally_end + 2:
-            continue
         near_events = [
             (abs(event.frame - frame), event.kind)
             for event in segment.events
             if abs(event.frame - frame) <= 2 and event.kind in CLASSES
         ]
-        label = min(near_events)[1] if near_events else "none"
+        label = "none"
+        if near_events and in_rally(segment, frame):
+            label = min(near_events)[1]
         rows.append(
             (frame, list(candidate.features), label, candidate.nearest_track_id)
         )
@@ -145,6 +151,20 @@ def found_events_of(model, segment_rows: list[tuple]) -> list[BallEvent]:
             track_id = track_id if kind == "impact" else None
             events.append(BallEvent(kind, frame, track_id, float(row.max())))
     return events
+
+
+def in_rally(segment, frame: int) -> bool:
+    """Within the labelled rally, give or take the 2 frames events are scored at."""
+    return segment.rally_start - 2 <= frame <= segment.rally_end + 2
+
+
+def outside_hits(segments, events_by_segment: dict) -> int:
+    """Impacts reported before the serve or after the point: all of them false."""
+    return sum(
+        event.kind == "impact" and not in_rally(segment, event.frame)
+        for segment in segments
+        for event in events_by_segment.get(segment.start, [])
+    )
 
 
 def build_models() -> dict:
@@ -185,6 +205,8 @@ def main() -> None:
     unmerged = []  # the shipped model's events before merging close impacts
     hitters = defaultdict(list)  # segment -> (frame, track ID) of predicted impacts
     found_events = defaultdict(list)  # segment -> events of the shipped model
+    outside = defaultdict(int)  # method -> impacts before the serve or after the point
+    by_start = {segment.start: segment for segment in segments}
     truth, boosted, importances = [], [], defaultdict(list)
     for test in folds:
         train = [s.start for s in segments if s.start not in test]
@@ -198,8 +220,12 @@ def main() -> None:
                 found = found_events_of(model, rows[segment])
                 if name == SHIPPED:
                     unmerged += [PredictedEvent(e.kind, e.frame) for e in found]
+                    outside[f"{SHIPPED}, hits not merged"] += outside_hits(
+                        [by_start[segment]], {segment: found}
+                    )
                 found = merge_close_impacts(found, labels.fps)
                 predicted[name] += [PredictedEvent(e.kind, e.frame) for e in found]
+                outside[name] += outside_hits([by_start[segment]], {segment: found})
                 if name == SHIPPED:
                     found_events[segment] = found
                     hitters[segment] = [
@@ -233,10 +259,17 @@ def main() -> None:
         f"{labels.video}: ±2 frames; every rally scored by a model that never saw "
         f"it (split: {args.split})"
     )
-    print(f"{'method':40}{'impact P/R':>13}{'bounce P/R':>13}")
+    print(
+        "Hits outside: impacts reported before the serve or after the point, "
+        "where every one is false."
+    )
+    print(f"{'method':40}{'impact P/R':>13}{'bounce P/R':>13}{'hits outside':>14}")
     for name, events in methods.items():
         scores = score_events(labels, events, 2)
-        print(f"{name:40}{_cell(scores['impact']):>13}{_cell(scores['bounce']):>13}")
+        print(
+            f"{name:40}{_cell(scores['impact']):>13}{_cell(scores['bounce']):>13}"
+            f"{outside.get(name, '-'):>14}"
+        )
 
     print("\nBoosted trees on the candidates (rows: label, columns: answer)")
     print(f"{'':14}" + "".join(f"{name:>14}" for name in CLASSES))
@@ -282,7 +315,10 @@ def score_other_video(path: str, size: str, rows: dict) -> None:
     x = np.array([row[1] for segment_rows in rows.values() for row in segment_rows])
     y = [row[2] for segment_rows in rows.values() for row in segment_rows]
     print(f"\n{other.video}: every model trained on all the rallies above, ±2 frames")
-    print(f"{'method':40}{'impact P/R':>13}{'bounce P/R':>13}{'hitter':>9}")
+    print(
+        f"{'method':40}{'impact P/R':>13}{'bounce P/R':>13}{'hitter':>9}"
+        f"{'hits outside':>14}"
+    )
     for name, model in build_models().items():
         model.fit(x, y)
         found = {s.start: found_events_of(model, other_rows[s.start]) for s in segments}
@@ -303,7 +339,7 @@ def score_other_video(path: str, size: str, rows: dict) -> None:
             right, scored = score_hitters(other, hitters, players)
             print(
                 f"{label:40}{_cell(scores['impact']):>13}{_cell(scores['bounce']):>13}"
-                f"{f'{right}/{scored}':>9}"
+                f"{f'{right}/{scored}':>9}{outside_hits(segments, by_segment):>14}"
             )
 
 
@@ -312,23 +348,21 @@ def _cell(score) -> str:
 
 
 def save_model(path: str, rows: dict, labels) -> None:
-    """Logistic regression trained on every candidate, exported for numpy."""
+    """The shipped model trained on every candidate, exported for numpy."""
     model = build_models()[SHIPPED]
     x = np.array([row[1] for segment_rows in rows.values() for row in segment_rows])
     y = [row[2] for segment_rows in rows.values() for row in segment_rows]
     model.fit(x, y)
-    imputer, scaler, regression = (step for _, step in model.steps)
-    EventModel(
-        classes=tuple(str(c) for c in regression.classes_),
-        fill=imputer.statistics_,
-        mean=scaler.mean_,
-        scale=scaler.scale_,
-        coef=regression.coef_,
-        intercept=regression.intercept_,
-    ).save(
+    exported = EventModel.from_scikit_learn(model)
+    if exported.predict(x) != list(model.predict(x)) or not np.allclose(
+        exported.probabilities(x), model.predict_proba(x)
+    ):
+        raise RuntimeError("The exported trees disagree with scikit-learn")
+    exported.save(
         path,
-        about=f"Logistic regression on {len(y)} candidates from the {len(rows)} "
-        f"labelled rallies of {labels.video} (scripts/train_event_classifier.py).",
+        about=f"Boosted trees on {len(y)} candidates from the {len(rows)} "
+        f"labelled segments of {labels.video}, before the serve and after the point "
+        "included (scripts/train_event_classifier.py).",
     )
     print(f"\nSaved {SHIPPED} trained on all {len(rows)} rallies to {path}")
 

@@ -21,7 +21,7 @@ from courtvision.analytics.rallies import Rally
 REPORT_SCHEMA_VERSION = 1
 ACCURACY_NOTES = (
     "Shots are counted from detected impacts: about half of the real impacts are "
-    "found, and about half of the detected ones are real, so a count can be off "
+    "found, and 6 or 7 in 10 of the detected ones are real, so a count can be off "
     "either way (reports/ball_tracker.md).",
     "The hitter is the player nearest the ball at the impact, right more than 8 "
     "times in 10.",
