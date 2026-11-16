@@ -318,3 +318,80 @@ python scripts/train_event_classifier.py --labels $T --size wasb --split rallies
   Qatar: the bounce before the serve must not become a hit.
 - **Train on candidates outside the rallies too,** before the serve and after the
   point, as "none". That is the likely fix for the pre-serve hit.
+
+## Boosted trees ship, trained on the moments outside the rallies (2026-11-17)
+
+#85, part of #52. Until now the event models trained, and were scored, only on the
+candidates inside the labelled rallies. The pipeline sees everything, though: the
+server bouncing the ball before the serve, and the ball after the point. Those moments
+are now in the training data, every candidate there marked "none" (59 of them on
+Tapia, against 358 inside the rallies). They are also in the scores, so a hit reported
+before the serve or after the point now counts against a model.
+
+### Scored on whole segments, logistic regression looked better than it was
+
+On Tapia, logistic regression reports 17 to 21 hits outside the rallies, all of them
+false, and its rally ends are off by a median 2.2 to 2.3 s instead of the 0.12 s
+reported before. That 0.12 s was measured without the moments outside the rallies.
+
+Every Tapia rally is scored by a model that never saw it, with close hits merged:
+
+| | Impacts P/R (halves) | Impacts P/R (one rally at a time) | Hits outside the rallies | Hitter (halves) | Rallies found | Start / end error, median (halves) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Logistic regression, trained inside the rallies (shipped before) | 0.54 / 0.49 | 0.54 / 0.49 | 21 / 17 | 88 % | 10 of 10 | 0.30 s / 2.34 s |
+| Trees, trained inside the rallies | 0.67 / 0.61 | 0.72 / 0.61 | 7 / 9 | 88 % | 10 of 10 | 0.50 s / 1.64 s |
+| **Trees, trained on the moments outside too (ships)** | **0.69 / 0.54** | **0.71 / 0.54** | **1 / 1** | **85 %** | **9 of 10** | **0.00 s / 0.68 s** |
+
+Logistic regression could not learn the moments outside the rallies: trained on them,
+it still reported 14 to 16 hits there and found fewer real ones. The trees learned
+them, but became more cautious: they find fewer real hits than before (recall 0.61 →
+0.54). They also miss one 5-second rally, where they found only one hit and a rally
+needs two. One rally at a time, their hitter is right 91 % of the time.
+
+### The rule set beforehand, and what happened on Qatar
+
+How to use the moments outside the rallies was chosen on Tapia alone, so that the Qatar
+clip stayed a fair test. The rule, fixed in advance, was the best impact F1 with at
+most 2 hits outside the rallies and rally starts within 0.1 s. Of six variants (only
+before the serve, or both; at weight 0.25, 0.5 or 1), only "both, at full weight"
+passed.
+
+Then Qatar, once, through the pipeline, against the hand labels:
+
+| Qatar clip | Shots (12 by hand) | Real hits | False hits | Rally (labelled frames 21–449) | Same team twice |
+| --- | --- | --- | --- | --- | --- |
+| Logistic regression, close hits merged (before) | 10 | 6 | 4 | 21–444 | 2 places |
+| **Trees, trained on the moments outside too (ships)** | **10** | **6** | **4** | **24–378** | **3 places** |
+
+#85 asked the trees to find **more** of Qatar's hits than logistic regression; they find
+the **same** number. The author chose to ship them anyway: they tie on the clip from
+another event, and on the ten Tapia rallies they are far better, with almost no hits
+outside the rallies and rally ends within 0.7 s instead of 2.3 s. The bar was lowered
+from "more hits" to "no fewer", and this is where that is written down.
+
+What is worse on Qatar:
+
+- **The serve is found 3 frames late** (frame 24), when the ball has passed the
+  server's partner. So the serve is given to the partner, and it counts as a miss at
+  ±2 frames.
+- **The rally ends 2.4 s early.** The trees find nothing after frame 378; the last hit
+  is at 400 and the rally is labelled to frame 449.
+- **The merge picked the wrong copy once.** The trees were equally sure of frames 73 and
+  77, and the earlier one was kept. The hit is at 78.
+
+Qatar has now been used for two decisions (#83 and this one), so it is no longer a
+clean test. The next clips from other cameras, such as the author's own phone footage,
+are the real check, and they could reverse this.
+
+### Reproducing
+
+```bash
+T=evaluation/labels/BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.json
+Q=evaluation/labels/youtube_gFl3ADnFRtc_15s.json
+python scripts/train_event_classifier.py --labels $T --size wasb --test-labels $Q \
+    --save-model src/courtvision/analytics/ball_events_model.json
+python scripts/train_event_classifier.py --labels $T --size wasb --split rallies
+```
+
+The pipeline run on Qatar uses the clip's six court points from the app
+(`--calibration`), and its `ball_events.csv` is scored with `scripts/score_events.py`.
