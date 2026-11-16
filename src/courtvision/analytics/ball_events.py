@@ -6,7 +6,8 @@ player boxes and the court; a logistic regression trained on the labelled
 rallies (``scripts/train_event_classifier.py``) says which event it was, if
 any. The model ships as JSON (weights, feature means and scales, fill-in values
 for missing numbers) and is applied with numpy, so running it needs no
-scikit-learn. Results: reports/ball_events.md.
+scikit-learn. Impacts a few frames apart are one hit found twice and count once.
+Results: reports/ball_events.md and reports/ball_tracker.md.
 """
 
 from __future__ import annotations
@@ -62,6 +63,7 @@ class BallEvent:
     kind: str  # "impact" or "bounce"; wall rebounds are not learned yet (#74)
     frame: int
     track_id: int | None  # for an impact, the player nearest the ball
+    confidence: float | None = None  # the model's probability of this kind
 
 
 @dataclass(frozen=True)
@@ -75,11 +77,16 @@ class EventModel:
     coef: np.ndarray  # one row of weights per class
     intercept: np.ndarray
 
-    def predict(self, rows: np.ndarray) -> list[str]:
+    def probabilities(self, rows: np.ndarray) -> np.ndarray:
+        """Each row's probability of each class, as scikit-learn's predict_proba."""
         rows = np.atleast_2d(np.asarray(rows, dtype=float))
         rows = np.where(np.isnan(rows), self.fill, rows)
         scores = ((rows - self.mean) / self.scale) @ self.coef.T + self.intercept
-        return [self.classes[i] for i in scores.argmax(axis=1)]
+        exponentials = np.exp(scores - scores.max(axis=1, keepdims=True))
+        return exponentials / exponentials.sum(axis=1, keepdims=True)
+
+    def predict(self, rows: np.ndarray) -> list[str]:
+        return [self.classes[i] for i in self.probabilities(rows).argmax(axis=1)]
 
     @classmethod
     def load(cls, path: str | Path = DEFAULT_MODEL_PATH) -> EventModel:
@@ -108,19 +115,56 @@ def detect_ball_events(
     ball_points: Iterable[BallPoint],
     players_by_frame: PlayersByFrame,
     estimate: HomographyEstimate,
+    fps: float,
     model: EventModel | None = None,
 ) -> list[BallEvent]:
-    """Every candidate the model calls an impact or a bounce."""
+    """Every candidate the model calls an impact or a bounce, one per hit."""
     candidates = candidate_features(ball_points, players_by_frame, estimate)
     if not candidates:
         return []
     model = model or EventModel.load()
-    kinds = model.predict(np.array([c.features for c in candidates]))
-    return [
-        BallEvent(kind, c.frame, c.nearest_track_id if kind == "impact" else None)
-        for c, kind in zip(candidates, kinds, strict=True)
-        if kind != NONE
-    ]
+    probabilities = model.probabilities(np.array([c.features for c in candidates]))
+    events = []
+    for candidate, row in zip(candidates, probabilities, strict=True):
+        kind = model.classes[row.argmax()]
+        if kind != NONE:
+            track_id = candidate.nearest_track_id if kind == "impact" else None
+            events.append(BallEvent(kind, candidate.frame, track_id, float(row.max())))
+    return merge_close_impacts(events, fps)
+
+
+# Nobody hits twice in a fifth of a second, and the ball cannot travel between
+# two players that fast: labelled hits are at least 0.32 s apart. Closer impacts
+# are one hit found twice.
+SAME_HIT_SECONDS = 0.2
+
+
+def merge_close_impacts(
+    events: Iterable[BallEvent], fps: float, within_seconds: float = SAME_HIT_SECONDS
+) -> list[BallEvent]:
+    """Impacts within ``within_seconds`` of the one before are one hit.
+
+    The model often fires twice for one hit, a few frames apart. The impact it is
+    surest of is kept (the first, if it is equally sure). Keeping the first or the
+    last instead each did well on one labelled video and badly on the other
+    (reports/ball_tracker.md). Bounces are left alone.
+    """
+    within = round(within_seconds * fps)
+    events = list(events)
+    runs: list[list[BallEvent]] = []
+    impacts = sorted((e for e in events if e.kind == "impact"), key=_frame)
+    for impact in impacts:
+        if runs and impact.frame - runs[-1][-1].frame <= within:
+            runs[-1].append(impact)
+        else:
+            runs.append([impact])
+    kept = [max(run, key=lambda impact: impact.confidence or 0.0) for run in runs]
+    others = [event for event in events if event.kind != "impact"]
+    return sorted(kept + others, key=_frame)
+
+
+def _frame(event: BallEvent) -> int:
+    return event.frame
 
 
 def candidate_features(

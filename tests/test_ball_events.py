@@ -7,6 +7,7 @@ from courtvision.analytics.ball_events import (
     EventModel,
     candidate_features,
     detect_ball_events,
+    merge_close_impacts,
 )
 from courtvision.detectors.tracknet_adapter import BallPoint
 from courtvision.evaluation.court import court_estimate
@@ -84,6 +85,7 @@ def test_the_numpy_model_matches_scikit_learn() -> None:
 
     assert sklearn  # imported
     assert model.predict(x) == list(pipeline.predict(x))
+    np.testing.assert_allclose(model.probabilities(x), pipeline.predict_proba(x))
 
 
 def test_a_bounce_turns_the_ball_from_down_to_up() -> None:
@@ -99,10 +101,48 @@ def test_a_bounce_turns_the_ball_from_down_to_up() -> None:
 
 
 def test_the_shipped_model_runs_on_a_track() -> None:
-    events = detect_ball_events(bounce_track(), {}, COURT)
+    events = detect_ball_events(bounce_track(), {}, COURT, fps=25)
 
     assert all(isinstance(event, BallEvent) for event in events)
     assert {event.kind for event in events} <= {"impact", "bounce"}
+
+
+def test_impacts_a_few_frames_apart_become_the_one_the_model_is_surest_of() -> None:
+    # At 25 fps a fifth of a second is 5 frames.
+    events = [
+        BallEvent("impact", 100, 1, 0.5),
+        BallEvent("bounce", 102, None, 0.6),
+        BallEvent("impact", 104, 3, 0.9),
+        BallEvent("impact", 108, 3, 0.4),  # 4 after the one before: the same hit
+        BallEvent("impact", 120, 2, 0.5),
+    ]
+
+    merged = merge_close_impacts(reversed(events), fps=25)
+
+    assert merged == [
+        BallEvent("bounce", 102, None, 0.6),
+        BallEvent("impact", 104, 3, 0.9),
+        BallEvent("impact", 120, 2, 0.5),
+    ]
+
+
+def test_the_first_impact_is_kept_when_the_model_is_equally_sure() -> None:
+    events = [BallEvent("impact", 100, 1), BallEvent("impact", 103, 3)]
+
+    assert merge_close_impacts(events, fps=25) == events[:1]
+
+
+def test_impacts_more_than_a_fifth_of_a_second_apart_are_kept() -> None:
+    events = [BallEvent("impact", 100, 1), BallEvent("impact", 106, 3)]
+
+    assert merge_close_impacts(events, fps=25) == events  # 6 frames: 0.24 s
+    assert merge_close_impacts(events, fps=30) == events[:1]  # 0.2 s
+
+
+def test_close_bounces_are_left_alone() -> None:
+    events = [BallEvent("bounce", 100, None), BallEvent("bounce", 103, None)]
+
+    assert merge_close_impacts(events, fps=25) == events
 
 
 def test_the_shipped_model_does_not_answer_wall_rebound() -> None:

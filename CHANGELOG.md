@@ -8,6 +8,7 @@
 - the app and the pipeline track the ball with WASB instead of TrackNet, on by default (`--no-ball` skips it): its network is copied in with its MIT notices (`detectors/wasb_hrnet.py`, NOTICE), its tennis weights (6 MB) download on first use and are checked, and the event model is retrained on its candidates; the `--tracknet-*` options are gone (#61)
 - stop reporting wall rebounds until they can be learned: the classifier couldn't tell them from bounces (4 in 5 reported were wrong), and without them it finds half the impacts instead of 4 in 10; they come back with the ball's height (#73, #74)
 - score the event model one rally at a time (`--split rallies`); boosted trees found more impacts on the labelled rallies (P/R 0.62/0.63 against 0.49/0.50) but 17 shots in the Qatar clip's rally of 12, so logistic regression keeps shipping; CI installs the train extra, so the NumPy model is checked against scikit-learn on every pull request (#75)
+- count a hit once when the event model finds it twice: impacts within 0.2 s of the one before become the one the model is surest of (impact precision 0.49 → 0.54 on the labelled rallies, 0.50 → 0.60 on the Qatar clip, recall about the same); the Qatar clip is hand-labelled as a test from another event, and `--test-labels` scores the event models on it (#83)
 
 ## v4.0 - Showcase Edition
 
