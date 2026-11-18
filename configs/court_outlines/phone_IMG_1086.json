@@ -1,0 +1,41 @@
+{
+  "clip": "IMG_1086.MOV",
+  "note": "Court floor traced by eye in image pixels on the author's own phone recording (not published). net_base_y is the image row where the net meets the floor: people whose feet are above it are on the far side.",
+  "image_width": 1920,
+  "image_height": 1080,
+  "net_base_y": 660,
+  "polygon": [
+    [
+      0,
+      1080
+    ],
+    [
+      0,
+      760
+    ],
+    [
+      390,
+      665
+    ],
+    [
+      660,
+      595
+    ],
+    [
+      1210,
+      595
+    ],
+    [
+      1560,
+      740
+    ],
+    [
+      1920,
+      860
+    ],
+    [
+      1920,
+      1080
+    ]
+  ]
+}
