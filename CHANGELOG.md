@@ -11,6 +11,10 @@
 - count a hit once when the event model finds it twice: impacts within 0.2 s of the one before become the one the model is surest of (impact precision 0.49 → 0.54 on the labelled rallies, 0.50 → 0.60 on the Qatar clip, recall about the same); the Qatar clip is hand-labelled as a test from another event, and `--test-labels` scores the event models on it (#83)
 - ship boosted trees as the event model, trained on the moments before the serve and after the point too, so they almost never report a hit there (1 against 17 to 21 for logistic regression on the labelled rallies); impacts P/R 0.69/0.54 against 0.54/0.49, rally ends within 0.7 s instead of 2.3 s; on the Qatar clip they tie with logistic regression (6 of 12 hits) but end its rally 2.4 s early; the trees are exported to JSON and walked with NumPy, matching scikit-learn's answers and probabilities (#85)
 
+### Pose
+
+- trial: how much of the near player a pose model sees in phone clips filmed from behind the back glass (RTMPose-m through rtmlib, Apache-2.0): shoulders, hips and knees found 96–99 % of the time and wrists 71–76 % when the player is fully in the picture, but much less when they stand close to the glass and are cut off by the frame; jackets on the glass are dropped as still objects; `scripts/try_pose.py`, `reports/pose.md` (#87)
+
 ## v4.0 - Showcase Edition
 
 Padel analytics on a laptop, measured against hand labels: four players with
