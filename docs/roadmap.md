@@ -28,9 +28,12 @@ Tracked in the [v4.0 milestone](https://github.com/AbdelrahmanAhmed3/courtvision
 
 ## v5.0: Personal edition
 
-- Fixed camera behind the back glass; analytics for near-side players.
+- Fixed camera behind the back glass; analytics for near-side players. The first
+  setup to support: a phone stuck to the outside of the player's own back glass,
+  reporting the games played at that end (teams change ends).
 - Point outcomes signalled by a hand gesture to the camera (one finger: won, two: lost).
 - LLM coaching report built from the match report and stats, with claims that cite moments in the clip, and an evaluation harness for its accuracy and cost.
+- Shot selection: an LLM trained to judge whether a shot was the right choice, from the shot, the ball and where all four players stood.
 - A web frontend (API plus React) instead of Streamlit.
 - Tennis ball events and movement stats.
 
