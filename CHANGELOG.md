@@ -13,7 +13,7 @@
 
 ### Pose
 
-- trial: how much of the near player a pose model sees in phone clips filmed from behind the back glass (RTMPose-m through rtmlib, Apache-2.0): shoulders, hips and knees found 96–99 % of the time and wrists 71–76 % when the player is fully in the picture, but much less when they stand close to the glass and are cut off by the frame; jackets on the glass are dropped as still objects; `scripts/try_pose.py`, `reports/pose.md` (#87)
+- trial: how much of the near player a pose model sees in phone clips filmed from behind the back glass (RTMPose-m through rtmlib, Apache-2.0): shoulders, hips and knees found 96–99 % of the time and wrists 71–76 % when the player is fully in the picture, but much less when they stand close to the glass off to the side and are cut off by the side of the frame; jackets on the glass are dropped as still objects; `scripts/try_pose.py`, `reports/pose.md` (#87)
 
 ## v4.0 - Showcase Edition
 

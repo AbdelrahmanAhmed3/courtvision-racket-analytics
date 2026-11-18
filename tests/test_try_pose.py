@@ -1,6 +1,6 @@
 import numpy as np
 
-from scripts.try_pose import Poses, drop_still_boxes, near_team, touches_edge
+from scripts.try_pose import Poses, cut_edges, drop_still_boxes, near_team
 
 JACKET = [100.0, 100.0, 140.0, 200.0, 0.6]
 PLAYER = [500.0, 100.0, 560.0, 260.0, 0.9]
@@ -44,10 +44,10 @@ def test_a_still_box_that_jitters_by_a_few_pixels_is_still_dropped() -> None:
     assert kept[5] == []
 
 
-def test_a_box_touching_the_frame_is_cut() -> None:
-    assert touches_edge([0, 10, 100, 100], 1920, 1080)
-    assert touches_edge([10, 10, 100, 1079], 1920, 1080)
-    assert not touches_edge([10, 10, 100, 100], 1920, 1080)
+def test_a_box_is_cut_by_the_edges_it_touches() -> None:
+    assert cut_edges([0, 10, 100, 1079], 1920, 1080) == {"left", "bottom"}
+    assert cut_edges([10, 0, 1919, 100], 1920, 1080) == {"right", "top"}
+    assert cut_edges([10, 10, 100, 100], 1920, 1080) == set()
 
 
 def test_the_near_team_is_the_two_most_confident_boxes_found_clearly() -> None:

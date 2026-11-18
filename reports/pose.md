@@ -11,8 +11,9 @@ out of scope. Whether a swing marks a hit is the next question (#60).
 ### Setup
 
 - **Clips:** the author's own phone recordings (not published), one club at night
-  under floodlights, 1080p at 30 fps, the phone leaning on the near back glass at
-  about waist height. Five clips: four landscape and one portrait. IMG_1089 is cut
+  under floodlights, 1080p at 30 fps with the 0.5× (ultra wide) lens, the phone
+  leaning on the near back glass at about waist height. Five clips: four landscape
+  and one portrait. IMG_1089 is cut
   at frame 10,600 (5 min 53 s), where the phone tipped over.
 - **Players:** RF-DETR Nano finds people. People whose feet are inside a court
   outline traced by eye are kept (`configs/court_outlines/phone_IMG_*.json`); these
@@ -37,6 +38,18 @@ at least one; "cut by the edge" is the share of near boxes touching the frame.
 | IMG_1085 | 21 s | 100% | 321 | 7% | 97% | 93% | 70% | 96% | 96% | 93% | 31 |
 | IMG_1084 | 12 s | 80% | 587 | 65% | 97% | 78% | 60% | 85% | 80% | 65% | 25 |
 | IMG_1083, portrait | 70 s | 77% | 537 | 39% | 96% | 93% | 67% | 93% | 92% | 91% | 37 |
+
+Which edge cuts them: almost always a side of the picture, almost never the top or
+bottom. (A first version of this report blamed a low phone; these numbers say
+otherwise.)
+
+| Clip | Cut by the edge | Left | Right | Top | Bottom |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| IMG_1089 | 6% | 5% | 1% | 0% | 0% |
+| IMG_1086 | 5% | 5% | 0% | 0% | 1% |
+| IMG_1085 | 7% | 3% | 3% | 0% | 0% |
+| IMG_1084 | 65% | 14% | 51% | 0% | 0% |
+| IMG_1083, portrait | 39% | 7% | 32% | 0% | 0% |
 
 The two worst single players:
 
@@ -75,10 +88,14 @@ crops are 200×260 px; the sheets are written to `outputs/pose/` for a second lo
 
 ### What goes wrong from this angle
 
-1. **The near player is cut off near the back glass,** which is where padel
-   defence happens. In IMG_1084 the right player stands close to the glass for the
-   whole clip and touches the frame edge in every frame: ankles found 37 % of the
-   time, wrists 47 %.
+1. **The near player is cut off by the sides of the picture when close to the
+   glass and off to the side,** which is where padel defence happens: from the
+   middle of the back glass, even the 0.5× lens doesn't reach that far sideways.
+   In IMG_1084 the right player stands close to the glass for the whole clip and
+   touches the frame edge in every frame: ankles found 37 % of the time, wrists
+   47 %. The top and bottom almost never cut a near player: a flat phone sees about
+   as far above its centre as below, so at waist height a standing player is
+   centred head to feet.
 2. **Seen from behind, the hands are often hidden by the body.** Wrists are the
    weakest part in every clip (60–76 %), and a third of the wrists found can't be
    checked by eye.
@@ -103,11 +120,17 @@ crops are 200×260 px; the sheets are written to `outputs/pose/` for a second lo
 - **The racket arm is the weak part:** hidden hands from behind make wrist speed
   noisy. Whether swings still mark hits is #60, which should be measured on
   hand-labelled hits in phone clips.
-- **The problems are the camera's, not the model's.** Being cut off at the glass
-  and being seen from behind come from a low phone behind the player. So the next
-  step is a recording test from one session, measured with this script: the phone
-  stuck flat to the glass at about 2 m, the same tilted down about 25°, and as high
-  as possible, all landscape at 60 fps. Keep landscape: portrait loses a player.
+- **The problems are the camera's, not the model's.** The cuts come from where the
+  phone is, not from its height or tilt, since they are at the sides. Hidden hands
+  come from filming from behind, which is the product's choice. A flat phone at
+  hip height needs no mount and keeps the near player in the picture top to
+  bottom. So the next step is a recording test from one session, measured with
+  this script: the phone stuck flat to the glass at hip height, landscape, 0.5×,
+  60 fps, once in the middle of the back glass and once behind the recording
+  player's own side. A higher, tilted phone would only help to see where the ball
+  lands on the far side; try it only if the landing spots from hip height turn out
+  too rough, checked against labelled bounces. Keep landscape: portrait loses a
+  player.
 - **Before pose goes into the pipeline:**
   - rtmlib requires `opencv-contrib-python` as well as `opencv-python`; two OpenCV
     packages in one environment break each other, so it is installed with
