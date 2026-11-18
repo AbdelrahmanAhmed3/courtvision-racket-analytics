@@ -168,10 +168,19 @@ def half(box, width: int) -> str:
     return "left" if (box[0] + box[2]) / 2 < width / 2 else "right"
 
 
-def touches_edge(box, width: int, height: int, margin: int = EDGE_PIXELS) -> bool:
-    """True when the box is cut by the frame, so part of the player is out of view."""
+EDGES = ("left", "right", "top", "bottom")
+
+
+def cut_edges(box, width: int, height: int, margin: int = EDGE_PIXELS) -> set[str]:
+    """The frame edges the box touches: past them, part of the player is out of view."""
     x1, y1, x2, y2 = box[:4]
-    return x1 <= margin or y1 <= margin or x2 >= width - margin or y2 >= height - margin
+    touched = {
+        "left": x1 <= margin,
+        "right": x2 >= width - margin,
+        "top": y1 <= margin,
+        "bottom": y2 >= height - margin,
+    }
+    return {edge for edge, hit in touched.items() if hit}
 
 
 def same_place(first: np.ndarray, second: np.ndarray) -> np.ndarray:
@@ -391,7 +400,8 @@ def summary(args, poses: Poses, size: tuple[int, int], frames: int) -> str:
     """One row per near player: how often found, cut by the frame, body parts seen."""
     width, height = size
     halves = np.array([half(box, width) for box in poses.boxes])
-    cut = np.array([touches_edge(box, width, height) for box in poses.boxes])
+    edges = [cut_edges(box, width, height) for box in poses.boxes]
+    cut = np.array([bool(touched) for touched in edges])
     heights = poses.boxes[:, 3] - poses.boxes[:, 1]
     lines = [
         f"{Path(args.input).name}: {frames} frames, "
@@ -419,6 +429,12 @@ def summary(args, poses: Poses, size: tuple[int, int], frames: int) -> str:
             + " | ".join(f"{rates[part]:.0%}" for part in BODY_PARTS)
             + " |"
         )
+    if edges:
+        shares = ", ".join(
+            f"{edge} {np.mean([edge in touched for touched in edges]):.0%}"
+            for edge in EDGES
+        )
+        lines += ["", f"Near boxes cut by each edge: {shares}"]
     return "\n".join(lines)
 
 
