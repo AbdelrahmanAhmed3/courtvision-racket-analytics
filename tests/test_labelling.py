@@ -299,7 +299,7 @@ def test_invalid_labels_are_rejected(tmp_path) -> None:
     path = tmp_path / "labels.json"
     save_labels(make_labels(), path)
     path.write_text(
-        path.read_text().replace('"schema_version": 2', '"schema_version": 9')
+        path.read_text().replace('"schema_version": 3', '"schema_version": 9')
     )
     with pytest.raises(ValueError, match="schema"):
         load_labels(path)
@@ -482,11 +482,13 @@ def mark_court(session: LabelSession) -> None:
     session.key("k")
     for x, y in COURT_POINTS:
         session.click(x, y)
+    session.key("k")
 
 
-def test_four_clicks_mark_the_court_and_esc_keeps_the_old_points() -> None:
+def test_the_service_line_ends_mark_the_court_and_esc_keeps_the_old_points() -> None:
     session = labelled_session(frame=10)
     mark_court(session)
+    # The default four keep the unnamed form of older labels.
     assert session.segment.court_points == COURT_POINTS
     assert session.segment.events == []  # the clicks were court points, not events
 
@@ -508,7 +510,7 @@ def test_the_court_maps_the_clicked_points_onto_the_service_lines() -> None:
     template = project_image_points(np.float32(COURT_POINTS), estimate)
     expected = [[0, 0.15], [1, 0.15], [1, 0.85], [0, 0.85]]
     assert template == pytest.approx(np.float32(expected), abs=1e-4)
-    far_baseline, _, near_baseline, _, net, centre = court_lines(COURT_POINTS)
+    far_baseline, _, near_baseline, _, net, centre, *_ = court_lines(COURT_POINTS)
     # Perspective: the far half looks shorter than the near half.
     assert net[0][1] - far_baseline[0][1] < near_baseline[0][1] - net[0][1]
     assert centre[:, 0] == pytest.approx([640, 640])
@@ -528,7 +530,7 @@ def test_version_1_labels_load_without_court_points(tmp_path) -> None:
 
     loaded = load_labels(path)
 
-    assert loaded == labels  # and it saves again as version 2
+    assert loaded == labels  # and it saves again in the current version
     assert all(segment.court_points is None for segment in loaded.segments)
 
 

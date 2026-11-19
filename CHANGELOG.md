@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Labelling
+
+- mark the court from any four or more landmarks the camera sees, so a phone on the back glass, where the near service line runs off the picture, can be marked; with five or more the court is fit to all of them and each click shows its distance from the fit in pixels; `k` then `p` copies the court from an earlier segment; labels schema 3 names the landmarks, and older files load unchanged (#90)
+
 ### Ball
 
 - compare ball trackers on the labelled rallies: WASB (MIT), run with its tennis weights, finds more of the ball than TrackNet and lifts hits, hitters and rally starts; `detectors/wasb_adapter.py`, `scripts/compare_ball_trackers.py`, results in `reports/ball_tracker.md` (#61)

@@ -14,8 +14,12 @@ import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-SCHEMA_VERSION = 2  # 2 added court points; version 1 files load without them
-READABLE_SCHEMA_VERSIONS = (1, 2)
+from courtvision.evaluation.court import named_points
+
+# 2 added court points; version 1 files load without them. 3 lets the court points
+# be any named landmarks; version 2 files hold the four service-line ends.
+SCHEMA_VERSION = 3
+READABLE_SCHEMA_VERSIONS = (1, 2, 3)
 PLAYER_IDS = (1, 2, 3, 4)
 EVENT_KINDS = ("impact", "bounce", "wall_rebound")
 SEGMENT_STATUSES = ("unreviewed", "label", "skip")
@@ -68,16 +72,16 @@ class Segment:
     events: list[BallEvent] = field(default_factory=list)
     boxes: dict[int, list[PlayerBox]] = field(default_factory=dict)
     reviewed_box_frames: list[int] = field(default_factory=list)
-    # Where the service lines meet the side walls, in image pixels: far left, far
-    # right, near right, near left (see courtvision.evaluation.court).
-    court_points: list[list[float]] | None = None
+    # Court landmarks in image pixels: four points are the service-line ends (far
+    # left, far right, near right, near left); a mapping names its landmarks
+    # (see courtvision.evaluation.court).
+    court_points: list[list[float]] | dict[str, list[float]] | None = None
 
     def __post_init__(self) -> None:
         if self.status not in SEGMENT_STATUSES:
             raise ValueError(f"Unknown segment status: {self.status}")
-        points = self.court_points
-        if points is not None and [len(point) for point in points] != [2] * 4:
-            raise ValueError("Court points must be four (x, y) points")
+        if self.court_points is not None:
+            named_points(self.court_points)  # raises if they cannot place a court
 
     def contains(self, frame: int) -> bool:
         return self.start <= frame < self.end
