@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Labelling
+
+- open the label tool at any frame with `--frame`, to go straight back to an event that needs fixing
+
 ### Ball
 
 - compare ball trackers on the labelled rallies: WASB (MIT), run with its tennis weights, finds more of the ball than TrackNet and lifts hits, hitters and rally starts; `detectors/wasb_adapter.py`, `scripts/compare_ball_trackers.py`, results in `reports/ball_tracker.md` (#61)
