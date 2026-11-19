@@ -67,6 +67,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-prefill", action="store_true", help="Do not propose boxes with RF-DETR."
     )
+    parser.add_argument(
+        "--frame", type=int, default=0, help="Frame to open at (default: the first)."
+    )
     return parser.parse_args()
 
 
@@ -230,7 +233,7 @@ def main() -> None:
 
     reader = FrameReader(args.input)
     proposer = None if args.no_prefill else BoxProposer(args.rfdetr_size)
-    session = LabelSession(labels)
+    session = LabelSession(labels, frame=args.frame)
     scale = min(1.0, (args.max_width - PANEL_WIDTH) / labels.width)
     mouse = {"down": None, "events": []}
 
