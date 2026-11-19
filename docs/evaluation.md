@@ -78,15 +78,32 @@ For each segment:
 
    The boxes start as RF-DETR proposals, so accepting them unchanged favours RF-DETR
    when comparing detectors (#6). Tighten any box that does not fit the player.
-6. **Court** (`k`, then 4 clicks), on any frame of the segment: click where each
-   service line meets the side wall, in order: far left, far right, near right, near
-   left. The tool then draws the court from those points. Check the drawing: the far
+6. **Court** (`k`), on any frame of the segment. The tool asks for padel landmarks
+   one at a time: click each, or press `x` if it is not in the picture, then `k` to
+   save once four or more are clicked. The first four it asks for are the default:
+   where each service line meets the side wall, far left, far right, near right,
+   near left. They are painted and sharp, while boards and glass often hide the near
+   floor corners. Then come the service-line Ts, where the net meets each side wall
+   and the middle, on the floor, and the four corners. Four points must not have
+   three on one line: the far service line's ends and T plus one more cannot place
+   the court.
+
+   The tool then draws the court from the points. Check the drawing: the far
    baseline on the bottom of the far glass, the net line where the net meets the
-   floor, the centre line on the painted one. If they are off, press `k` and click
-   again; `esc` keeps the old points. Service line ends are used because they are
-   painted and sharp, while boards and glass often hide the near floor corners. The
-   drawn near baseline is the least reliable part: a camera lens bends straight
-   lines, which four points cannot model.
+   floor, the centre and service lines on the painted ones. If they are off, press
+   `k` and click again; `esc` keeps the old points. Four points fit exactly, so only
+   the drawing shows a bad click. With five or more the court is fit to all of them,
+   and each click shows how many pixels it is from the fitted court: a click much
+   further than the others is the bad one. The drawn near baseline is the least
+   reliable part: a camera lens bends straight lines, which no fit of a flat court
+   can model.
+
+   **Phone on the back glass.** The near service line runs off both sides of the
+   picture: skip its ends and click the far service line's ends and T, the near T,
+   and where the net meets each side wall (the far corners too, if they are clear).
+   The near half then rests on one point, the near T, so check its drawn lines most
+   closely. The camera stays put for the whole clip, so on each later segment press
+   `k` then `p` to copy the court from the nearest earlier segment that has one.
 
 ### Checking labels
 
@@ -171,13 +188,14 @@ Every labelled player counts towards recall, including players outside the court
 
 ## File format
 
-Schema version 2, produced by `courtvision.evaluation.labels` (field order in saved
+Schema version 3, produced by `courtvision.evaluation.labels` (field order in saved
 files may differ; coordinates are floats). Version 1 files, without court points,
-still load and are saved as version 2.
+and version 2 files, whose court points are always the four service-line ends,
+still load and are saved as version 3.
 
 ```jsonc
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "video": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4",
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
@@ -197,6 +215,18 @@ still load and are saved as version 2.
       // where the service lines meet the side walls: far left, far right,
       // near right, near left
       "court_points": [[378.0, 230.0], [897.0, 230.0], [1140.0, 500.0], [135.0, 500.0]]
+    },
+    {
+      // any other four or more landmarks are named, from a phone on the back glass
+      // for example (names from courtvision.calibration.landmarks)
+      "court_points": {
+        "far_left_service_intersection": [612.0, 401.0],
+        "far_right_service_intersection": [1301.0, 398.0],
+        "far_service_center": [957.0, 399.0],
+        "near_service_center": [962.0, 612.0],
+        "left_net_point": [420.0, 455.0],
+        "right_net_point": [1490.0, 451.0]
+      }
     }
   ]
 }
