@@ -5,6 +5,7 @@
 ### Labelling
 
 - open the label tool at any frame with `--frame`, to go straight back to an event that needs fixing
+- mark the court from any four or more landmarks the camera sees, so a phone on the back glass, where the near service line runs off the picture, can be marked; with five or more the court is fit to all of them and each click shows its distance from the fit in pixels; `k` then `p` copies the court from an earlier segment; labels schema 3 names the landmarks, and older files load unchanged (#90)
 
 ### Ball
 

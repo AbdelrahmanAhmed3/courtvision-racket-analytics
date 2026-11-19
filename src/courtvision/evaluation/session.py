@@ -10,7 +10,13 @@ import copy
 from dataclasses import dataclass
 
 from courtvision.evaluation.checks import describe, find_all_problems, find_problems
-from courtvision.evaluation.court import POINT_NAMES
+from courtvision.evaluation.court import (
+    COURT_LANDMARKS,
+    DESCRIPTIONS,
+    LANDMARK_NAMES,
+    MIN_POINTS,
+    court_residuals,
+)
 from courtvision.evaluation.labels import (
     BallEvent,
     PlayerBox,
@@ -34,7 +40,8 @@ KEY_HELP = (
     ("r / e", "rally starts / ends here"),
     ("1-4", "impact by player (or assign box)"),
     ("b / w", "bounce / wall rebound, then click ball"),
-    ("k", "court: click 4 service line ends"),
+    ("k", "court: click points, x skips one, k saves"),
+    ("k, p", "court: copy from an earlier segment"),
     ("click box", "select; drag: draw or resize selected"),
     ("x", "delete selected box or this frame's events"),
     ("p", "copy players from previous box frame"),
@@ -56,7 +63,8 @@ class LabelSession:
         self.labels = labels
         self.frame = 0
         self.pending: str | None = None  # "bounce" or "wall_rebound" awaiting a click
-        self.court_clicks: list[list[float]] | None = None  # while marking the court
+        self.court_clicks: dict[str, list[float]] | None = None  # while marking
+        self.court_step = 0  # index into COURT_LANDMARKS while marking
         self.selected: int | None = None  # index into this frame's boxes
         self.message = ""
         self.dirty = False
@@ -140,7 +148,11 @@ class LabelSession:
             "u": self._undo_last,
             "esc": self._cancel,
         }
-        if key in {"1", "2", "3", "4"}:
+        marking = {"x": self._skip_court_point, "k": self._save_court}
+        marking["p"] = self._copy_earlier_court
+        if self.court_clicks is not None and key in marking:
+            marking[key]()
+        elif key in {"1", "2", "3", "4"}:
             self._number(int(key))
         elif key in actions:
             actions[key]()
@@ -207,6 +219,7 @@ class LabelSession:
             ChecklistItem("Rally start marked (r)", segment.rally_start is not None),
             ChecklistItem("Rally end marked (e)", segment.rally_end is not None),
             ChecklistItem("Court marked (k)", segment.court_points is not None),
+            *_court_fit_items(segment),
             ChecklistItem(
                 f"Impacts {len(impacts)}, bounces "
                 f"{sum(event.kind == 'bounce' for event in segment.events)}, "
@@ -284,23 +297,70 @@ class LabelSession:
         self.court_clicks = None
 
     def _start_court(self) -> None:
-        """Mark the court: four clicks replace the points, esc keeps the old."""
+        """Mark the court: click or skip (x) each landmark asked for, then save (k).
+
+        The new points replace the old on saving; esc keeps the old.
+        """
         if not self._labelling():
             return
         self.pending = None
-        self.court_clicks = []
-        self.message = _court_prompt(0)
+        self.court_clicks = {}
+        self.court_step = 0
+        self.message = _court_prompt(0, 0)
 
     def _add_court_point(self, x: float, y: float) -> None:
+        name, _ = COURT_LANDMARKS[self.court_step]
+        self.court_clicks[name] = [x, y]
+        self._next_court_point()
+
+    def _skip_court_point(self) -> None:
+        self._next_court_point()
+
+    def _next_court_point(self) -> None:
+        self.court_step += 1
+        if self.court_step == len(COURT_LANDMARKS):
+            self._save_court()
+        else:
+            self.message = _court_prompt(self.court_step, len(self.court_clicks))
+
+    def _save_court(self) -> None:
         clicks = self.court_clicks
-        clicks.append([x, y])
-        if len(clicks) < len(POINT_NAMES):
-            self.message = _court_prompt(len(clicks))
+        asked_all = self.court_step >= len(COURT_LANDMARKS)
+        try:
+            residuals = court_residuals(clicks)
+        except ValueError as error:
+            if asked_all:
+                self.court_clicks = None
+                self.message = f"Court not saved: {error}"
+            else:
+                self.message = f"{error}; keep clicking ({len(clicks)} so far)"
             return
         self._edit()
-        self.segment.court_points = clicks
+        if set(clicks) == set(LANDMARK_NAMES):
+            # The default four keep the unnamed form older labels use.
+            self.segment.court_points = [clicks[name] for name in LANDMARK_NAMES]
+        else:
+            self.segment.court_points = dict(clicks)
         self.court_clicks = None
-        self.message = "Court saved: check the drawn baselines, net and centre line"
+        self.message = "Court saved: check the drawn lines. " + _fit_summary(residuals)
+
+    def _copy_earlier_court(self) -> None:
+        index = self.labels.segments.index(self.segment)
+        earlier = [
+            segment
+            for segment in self.labels.segments[:index]
+            if segment.court_points is not None
+        ]
+        self.court_clicks = None
+        if not earlier:
+            self.message = "No earlier segment has a court"
+            return
+        self._edit()
+        self.segment.court_points = copy.deepcopy(earlier[-1].court_points)
+        self.message = (
+            f"Court copied from the segment at frame {earlier[-1].start}: "
+            "check the drawn lines"
+        )
 
     def _previous_segment(self) -> None:
         index = self.labels.segments.index(self.segment)
@@ -518,5 +578,28 @@ def _iou(first: PlayerBox, second: PlayerBox) -> float:
     return overlap / (_area(first) + _area(second) - overlap)
 
 
-def _court_prompt(index: int) -> str:
-    return f"Click the {POINT_NAMES[index]}, where it meets the wall ({index + 1}/4)"
+def _court_prompt(step: int, clicked: int) -> str:
+    _, description = COURT_LANDMARKS[step]
+    save = f", k saves ({clicked} points)" if clicked >= MIN_POINTS else ""
+    return (
+        f"Court {step + 1}/{len(COURT_LANDMARKS)}: click the {description}, "
+        f"or x if it is not in the picture{save}. p copies an earlier court"
+    )
+
+
+def _court_fit_items(segment) -> list[ChecklistItem]:
+    """With more points than the fit needs, how far the worst click is."""
+    if segment.court_points is None or len(segment.court_points) <= MIN_POINTS:
+        return []
+    return [ChecklistItem(_fit_summary(court_residuals(segment.court_points)), None)]
+
+
+def _fit_summary(residuals: dict[str, float]) -> str:
+    """How well the clicks agree, once there are more than the fit needs."""
+    if len(residuals) <= MIN_POINTS:
+        return "Four points fit exactly, so only the drawing can show a bad click."
+    name, worst = max(residuals.items(), key=lambda item: item[1])
+    return (
+        f"{len(residuals)} points; the furthest click is {worst:.0f} px from the "
+        f"fitted court ({DESCRIPTIONS[name]})"
+    )
