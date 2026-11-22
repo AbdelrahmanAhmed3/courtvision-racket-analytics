@@ -64,7 +64,9 @@ For each segment:
    the second serve; do not label the first. To move a start or end that is already
    set, press `r` or `e` twice: one press never moves it, so a slip cannot.
 3. **Impacts** (`1`-`4`): on the frame where the racket meets the ball, press the
-   hitter's number. Use the closest frame if the contact falls between two.
+   hitter's number. Use the closest frame if the contact falls between two. To
+   change the hitter of an impact already there, press the new number twice: one
+   press never changes it, so a number meant for a box cannot.
 4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor,
    including the serve's bounce in the service box.
    **Wall rebounds** (`w`, then click): the frame it touches glass or mesh, whether

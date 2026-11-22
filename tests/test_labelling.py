@@ -66,13 +66,16 @@ def test_box_frames_follow_the_rally_and_interval() -> None:
     assert labels.box_frames(segment) == [50, 75, 100]
 
 
-def test_an_impact_needs_a_labelled_segment_and_replaces_one_on_the_same_frame():
+def test_an_impact_needs_a_labelled_segment_and_a_second_press_to_change_player():
     session = LabelSession(make_labels(), frame=10)
     session.key("2")
     assert session.segment.events == []
 
     session.key("l")
     session.key("2")
+    session.key("4")  # a slip, e.g. a click that missed a box on a box frame
+    assert session.segment.events == [BallEvent("impact", 10, player=2)]
+    assert "press 4 again" in session.message
     session.key("4")
 
     assert session.segment.events == [BallEvent("impact", 10, player=4)]
