@@ -135,7 +135,7 @@ class VideoLabels:
     width: int
     height: int
     frame_count: int
-    box_interval: int | None = 25  # None: labelled without player boxes
+    box_interval: int | None = 25  # None: boxes only at each rally start
     segments: list[Segment] = field(default_factory=list)
     schema_version: int = SCHEMA_VERSION
 
@@ -146,9 +146,13 @@ class VideoLabels:
         raise ValueError(f"Frame {frame} is outside every segment")
 
     def box_frames(self, segment: Segment) -> list[int]:
-        """Frames in a segment's rally (or whole segment) that need player boxes."""
+        """Frames in a segment's rally (or whole segment) that need player boxes.
+
+        Without an interval, only the rally start does: enough to tell who is
+        who in a clip of one session, where each person keeps one number.
+        """
         if self.box_interval is None:
-            return []
+            return [] if segment.rally_start is None else [segment.rally_start]
         start = segment.start if segment.rally_start is None else segment.rally_start
         end = segment.end if segment.rally_end is None else segment.rally_end + 1
         interval = self.box_interval
