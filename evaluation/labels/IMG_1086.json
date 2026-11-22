@@ -1,0 +1,269 @@
+{
+ "video": "IMG_1086.MOV",
+ "source_url": "",
+ "fps": 29.989071038251367,
+ "width": 1920,
+ "height": 1080,
+ "frame_count": 1372,
+ "box_interval": null,
+ "segments": [
+  {
+   "start": 0,
+   "end": 260,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 260,
+   "end": 894,
+   "status": "label",
+   "rally_start": 260,
+   "rally_end": 579,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 260,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 289,
+     "player": null,
+     "x": 958.0799999999999,
+     "y": 616.3199999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 301,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 354,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 381,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 404,
+     "player": null,
+     "x": 631.68,
+     "y": 810.2399999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 407,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 441,
+     "player": null,
+     "x": 833.28,
+     "y": 604.8
+    },
+    {
+     "kind": "impact",
+     "frame": 446,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 468,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 495,
+     "player": null,
+     "x": 829.4399999999999,
+     "y": 608.64
+    },
+    {
+     "kind": "impact",
+     "frame": 497,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 531,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 549,
+     "player": null,
+     "x": 689.28,
+     "y": 625.92
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 562,
+     "player": null,
+     "x": 641.28,
+     "y": 581.76
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     658.56,
+     612.4799999999999
+    ],
+    "far_service_center": [
+     915.8399999999999,
+     610.56
+    ],
+    "near_service_center": [
+     627.8399999999999,
+     950.4
+    ],
+    "left_net_point": [
+     449.28,
+     664.3199999999999
+    ],
+    "right_net_point": [
+     1307.52,
+     654.7199999999999
+    ],
+    "net_center": [
+     877.4399999999999,
+     658.56
+    ]
+   }
+  },
+  {
+   "start": 894,
+   "end": 1075,
+   "status": "label",
+   "rally_start": 894,
+   "rally_end": 1070,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 894,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 922,
+     "player": null,
+     "x": 806.4,
+     "y": 622.0799999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 936,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 960,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 988,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 1036,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1056,
+     "player": null,
+     "x": 768.0,
+     "y": 610.56
+    },
+    {
+     "kind": "impact",
+     "frame": 1059,
+     "player": 3,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     658.56,
+     612.4799999999999
+    ],
+    "far_service_center": [
+     915.8399999999999,
+     610.56
+    ],
+    "near_service_center": [
+     627.8399999999999,
+     950.4
+    ],
+    "left_net_point": [
+     449.28,
+     664.3199999999999
+    ],
+    "right_net_point": [
+     1307.52,
+     654.7199999999999
+    ],
+    "net_center": [
+     877.4399999999999,
+     658.56
+    ]
+   }
+  },
+  {
+   "start": 1075,
+   "end": 1372,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  }
+ ],
+ "schema_version": 3
+}

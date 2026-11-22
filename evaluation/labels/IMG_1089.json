@@ -1,0 +1,1648 @@
+{
+ "video": "IMG_1089.MOV",
+ "source_url": "",
+ "fps": 29.988500177198528,
+ "width": 1920,
+ "height": 1080,
+ "frame_count": 13821,
+ "box_interval": null,
+ "segments": [
+  {
+   "start": 0,
+   "end": 1126,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 1126,
+   "end": 1753,
+   "status": "label",
+   "rally_start": 1128,
+   "rally_end": 1522,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 1128,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1157,
+     "player": null,
+     "x": 637.4399999999999,
+     "y": 606.7199999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 1172,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 1194,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1229,
+     "player": null,
+     "x": 825.5999999999999,
+     "y": 591.36
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 1242,
+     "player": null,
+     "x": 817.92,
+     "y": 549.12
+    },
+    {
+     "kind": "impact",
+     "frame": 1254,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 1331,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1344,
+     "player": null,
+     "x": 743.04,
+     "y": 606.7199999999999
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 1359,
+     "player": null,
+     "x": 729.5999999999999,
+     "y": 535.68
+    },
+    {
+     "kind": "impact",
+     "frame": 1377,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 1433,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 1454,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1446,
+     "player": null,
+     "x": 969.5999999999999,
+     "y": 614.4
+    },
+    {
+     "kind": "bounce",
+     "frame": 1490,
+     "player": null,
+     "x": 696.9599999999999,
+     "y": 675.8399999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 1515,
+     "player": 1,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     593.28,
+     597.12
+    ],
+    "near_right_service_intersection": [
+     1752.9599999999998,
+     906.2399999999999
+    ],
+    "far_service_center": [
+     848.64,
+     600.9599999999999
+    ],
+    "near_service_center": [
+     334.08,
+     898.56
+    ],
+    "left_net_point": [
+     336.0,
+     641.28
+    ],
+    "right_net_point": [
+     1203.84,
+     648.9599999999999
+    ],
+    "net_center": [
+     771.8399999999999,
+     643.1999999999999
+    ]
+   }
+  },
+  {
+   "start": 1753,
+   "end": 2098,
+   "status": "label",
+   "rally_start": 1753,
+   "rally_end": 1858,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 1753,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1780,
+     "player": null,
+     "x": 1063.6799999999998,
+     "y": 608.64
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 1794,
+     "player": null,
+     "x": 1098.24,
+     "y": 556.8
+    },
+    {
+     "kind": "impact",
+     "frame": 1799,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 1836,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1857,
+     "player": null,
+     "x": 873.5999999999999,
+     "y": 647.04
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     593.00927734375,
+     596.2091064453125
+    ],
+    "near_right_service_intersection": [
+     1752.631591796875,
+     905.451904296875
+    ],
+    "far_service_center": [
+     848.3637084960938,
+     600.0774536132812
+    ],
+    "near_service_center": [
+     333.78094482421875,
+     897.6141357421875
+    ],
+    "left_net_point": [
+     335.7295837402344,
+     640.339599609375
+    ],
+    "right_net_point": [
+     1203.5511474609375,
+     648.1160278320312
+    ],
+    "net_center": [
+     771.560546875,
+     642.3080444335938
+    ]
+   }
+  },
+  {
+   "start": 2098,
+   "end": 2398,
+   "status": "label",
+   "rally_start": 2098,
+   "rally_end": 2225,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 2098,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2139,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2160,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 2202,
+     "player": null,
+     "x": 660.4799999999999,
+     "y": 604.8
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     592.8433227539062,
+     595.8117065429688
+    ],
+    "near_right_service_intersection": [
+     1752.547119140625,
+     905.0723266601562
+    ],
+    "far_service_center": [
+     848.2154541015625,
+     599.6795043945312
+    ],
+    "near_service_center": [
+     333.59783935546875,
+     897.2385864257812
+    ],
+    "left_net_point": [
+     335.5457458496094,
+     639.9461669921875
+    ],
+    "right_net_point": [
+     1203.4278564453125,
+     647.7202758789062
+    ],
+    "net_center": [
+     771.4071044921875,
+     641.913330078125
+    ]
+   }
+  },
+  {
+   "start": 2398,
+   "end": 2742,
+   "status": "label",
+   "rally_start": 2398,
+   "rally_end": 2476,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 2398,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 2426,
+     "player": null,
+     "x": 1034.8799999999999,
+     "y": 600.9599999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 2436,
+     "player": 4,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     592.6549682617188,
+     595.3623657226562
+    ],
+    "near_right_service_intersection": [
+     1752.36181640625,
+     904.7125854492188
+    ],
+    "far_service_center": [
+     848.0324096679688,
+     599.24853515625
+    ],
+    "near_service_center": [
+     333.3824157714844,
+     896.7772827148438
+    ],
+    "left_net_point": [
+     335.3487548828125,
+     639.4793090820312
+    ],
+    "right_net_point": [
+     1203.2490234375,
+     647.315673828125
+    ],
+    "net_center": [
+     771.2193603515625,
+     641.477783203125
+    ]
+   }
+  },
+  {
+   "start": 2742,
+   "end": 3445,
+   "status": "label",
+   "rally_start": 2742,
+   "rally_end": 2866,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 2742,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 2768,
+     "player": null,
+     "x": 625.92,
+     "y": 610.56
+    },
+    {
+     "kind": "impact",
+     "frame": 2785,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2845,
+     "player": 1,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     593.124267578125,
+     594.9970092773438
+    ],
+    "near_right_service_intersection": [
+     1751.783935546875,
+     904.20703125
+    ],
+    "far_service_center": [
+     848.2783203125,
+     598.908447265625
+    ],
+    "near_service_center": [
+     334.0443115234375,
+     896.1197509765625
+    ],
+    "left_net_point": [
+     336.0377502441406,
+     639.0466918945312
+    ],
+    "right_net_point": [
+     1203.1793212890625,
+     646.973388671875
+    ],
+    "net_center": [
+     771.527587890625,
+     641.0921630859375
+    ]
+   }
+  },
+  {
+   "start": 3445,
+   "end": 3796,
+   "status": "label",
+   "rally_start": 3445,
+   "rally_end": 3671,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 3445,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 3479,
+     "player": null,
+     "x": 470.4,
+     "y": 906.2399999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 3496,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3543,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3574,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 3628,
+     "player": null,
+     "x": 1090.56,
+     "y": 531.8399999999999
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     591.6675415039062,
+     595.9650268554688
+    ],
+    "near_right_service_intersection": [
+     1751.297119140625,
+     905.5216064453125
+    ],
+    "far_service_center": [
+     847.0396728515625,
+     599.8977661132812
+    ],
+    "near_service_center": [
+     332.344482421875,
+     897.3272094726562
+    ],
+    "left_net_point": [
+     334.3577880859375,
+     640.0342407226562
+    ],
+    "right_net_point": [
+     1202.2410888671875,
+     648.0289916992188
+    ],
+    "net_center": [
+     770.2202758789062,
+     642.1121826171875
+    ]
+   }
+  },
+  {
+   "start": 3796,
+   "end": 4580,
+   "status": "label",
+   "rally_start": 3796,
+   "rally_end": 4335,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 3796,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 3826,
+     "player": null,
+     "x": 28.799999999999997,
+     "y": 825.5999999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 3878,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 3930,
+     "player": null,
+     "x": 977.28,
+     "y": 468.47999999999996
+    },
+    {
+     "kind": "impact",
+     "frame": 3951,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 3969,
+     "player": null,
+     "x": 533.76,
+     "y": 695.04
+    },
+    {
+     "kind": "impact",
+     "frame": 3973,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4011,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 4030,
+     "player": null,
+     "x": 414.71999999999997,
+     "y": 789.1199999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 4061,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4093,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 4118,
+     "player": null,
+     "x": 1115.52,
+     "y": 737.28
+    },
+    {
+     "kind": "impact",
+     "frame": 4139,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4161,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4203,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4221,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 4253,
+     "player": null,
+     "x": 1344.0,
+     "y": 835.1999999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 4285,
+     "player": 2,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     595.6132202148438,
+     598.36962890625
+    ],
+    "near_right_service_intersection": [
+     1755.3504638671875,
+     909.04931640625
+    ],
+    "far_service_center": [
+     851.065673828125,
+     602.5286254882812
+    ],
+    "near_service_center": [
+     335.93963623046875,
+     899.6021728515625
+    ],
+    "left_net_point": [
+     338.1802978515625,
+     642.2266235351562
+    ],
+    "right_net_point": [
+     1206.34130859375,
+     650.9885864257812
+    ],
+    "net_center": [
+     774.1838989257812,
+     644.6892700195312
+    ]
+   }
+  },
+  {
+   "start": 4580,
+   "end": 5354,
+   "status": "label",
+   "rally_start": 4580,
+   "rally_end": 4800,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 4580,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 4608,
+     "player": null,
+     "x": 658.56,
+     "y": 775.68
+    },
+    {
+     "kind": "impact",
+     "frame": 4618,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4657,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4673,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 4733,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 4764,
+     "player": null,
+     "x": 1804.8,
+     "y": 681.5999999999999
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     597.5672607421875,
+     599.0506591796875
+    ],
+    "near_right_service_intersection": [
+     1758.4544677734375,
+     910.8370971679688
+    ],
+    "far_service_center": [
+     853.3143310546875,
+     603.3786010742188
+    ],
+    "near_service_center": [
+     337.3979187011719,
+     900.466796875
+    ],
+    "left_net_point": [
+     339.8065490722656,
+     642.793212890625
+    ],
+    "right_net_point": [
+     1208.97216796875,
+     652.1232299804688
+    ],
+    "net_center": [
+     776.3159790039062,
+     645.538818359375
+    ]
+   }
+  },
+  {
+   "start": 5354,
+   "end": 6003,
+   "status": "label",
+   "rally_start": 5354,
+   "rally_end": 5701,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 5354,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 5382,
+     "player": null,
+     "x": 731.52,
+     "y": 750.7199999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 5397,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 5462,
+     "player": null,
+     "x": 512.64,
+     "y": 685.4399999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 5420,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 5483,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 5511,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 5569,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 5629,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 5669,
+     "player": null,
+     "x": 568.3199999999999,
+     "y": 814.0799999999999
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     598.6869506835938,
+     596.613037109375
+    ],
+    "near_right_service_intersection": [
+     1755.8321533203125,
+     907.781982421875
+    ],
+    "far_service_center": [
+     853.6296997070312,
+     601.007080078125
+    ],
+    "near_service_center": [
+     339.24066162109375,
+     897.0018310546875
+    ],
+    "left_net_point": [
+     341.7219543457031,
+     640.1380004882812
+    ],
+    "right_net_point": [
+     1208.1556396484375,
+     649.7094116210938
+    ],
+    "net_center": [
+     776.8600463867188,
+     643.010986328125
+    ]
+   }
+  },
+  {
+   "start": 6003,
+   "end": 6452,
+   "status": "label",
+   "rally_start": 6003,
+   "rally_end": 6199,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 6003,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 6052,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 6077,
+     "player": 3,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     598.1798095703125,
+     595.9619140625
+    ],
+    "near_right_service_intersection": [
+     1755.4271240234375,
+     907.4786987304688
+    ],
+    "far_service_center": [
+     853.1615600585938,
+     600.4224853515625
+    ],
+    "near_service_center": [
+     338.6150817871094,
+     896.3311157226562
+    ],
+    "left_net_point": [
+     341.1630859375,
+     639.4274291992188
+    ],
+    "right_net_point": [
+     1207.7308349609375,
+     649.2239990234375
+    ],
+    "net_center": [
+     776.3689575195312,
+     642.4132080078125
+    ]
+   }
+  },
+  {
+   "start": 6452,
+   "end": 6795,
+   "status": "label",
+   "rally_start": 6452,
+   "rally_end": 6540,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 6452,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 6485,
+     "player": null,
+     "x": 720.0,
+     "y": 789.1199999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 6502,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 6532,
+     "player": null,
+     "x": 539.52,
+     "y": 541.4399999999999
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     598.1055297851562,
+     595.8955688476562
+    ],
+    "near_right_service_intersection": [
+     1757.111572265625,
+     908.27001953125
+    ],
+    "far_service_center": [
+     853.4946899414062,
+     600.4422607421875
+    ],
+    "near_service_center": [
+     338.0316162109375,
+     896.666015625
+    ],
+    "left_net_point": [
+     340.66326904296875,
+     639.3511962890625
+    ],
+    "right_net_point": [
+     1208.6173095703125,
+     649.4317626953125
+    ],
+    "net_center": [
+     776.56591796875,
+     642.4765014648438
+    ]
+   }
+  },
+  {
+   "start": 6795,
+   "end": 8254,
+   "status": "label",
+   "rally_start": 6795,
+   "rally_end": 7054,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 6795,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 6911,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 6933,
+     "player": null,
+     "x": 30.72,
+     "y": 771.8399999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 6837,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 6942,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 7012,
+     "player": null,
+     "x": 833.28,
+     "y": 504.96
+    },
+    {
+     "kind": "bounce",
+     "frame": 7020,
+     "player": null,
+     "x": 831.3599999999999,
+     "y": 591.36
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     597.9532470703125,
+     595.2857055664062
+    ],
+    "near_right_service_intersection": [
+     1755.448486328125,
+     907.1962280273438
+    ],
+    "far_service_center": [
+     853.006591796875,
+     599.814697265625
+    ],
+    "near_service_center": [
+     338.2352600097656,
+     895.6721801757812
+    ],
+    "left_net_point": [
+     340.8516845703125,
+     638.6959228515625
+    ],
+    "right_net_point": [
+     1207.6641845703125,
+     648.7235717773438
+    ],
+    "net_center": [
+     776.1809692382812,
+     641.7971801757812
+    ]
+   }
+  },
+  {
+   "start": 8254,
+   "end": 8877,
+   "status": "label",
+   "rally_start": 8254,
+   "rally_end": 8463,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 8254,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 8300,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 8370,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 8399,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 8458,
+     "player": null,
+     "x": 881.28,
+     "y": 639.3599999999999
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     596.5859375,
+     593.37353515625
+    ],
+    "near_right_service_intersection": [
+     1757.4317626953125,
+     907.061767578125
+    ],
+    "far_service_center": [
+     852.4227294921875,
+     598.0962524414062
+    ],
+    "near_service_center": [
+     335.855224609375,
+     894.5036010742188
+    ],
+    "left_net_point": [
+     338.6607971191406,
+     636.7365112304688
+    ],
+    "right_net_point": [
+     1208.1397705078125,
+     647.4058837890625
+    ],
+    "net_center": [
+     775.3306274414062,
+     640.154052734375
+    ]
+   }
+  },
+  {
+   "start": 8877,
+   "end": 9461,
+   "status": "label",
+   "rally_start": 8877,
+   "rally_end": 9341,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 8877,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 8908,
+     "player": null,
+     "x": 1065.6,
+     "y": 602.88
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 8917,
+     "player": null,
+     "x": 1102.08,
+     "y": 556.8
+    },
+    {
+     "kind": "impact",
+     "frame": 8924,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 8958,
+     "player": null,
+     "x": 579.8399999999999,
+     "y": 731.52
+    },
+    {
+     "kind": "impact",
+     "frame": 8963,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9025,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9057,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9085,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9118,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 9143,
+     "player": null,
+     "x": 1019.52,
+     "y": 608.64
+    },
+    {
+     "kind": "impact",
+     "frame": 9152,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9175,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9199,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9247,
+     "player": 2,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     598.226318359375,
+     593.103271484375
+    ],
+    "near_right_service_intersection": [
+     1757.5184326171875,
+     907.072021484375
+    ],
+    "far_service_center": [
+     853.7570190429688,
+     597.9641723632812
+    ],
+    "near_service_center": [
+     337.63568115234375,
+     893.7293090820312
+    ],
+    "left_net_point": [
+     340.5828552246094,
+     636.2697143554688
+    ],
+    "right_net_point": [
+     1209.0242919921875,
+     647.415283203125
+    ],
+    "net_center": [
+     776.7326049804688,
+     639.9287109375
+    ]
+   }
+  },
+  {
+   "start": 9461,
+   "end": 9687,
+   "status": "label",
+   "rally_start": 9461,
+   "rally_end": 9554,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 9461,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 9490,
+     "player": null,
+     "x": 645.12,
+     "y": 593.28
+    },
+    {
+     "kind": "impact",
+     "frame": 9502,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 9529,
+     "player": null,
+     "x": 247.67999999999998,
+     "y": 696.9599999999999
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     597.6671142578125,
+     593.1114501953125
+    ],
+    "near_right_service_intersection": [
+     1757.9783935546875,
+     907.4341430664062
+    ],
+    "far_service_center": [
+     853.4264526367188,
+     597.9927368164062
+    ],
+    "near_service_center": [
+     336.8241271972656,
+     893.9906616210938
+    ],
+    "left_net_point": [
+     339.7900390625,
+     636.3004760742188
+    ],
+    "right_net_point": [
+     1209.009033203125,
+     647.5104370117188
+    ],
+    "net_center": [
+     776.3304443359375,
+     639.9901123046875
+    ]
+   }
+  },
+  {
+   "start": 9687,
+   "end": 9950,
+   "status": "label",
+   "rally_start": 9687,
+   "rally_end": 9870,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 9687,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 9713,
+     "player": null,
+     "x": 831.3599999999999,
+     "y": 600.9599999999999
+    },
+    {
+     "kind": "impact",
+     "frame": 9733,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 9783,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 9817,
+     "player": null,
+     "x": 956.16,
+     "y": 493.43999999999994
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     599.33740234375,
+     593.012939453125
+    ],
+    "near_right_service_intersection": [
+     1757.48779296875,
+     907.2703857421875
+    ],
+    "far_service_center": [
+     854.6472778320312,
+     597.9924926757812
+    ],
+    "near_service_center": [
+     338.8250427246094,
+     893.2568359375
+    ],
+    "left_net_point": [
+     341.8934020996094,
+     636.0186157226562
+    ],
+    "right_net_point": [
+     1209.5872802734375,
+     647.5720825195312
+    ],
+    "net_center": [
+     777.668701171875,
+     639.8841552734375
+    ]
+   }
+  },
+  {
+   "start": 9950,
+   "end": 10403,
+   "status": "label",
+   "rally_start": 9950,
+   "rally_end": 10402,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 9950,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 9981,
+     "player": null,
+     "x": 1015.68,
+     "y": 593.28
+    },
+    {
+     "kind": "impact",
+     "frame": 9991,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 10023,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 10046,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 10067,
+     "player": 2,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 10093,
+     "player": null,
+     "x": 1092.48,
+     "y": 606.7199999999999
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 10104,
+     "player": null,
+     "x": 1121.28,
+     "y": 545.28
+    },
+    {
+     "kind": "impact",
+     "frame": 10119,
+     "player": 4,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 10208,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 10233,
+     "player": 3,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "impact",
+     "frame": 10276,
+     "player": 1,
+     "x": null,
+     "y": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 10349,
+     "player": null,
+     "x": 1009.92,
+     "y": 495.35999999999996
+    },
+    {
+     "kind": "impact",
+     "frame": 10368,
+     "player": 4,
+     "x": null,
+     "y": null
+    }
+   ],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": {
+    "far_left_service_intersection": [
+     599.4654541015625,
+     593.0816040039062
+    ],
+    "near_right_service_intersection": [
+     1758.2525634765625,
+     907.9112548828125
+    ],
+    "far_service_center": [
+     854.9364013671875,
+     598.1463623046875
+    ],
+    "near_service_center": [
+     338.6906433105469,
+     893.4331665039062
+    ],
+    "left_net_point": [
+     341.8435974121094,
+     636.0320434570312
+    ],
+    "right_net_point": [
+     1210.0863037109375,
+     647.8715209960938
+    ],
+    "net_center": [
+     777.8952026367188,
+     640.0399780273438
+    ]
+   }
+  },
+  {
+   "start": 10403,
+   "end": 13821,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  }
+ ],
+ "schema_version": 3
+}
