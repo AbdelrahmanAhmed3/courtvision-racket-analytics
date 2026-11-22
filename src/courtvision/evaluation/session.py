@@ -40,7 +40,7 @@ KEY_HELP = (
     ("r / e", "rally starts / ends here"),
     ("1-4", "impact by player (or assign box)"),
     ("b / w", "bounce / wall rebound, then click ball"),
-    ("k", "court: click points, x skips one, k saves"),
+    ("k", "court: click, x skips, u back, k saves"),
     ("k, p", "court: copy from an earlier segment"),
     ("click box", "select; drag: draw or resize selected"),
     ("x", "delete selected box or this frame's events"),
@@ -148,8 +148,12 @@ class LabelSession:
             "u": self._undo_last,
             "esc": self._cancel,
         }
-        marking = {"x": self._skip_court_point, "k": self._save_court}
-        marking["p"] = self._copy_earlier_court
+        marking = {
+            "x": self._skip_court_point,
+            "u": self._court_step_back,
+            "k": self._save_court,
+            "p": self._copy_earlier_court,
+        }
         if self.court_clicks is not None and key in marking:
             marking[key]()
         elif key in {"1", "2", "3", "4"}:
@@ -299,7 +303,8 @@ class LabelSession:
     def _start_court(self) -> None:
         """Mark the court: click or skip (x) each landmark asked for, then save (k).
 
-        The new points replace the old on saving; esc keeps the old.
+        u goes back one landmark. The new points replace the old on saving; esc
+        keeps the old.
         """
         if not self._labelling():
             return
@@ -315,6 +320,16 @@ class LabelSession:
 
     def _skip_court_point(self) -> None:
         self._next_court_point()
+
+    def _court_step_back(self) -> None:
+        """Back to the landmark before, removing its click if it was clicked."""
+        if self.court_step == 0:
+            self.message = "Nothing to undo. " + _court_prompt(0, 0)
+            return
+        self.court_step -= 1
+        name, _ = COURT_LANDMARKS[self.court_step]
+        self.court_clicks.pop(name, None)
+        self.message = _court_prompt(self.court_step, len(self.court_clicks))
 
     def _next_court_point(self) -> None:
         self.court_step += 1
@@ -580,10 +595,11 @@ def _iou(first: PlayerBox, second: PlayerBox) -> float:
 
 def _court_prompt(step: int, clicked: int) -> str:
     _, description = COURT_LANDMARKS[step]
+    back = ", u goes back" if step > 0 else ""
     save = f", k saves ({clicked} points)" if clicked >= MIN_POINTS else ""
     return (
         f"Court {step + 1}/{len(COURT_LANDMARKS)}: click the {description}, "
-        f"or x if it is not in the picture{save}. p copies an earlier court"
+        f"or x if it is not in the picture{back}{save}. p copies an earlier court"
     )
 
 

@@ -80,7 +80,8 @@ For each segment:
    when comparing detectors (#6). Tighten any box that does not fit the player.
 6. **Court** (`k`), on any frame of the segment. The tool asks for padel landmarks
    one at a time: click each, or press `x` if it is not in the picture, then `k` to
-   save once four or more are clicked. The first four it asks for are the default:
+   save once four or more are clicked. `u` goes back one landmark and removes its
+   click, to fix a misclick. The first four it asks for are the default:
    where each service line meets the side wall, far left, far right, near right,
    near left. They are painted and sharp, while boards and glass often hide the near
    floor corners. Then come the service-line Ts, where the net meets each side wall
