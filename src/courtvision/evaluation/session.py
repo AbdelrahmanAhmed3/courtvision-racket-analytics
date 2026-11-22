@@ -246,13 +246,16 @@ class LabelSession:
             for frame in self.labels.box_frames(segment)
             if frame not in segment.reviewed_box_frames
         ]
-        items.append(
-            ChecklistItem(
-                f"Box frames done {len(self.labels.box_frames(segment)) - len(due)}"
-                f"/{len(self.labels.box_frames(segment))}",
-                not due,
+        if self.labels.box_interval is None:
+            items.append(ChecklistItem("No player boxes in this video", None))
+        else:
+            items.append(
+                ChecklistItem(
+                    f"Box frames done {len(self.labels.box_frames(segment)) - len(due)}"
+                    f"/{len(self.labels.box_frames(segment))}",
+                    not due,
+                )
             )
-        )
         if self.is_box_frame():
             boxes = self.boxes()
             assigned = sum(box.player is not None for box in boxes)

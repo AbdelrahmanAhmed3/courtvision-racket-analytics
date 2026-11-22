@@ -1,5 +1,6 @@
 import pytest
 
+from courtvision.evaluation.checks import find_all_problems
 from courtvision.evaluation.labels import (
     BallEvent,
     PlayerBox,
@@ -555,3 +556,21 @@ def test_a_labelled_segment_needs_its_court() -> None:
     mark_court(session)
 
     assert (10, "No court marked (k)") not in problems_in(session)
+
+
+def test_a_video_labelled_without_boxes_needs_no_box_frames(tmp_path) -> None:
+    labels = make_labels(cuts=(), box_interval=None)  # events and court only
+    session = LabelSession(labels, frame=10)
+    session.key("l")
+    session.key("r")
+    session.key("1")
+    mark_court(session)
+    session.go_to(80)
+    session.key("e")
+    path = tmp_path / "labels.json"
+
+    save_labels(labels, path)
+
+    assert labels.box_frames(labels.segments[0]) == []
+    assert find_all_problems(load_labels(path)) == []
+    assert load_labels(path).box_interval is None
