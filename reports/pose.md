@@ -163,3 +163,91 @@ python scripts/try_pose.py --input ~/Downloads/IMG_1086.MOV \
 
 The people found are cached in `outputs/predictions/`, the poses in `outputs/pose/`
 with the skeleton video and the sample sheets. None of it is committed.
+
+## Hits from the swing (2026-11-22, #60)
+
+A hit is a swing, and the hitting wrist moves fastest around contact, even when the
+ball tracker has lost the ball. So does a peak in the near player's wrist speed mark
+their hits? The trial runs on the phone clips' near players, the players the
+product is for: IMG_1089 and IMG_1086, 19 rallies, 154 s of play, **53 near-team
+hits** (P1 and P2). The far players, 80 to 95 px tall, are left out, as in the
+section above.
+
+### How
+
+- **Poses:** the cache above, RTMPose-m on the two near players in every frame.
+- **Players over time:** the pose boxes are linked with the IoU tracker. Who is who
+  comes from the players boxed at each rally start (`--rally-start-boxes`, #93).
+- **Wrist speed:** the fastest found wrist between consecutive frames, in **body
+  heights per second** (box heights), so a player far from the camera counts the
+  same as one near it.
+- **Peaks:** the fastest within 0.2 s either side, at or above a threshold. Three
+  thresholds were tried, and all three are reported.
+- A peak **marks a hit** within ±2 frames, as the event scores.
+
+### Peaks as hits
+
+| Peak at least | Hits with a peak | Hits the ball tracker has no candidate for, with a peak | Peaks that are at a hit | Other peaks per second of play |
+| --- | --- | --- | --- | --- |
+| 1 body height/s | 23 of 53 | 9 of 20 | 23 of 246 | 1.45 |
+| 2 body heights/s | 18 of 53 | 7 of 20 | 18 of 98 | 0.52 |
+| 3 body heights/s | 10 of 53 | 5 of 20 | 10 of 38 | 0.18 |
+
+Where a peak is near a hit (2 body heights/s, within ±8 frames), it falls from 3
+frames before to 2 after the labelled frame, quartiles: a swing is wider than a
+contact.
+
+**Peaks don't find hits.** At most a third of the hits have one, and four in five
+peaks aren't hits. Possible reasons, not checked one by one: arms move fast when
+players run, feint or catch the ball, and seen from behind a third of the wrists
+can't be placed by eye (section above).
+
+### Who swung
+
+But when a peak is at a hit, the player who swung is the labelled hitter 11 times
+out of 11 (2 body heights/s). So the second question: given a hit, can pose say
+which near player made it? Three rules, on the same 53 hits:
+
+| Rule | Names a player | Right | Right, of all 53 |
+| --- | --- | --- | --- |
+| **Pose: the near player with the fastest wrist within ±3 frames** | 40 | **28 (70 %)** | **53 %** |
+| Ball: the nearest player among everyone tracked (the pipeline's rule) | 25 | 10 (40 %) | 19 % |
+| Ball: the nearest player on the near half | 31 | 16 (52 %) | 30 % |
+
+- **From behind, the nearest player to the ball is often the wrong one.** The
+  likely reason, not checked frame by frame: the near players' boxes are large and
+  cover much of the court behind them in the picture, so a ball near one of them in
+  the picture can be metres away.
+- **Pose doesn't need the ball,** so it names a hitter even where the ball is lost.
+- **It names no one 13 times,** each time because the fastest player's track
+  started after the rally start (the tracker lost and found them), so the boxes
+  there can't say who it is. Linking the same person across tracker breaks could
+  recover these.
+
+### Recommendation
+
+- **Don't find hits from the swing.** It finds a third of the near players' hits,
+  and most peaks are false.
+- **Do name the near hitter from the swing.** For hits found from the ball, the
+  near player whose wrist moves fastest around the hit is right 70 % of the times
+  it names someone, against 52 % for the nearest near player, from the same clips.
+  This is the next issue: a pipeline step, when pose runs, that names the near
+  hitter of each near-team hit.
+- **Swing as an input to the hit model is untested.** 7 of the 20 near hits the ball
+  tracker has no candidate for have a peak, but each comes with about five false
+  ones. Worth trying only together with the phone event model (#94).
+- **How far to trust this:** 53 hits from one court on one evening, two players
+  near the camera, and identity from one box per rally. The three thresholds were
+  not chosen on separate clips, so the best row flatters itself a little; the "who
+  swung" rule has no threshold.
+
+### Reproducing
+
+Needs the pose cache above, and the players and ball caches of
+`scripts/predict_shot_events.py` and `scripts/compare_ball_trackers.py` (see
+`reports/ball_tracker.md`):
+
+```bash
+python scripts/try_swing_hits.py \
+    --labels evaluation/labels/IMG_1089.json evaluation/labels/IMG_1086.json
+```
