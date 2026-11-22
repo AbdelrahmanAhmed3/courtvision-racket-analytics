@@ -122,7 +122,7 @@ class LabelSession:
     # Input ----------------------------------------------------------------
     def key(self, key: str) -> None:
         self.message = ""
-        if key not in {"r", "e"}:
+        if key not in {"r", "e", "1", "2", "3", "4"}:
             self._armed = None
         actions = {
             "a": lambda: self.go_to(self.frame - 1),
@@ -492,8 +492,21 @@ class LabelSession:
             return
         if not self._labelling():
             return
-        self._edit()
         segment = self.segment
+        here = [
+            e for e in segment.events if e.kind == "impact" and e.frame == self.frame
+        ]
+        armed = (f"P{player}", self.frame)
+        if here and here[0].player != player and self._armed != armed:
+            # A slip, such as a click that missed a box, must not change a hit.
+            self._armed = armed
+            self.message = (
+                f"Impact here is by player {here[0].player}: "
+                f"press {player} again to change it"
+            )
+            return
+        self._armed = None
+        self._edit()
         segment.events = [
             event
             for event in segment.events
