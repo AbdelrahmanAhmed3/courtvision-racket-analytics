@@ -120,7 +120,7 @@ def test_the_labeller_skips_landmarks_out_of_the_picture() -> None:
 
     mark_back_glass_court(session)
 
-    assert session.segment.court_points == pytest.approx(seen(BACK_GLASS))
+    assert session.segment.court_points == seen(BACK_GLASS)
     assert "6 points" in session.message
     assert session.segment.events == []  # x skipped landmarks, deleted nothing
 
