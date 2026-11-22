@@ -463,15 +463,39 @@ or after a point, where every one is false.
   false hits, but finds fewer real ones. Its training holds about 40 to 80 hits
   against hundreds of candidates that are not events, too few to learn from.
 - **IMG_1086 is too small to choose between them:** both find the same 6 of 15 hits.
-- **Hitters can't be scored yet.** The scripts learn which tracked person is which
-  player from labelled boxes, and these clips have none (#93).
+- **The hitter is right about one time in four** (below).
 - **The model reads ball speed in pixels per frame,** and leans on it most. The
   phone's 1080p at 30 fps reads the same real speed 1.25 times faster than Tapia's
   720p at 25 (#94).
 
+### Hitters (#93)
+
+The scripts learn which tracked person is which player from labelled boxes. In a
+clip of one session each person keeps one number for the whole clip, so the phone
+clips' players are boxed once, at each rally start (`--rally-start-boxes`). The
+hitter is the player nearest the ball, as in the pipeline:
+
+| Hits found by the trees | Hitter right |
+| --- | --- |
+| IMG_1089, trained on Tapia | 7 of 22 |
+| IMG_1089, trained on its other rallies (halves / one rally at a time) | 3 of 14 / 4 of 19 |
+| IMG_1086, trained on Tapia / on IMG_1089 | 2 of 6 / 1 of 6 |
+| *Tapia, for comparison* | *64 of 75* |
+
+About one in four, what guessing among four players would get. From behind the back
+glass, the player nearest the ball in the picture is often the wrong one, and the
+far players are tracked only half the time (#96). On the same clips, the near player
+whose wrist moves fastest around a near-team hit is the hitter 70 % of the times it
+names one (the #60 trial; #97 makes it a pipeline step).
+
+Numbering players from where they stand at each rally start was tried first and
+dropped: the labels follow each person through the clip, and partners serve from
+either side, so position can't say who is who.
+
 ### Next
 
-- **#93:** number the players from where they stand, so hitters can be scored.
+- **#97:** name the near hitter from the swing.
+- **#96:** find the far players.
 - **#94:** ball speed that doesn't depend on picture size or frame rate, and one
   model trained on broadcast and phone rallies together.
 - **#79:** the ball tracker caps everything above; fine-tuning it on padel is the
