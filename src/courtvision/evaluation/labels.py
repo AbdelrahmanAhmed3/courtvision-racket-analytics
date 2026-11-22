@@ -135,7 +135,7 @@ class VideoLabels:
     width: int
     height: int
     frame_count: int
-    box_interval: int = 25
+    box_interval: int | None = 25  # None: labelled without player boxes
     segments: list[Segment] = field(default_factory=list)
     schema_version: int = SCHEMA_VERSION
 
@@ -147,6 +147,8 @@ class VideoLabels:
 
     def box_frames(self, segment: Segment) -> list[int]:
         """Frames in a segment's rally (or whole segment) that need player boxes."""
+        if self.box_interval is None:
+            return []
         start = segment.start if segment.rally_start is None else segment.rally_start
         end = segment.end if segment.rally_end is None else segment.rally_end + 1
         interval = self.box_interval
