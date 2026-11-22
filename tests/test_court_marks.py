@@ -166,3 +166,24 @@ def test_lines_near_or_behind_the_camera_are_cut_off() -> None:
     near_end = project_image_points(right_side[1:], estimate)[0]
     # Cut where depth is 5 % of the net's: 0.9 - y = 0.05 * 0.4.
     assert near_end == pytest.approx([1, 0.88], abs=1e-3)
+
+
+def test_u_while_marking_steps_back_one_landmark_and_leaves_the_labels() -> None:
+    session = labelled_session(frame=10)
+    session.key("1")  # a hit, which u must not undo while marking
+    events = list(session.segment.events)
+    assert len(events) == 1
+    points = seen(BACK_GLASS)
+    session.key("k")
+    session.click(*points["far_left_service_intersection"])
+    session.click(900, 100)  # a bad click on the far service line's right end
+    session.key("x")  # near service line, right end
+
+    session.key("u")  # back to the skipped landmark
+    session.key("u")  # back to the bad click, which is removed
+
+    assert session.court_clicks == {
+        "far_left_service_intersection": points["far_left_service_intersection"]
+    }
+    assert "far service line, right end" in session.message
+    assert session.segment.events == events
