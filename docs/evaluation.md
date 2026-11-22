@@ -13,8 +13,8 @@ no timestamps are needed: segments record their own frame ranges.
 | --- | --- | --- |
 | `BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4` | [Premier Padel on YouTube](https://www.youtube.com/watch?v=ZSneXJfDqjI), 720p | 7.5 min compilation: many courts, lighting and shirt colours, points played outside the court |
 | `youtube_gFl3ADnFRtc_15s.mp4` | [Daily Padel on YouTube](https://www.youtube.com/watch?v=gFl3ADnFRtc), 720p, 30 fps | 15 s, one rally at the Qatar Major (12 impacts), the README's demo clip. A test from another event: the event model never trains on it. Where the 15 s start in the video is not recorded yet |
-| `IMG_1086.MOV` | Our own recording, not published | 46 s, 1080p, 30 fps, from a phone on the near back glass; 2 rallies (15 impacts), labelled without player boxes |
-| `IMG_1089.MOV` | Our own recording, not published | 7.7 min, same court, phone on the back glass again; 17 rallies (87 impacts), labelled without player boxes. The phone moved a few pixels during the clip, so each rally has its own court |
+| `IMG_1086.MOV` | Our own recording, not published | 46 s, 1080p, 30 fps, from a phone on the near back glass; 2 rallies (15 impacts); players boxed at each rally start only |
+| `IMG_1089.MOV` | Our own recording, not published | 7.7 min, same court, phone on the back glass again; 17 rallies (87 impacts); players boxed at each rally start only. The phone moved a few pixels during the clip, so each rally has its own court |
 
 Download a video into `data/raw/` (ignored by git), for example:
 
@@ -31,8 +31,10 @@ pip install -e ".[local]"   # RF-DETR proposes player boxes
 python scripts/label_clip.py --input data/raw/<video>.mp4 --source-url "<link>"
 ```
 
-For a clip whose events and court are labelled but not its players, add
-`--no-boxes` on the first run: no frame then needs player boxes.
+For a clip of one session, such as a phone on the back glass, add
+`--rally-start-boxes` on the first run: players are boxed only at each rally start,
+enough to tell who is who, since each person keeps one number for the whole clip
+(see [Player numbers](#player-numbers)).
 
 The first run finds camera cuts and splits the video into **segments**. Labels save
 after every change; run the same command again to continue, with `--frame <n>` to
@@ -138,6 +140,12 @@ and 2, the far team is 3 and 4; within each team, the player on the **left of th
 image** gets the lower number. Then follow the **same person** for the whole
 segment, even if partners swap sides.
 
+**A clip of one session** (one match, one fixed camera) numbers each person once,
+at the first labelled rally start by the rule above, and keeps that number for the
+whole clip: a player serving from the other side the next point keeps theirs. A
+per-player stat then means one person. Box the players at each rally start, so the
+scripts can tell who is who.
+
 ## Scoring predictions
 
 ```bash
@@ -206,7 +214,7 @@ still load and are saved as version 3.
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
   "box_interval": 25,                       // box frames are multiples of this;
-                                            // null: labelled without player boxes
+                                            // null: only at each rally start
   "segments": [
     {
       "start": 462, "end": 915,             // frames; end is exclusive

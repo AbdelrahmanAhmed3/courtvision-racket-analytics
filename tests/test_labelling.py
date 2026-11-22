@@ -558,8 +558,8 @@ def test_a_labelled_segment_needs_its_court() -> None:
     assert (10, "No court marked (k)") not in problems_in(session)
 
 
-def test_a_video_labelled_without_boxes_needs_no_box_frames(tmp_path) -> None:
-    labels = make_labels(cuts=(), box_interval=None)  # events and court only
+def test_a_clip_of_one_session_is_boxed_only_at_each_rally_start(tmp_path) -> None:
+    labels = make_labels(cuts=(), box_interval=None)  # who is who, once a rally
     session = LabelSession(labels, frame=10)
     session.key("l")
     session.key("r")
@@ -567,10 +567,16 @@ def test_a_video_labelled_without_boxes_needs_no_box_frames(tmp_path) -> None:
     mark_court(session)
     session.go_to(80)
     session.key("e")
-    path = tmp_path / "labels.json"
+    assert labels.box_frames(labels.segments[0]) == [10]
+    assert problems_in(session) == [(10, "Boxes not done")]
 
+    session.go_to(10)
+    session.prefill([(0, 0, 50, 100)])
+    session.click(10, 10)
+    session.key("1")
+    session.key("y")
+    path = tmp_path / "labels.json"
     save_labels(labels, path)
 
-    assert labels.box_frames(labels.segments[0]) == []
     assert find_all_problems(load_labels(path)) == []
     assert load_labels(path).box_interval is None

@@ -68,9 +68,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--box-interval", type=int, default=25)
     parser.add_argument(
-        "--no-boxes",
+        "--rally-start-boxes",
         action="store_true",
-        help="Label events and court only: no frame needs player boxes.",
+        help="Box the players only at each rally start, to tell who is who in a "
+        "clip of one session (new labels files only).",
     )
     parser.add_argument("--max-width", type=int, default=1400, help="Window width.")
     parser.add_argument("--rfdetr-size", default="nano")
@@ -132,7 +133,7 @@ def create_labels(args: argparse.Namespace) -> VideoLabels:
         width=width,
         height=height,
         frame_count=frame_count,
-        box_interval=None if args.no_boxes else args.box_interval,
+        box_interval=None if args.rally_start_boxes else args.box_interval,
         segments=segments_from_cuts(cuts, frame_count),
     )
 
