@@ -13,6 +13,8 @@ no timestamps are needed: segments record their own frame ranges.
 | --- | --- | --- |
 | `BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4` | [Premier Padel on YouTube](https://www.youtube.com/watch?v=ZSneXJfDqjI), 720p | 7.5 min compilation: many courts, lighting and shirt colours, points played outside the court |
 | `youtube_gFl3ADnFRtc_15s.mp4` | [Daily Padel on YouTube](https://www.youtube.com/watch?v=gFl3ADnFRtc), 720p, 30 fps | 15 s, one rally at the Qatar Major (12 impacts), the README's demo clip. A test from another event: the event model never trains on it. Where the 15 s start in the video is not recorded yet |
+| `IMG_1086.MOV` | Our own recording, not published | 46 s, 1080p, 30 fps, from a phone on the near back glass; 2 rallies (15 impacts), labelled without player boxes |
+| `IMG_1089.MOV` | Our own recording, not published | 7.7 min, same court, phone on the back glass again; 17 rallies (87 impacts), labelled without player boxes. The phone moved a few pixels during the clip, so each rally has its own court |
 
 Download a video into `data/raw/` (ignored by git), for example:
 
@@ -28,6 +30,9 @@ yt-dlp -f "bv*[height=720][ext=mp4]" -o "data/raw/BEST-OF-AGUSTIN-TAPIA-RED-BULL
 pip install -e ".[local]"   # RF-DETR proposes player boxes
 python scripts/label_clip.py --input data/raw/<video>.mp4 --source-url "<link>"
 ```
+
+For a clip whose events and court are labelled but not its players, add
+`--no-boxes` on the first run: no frame then needs player boxes.
 
 The first run finds camera cuts and splits the video into **segments**. Labels save
 after every change; run the same command again to continue, with `--frame <n>` to
@@ -200,7 +205,8 @@ still load and are saved as version 3.
   "video": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4",
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
-  "box_interval": 25,                       // box frames are multiples of this
+  "box_interval": 25,                       // box frames are multiples of this;
+                                            // null: labelled without player boxes
   "segments": [
     {
       "start": 462, "end": 915,             // frames; end is exclusive
