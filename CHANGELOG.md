@@ -23,6 +23,7 @@
 ### Pose
 
 - trial: how much of the near player a pose model sees in phone clips filmed from behind the back glass (RTMPose-m through rtmlib, Apache-2.0): shoulders, hips and knees found 96–99 % of the time and wrists 71–76 % when the player is fully in the picture, but much less when they stand close to the glass off to the side and are cut off by the side of the frame; jackets on the glass are dropped as still objects; `scripts/try_pose.py`, `reports/pose.md` (#87)
+- trial: hits from the near player's swing. Wrist-speed peaks find only a third of the near players' hits, and most peaks are not hits, so they won't find hits; but the near player whose wrist moves fastest around a hit is the hitter 70 % of the times it names one, against 52 % for the player nearest the ball; `scripts/try_swing_hits.py`, `reports/pose.md` (#60)
 
 ## v4.0 - Showcase Edition
 
