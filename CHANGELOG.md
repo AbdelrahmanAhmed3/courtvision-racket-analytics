@@ -6,9 +6,11 @@
 
 - open the label tool at any frame with `--frame`, to go straight back to an event that needs fixing
 - mark the court from any four or more landmarks the camera sees, so a phone on the back glass, where the near service line runs off the picture, can be marked; with five or more the court is fit to all of them and each click shows its distance from the fit in pixels; `u` steps back one click while marking; `k` then `p` copies the court from an earlier segment; labels schema 3 names the landmarks, and older files load unchanged (#90)
+- label a clip without player boxes (`--no-boxes`, `box_interval` null in the labels file); the first two phone clips from the back glass are labelled this way, events and court only (#90)
 
 ### Ball
 
+- first scores from a phone on the back glass: the event model trained on broadcast finds a quarter of the hits on IMG_1089 and reports 55 false ones between points; trained on the phone rallies it is more careful but finds fewer; results in `reports/ball_tracker.md` (#90)
 - compare ball trackers on the labelled rallies: WASB (MIT), run with its tennis weights, finds more of the ball than TrackNet and lifts hits, hitters and rally starts; `detectors/wasb_adapter.py`, `scripts/compare_ball_trackers.py`, results in `reports/ball_tracker.md` (#61)
 - the app and the pipeline track the ball with WASB instead of TrackNet, on by default (`--no-ball` skips it): its network is copied in with its MIT notices (`detectors/wasb_hrnet.py`, NOTICE), its tennis weights (6 MB) download on first use and are checked, and the event model is retrained on its candidates; the `--tracknet-*` options are gone (#61)
 - stop reporting wall rebounds until they can be learned: the classifier couldn't tell them from bounces (4 in 5 reported were wrong), and without them it finds half the impacts instead of 4 in 10; they come back with the ball's height (#73, #74)

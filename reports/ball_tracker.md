@@ -395,3 +395,100 @@ python scripts/train_event_classifier.py --labels $T --size wasb --split rallies
 
 The pipeline run on Qatar uses the clip's six court points from the app
 (`--calibration`), and its `ball_events.csv` is scored with `scripts/score_events.py`.
+
+## A phone on the back glass: first scores (2026-11-22)
+
+#90. The first clips from another camera: the author's phone, stuck on the outside of
+the near back glass, 1080p at 30 fps. IMG_1089 has 17 rallies (87 impacts, 32
+bounces, 12 wall rebounds) and IMG_1086 has 2 (15 impacts, 7 bounces), both labelled
+for events and court but not players. The scripts are the same as above; ±2 frames is
+0.067 s at 30 fps, against 0.08 s at 25.
+
+### The courts
+
+From the back glass the near service line runs off both sides of the picture, so the
+courts were marked from other landmarks: 6 on IMG_1086, where the furthest click is
+5.7 px from the fitted court, and 7 on IMG_1089, within 1.7 px. All 39 labelled
+bounces land inside the court.
+
+The phone moved during IMG_1089: by the last rally the picture had shifted 6 px
+sideways and 3 px up and turned 0.3°, mostly during one long rally. So the court was
+marked on the first rally and moved onto each later one with the camera's movement,
+fitted to fixed things in the picture (net posts, the glass frame, the wall's foot)
+to within 2 px, or 3 px on the rally during which the phone moved. Unmoved, the
+court would have been 6 to 8 px off on the last rally.
+
+Depth is squeezed at the far end: half a metre down the court takes 109 px at the
+near service line, 8 px at the net and 2 to 3 px in the far half, where the
+player's own shots land (#95).
+
+### The ball
+
+| | IMG_1089, TrackNet | IMG_1089, WASB | IMG_1086, TrackNet | IMG_1086, WASB |
+| --- | --- | --- | --- | --- |
+| Ball found during rallies | 65 % | 62 % | 65 % | 65 % |
+| Bounces: ball within 15 px | 12 of 32 | 9 of 32 | 3 of 7 | 4 of 7 |
+| Median distance where found, bounces | 7.9 px | 13.0 px | 2.9 px | 6.4 px |
+| Events with a candidate within ±2 frames | **0.65** | **0.64** | 0.70 | 0.74 |
+
+- **WASB's lead over TrackNet is gone here.** It finds the ball as often, and is
+  further from the labelled bounces. Both run with weights trained on other footage.
+- **A third of IMG_1089's events have no candidate,** so no event model can find
+  more than 64 % of them. Where the ball is lost has not been measured yet.
+- 15 px is two or three ball widths at 720p but less at 1080p, so these counts
+  compare the trackers with each other, not with Tapia.
+
+### Events
+
+Boosted trees, close hits merged. "Hits between points" are reported before a serve
+or after a point, where every one is false.
+
+| IMG_1089 | Impacts P / R | Bounces P / R | Hits between points |
+| --- | --- | --- | --- |
+| Ships: trained on all ten Tapia rallies | 0.31 / 0.25 | 0.39 / 0.22 | 55 |
+| Trained on the other half of IMG_1089's rallies | 0.54 / 0.16 | 0.75 / 0.19 | 17 |
+| Trained on IMG_1089's other 16 rallies | 0.46 / 0.22 | 0.57 / 0.12 | 18 |
+| *For comparison: ships, on Tapia (halves)* | *0.69 / 0.54* | *0.55 / 0.34* | *1* |
+
+| IMG_1086 | Impacts P / R | Bounces P / R | Hits between points |
+| --- | --- | --- | --- |
+| Ships: trained on Tapia | 0.60 / 0.40 | none reported | 1 |
+| Trained on all of IMG_1089 | 0.60 / 0.40 | 1.00 / 0.29 | 1 |
+
+- **The broadcast model does not carry over.** On IMG_1089 it finds a quarter of the
+  hits, and only 3 in 10 of the hits it reports are real. It also reports 55 hits
+  between points, when players knock the ball around or pick it up. Broadcast
+  cameras mostly cut away then, so the model has hardly seen it.
+- **Trained on the phone, it is more careful, not better.** It reports far fewer
+  false hits, but finds fewer real ones. Its training holds about 40 to 80 hits
+  against hundreds of candidates that are not events, too few to learn from.
+- **IMG_1086 is too small to choose between them:** both find the same 6 of 15 hits.
+- **Hitters can't be scored yet.** The scripts learn which tracked person is which
+  player from labelled boxes, and these clips have none (#93).
+- **The model reads ball speed in pixels per frame,** and leans on it most. The
+  phone's 1080p at 30 fps reads the same real speed 1.25 times faster than Tapia's
+  720p at 25 (#94).
+
+### Next
+
+- **#93:** number the players from where they stand, so hitters can be scored.
+- **#94:** ball speed that doesn't depend on picture size or frame rate, and one
+  model trained on broadcast and phone rallies together.
+- **#79:** the ball tracker caps everything above; fine-tuning it on padel is the
+  biggest lever.
+
+### Reproducing
+
+The phone footage is not published, so only the author can rerun these.
+
+```bash
+T=evaluation/labels/BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.json
+P=evaluation/labels/IMG_1089.json
+python scripts/predict_shot_events.py --labels $P --video <path>/IMG_1089.MOV
+python scripts/compare_ball_trackers.py --labels $P --video <path>/IMG_1089.MOV
+python scripts/train_event_classifier.py --labels $T --size wasb --test-labels $P
+python scripts/train_event_classifier.py --labels $P --size wasb
+python scripts/train_event_classifier.py --labels $P --size wasb --split rallies
+python scripts/train_event_classifier.py --labels $P --size wasb \
+    --test-labels evaluation/labels/IMG_1086.json
+```
