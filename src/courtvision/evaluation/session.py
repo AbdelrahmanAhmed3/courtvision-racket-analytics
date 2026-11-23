@@ -18,6 +18,8 @@ from courtvision.evaluation.court import (
     court_residuals,
 )
 from courtvision.evaluation.labels import (
+    NEAR_TEAM,
+    STROKE_GROUPS,
     BallEvent,
     PlayerBox,
     Segment,
@@ -28,6 +30,42 @@ MAX_UNDO = 50
 MIN_BOX_SIZE_PX = 6
 # A copied player takes over a proposed box overlapping its old box this much.
 COPY_MIN_IOU = 0.3
+# Asking for a stroke starts this long before the hit, so the swing can be played.
+STROKE_LEAD_SECONDS = 0.5
+# While a stroke is asked for, these keys set it; a, d, space and esc still work.
+STROKE_KEYS = (
+    ("s", "serve"),
+    ("f", "forehand"),
+    ("b", "backhand"),
+    ("v", "forehand_volley"),
+    ("c", "backhand_volley"),
+    ("j", "bandeja"),
+    ("i", "vibora"),
+    ("m", "smash"),
+    ("r", "rulo"),
+    ("p", "bajada"),
+    ("l", "lob"),
+    ("o", "drop_shot"),
+    ("h", "chiquita"),
+    ("w", "contrapared"),
+    ("z", "unsure"),
+)
+
+
+def _stroke_help(stroke: str) -> str:
+    """The stroke, and its group when the group is named differently."""
+    group = STROKE_GROUPS[stroke]
+    name = stroke.replace("_", " ")
+    return name if group == stroke else f"{name} ({group.replace('_', ' ')})"
+
+
+STROKE_HELP = (
+    *((key, _stroke_help(stroke)) for key, stroke in STROKE_KEYS),
+    ("x", "clear this hit's stroke"),
+    ("t", "skip to the next hit without one"),
+    ("a / d", "previous / next frame; space plays"),
+    ("esc", "stop asking for strokes"),
+)
 
 KEY_HELP = (
     ("a / d", "previous / next frame"),
@@ -39,6 +77,7 @@ KEY_HELP = (
     ("c / m", "cut here / merge with previous segment"),
     ("r / e", "rally starts / ends here"),
     ("1-4", "impact by player (or assign box)"),
+    ("t", "stroke of each hit by player 1 or 2"),
     ("b / w", "bounce / wall rebound, then click ball"),
     ("k", "court: click, x skips, u back, k saves"),
     ("k, p", "court: copy from an earlier segment"),
@@ -66,9 +105,11 @@ class LabelSession:
         self.court_clicks: dict[str, list[float]] | None = None  # while marking
         self.court_step = 0  # index into COURT_LANDMARKS while marking
         self.selected: int | None = None  # index into this frame's boxes
+        self.stroke_for: int | None = None  # frame of the impact asked for a stroke
         self.message = ""
         self.dirty = False
-        self._undo: list[VideoLabels] = []
+        # Labels before each edit, and the impact asked for a stroke then.
+        self._undo: list[tuple[VideoLabels, int | None]] = []
         self._armed: tuple[str, int] | None = None  # a mark waiting to be moved
         self.go_to(frame)
 
@@ -145,6 +186,7 @@ class LabelSession:
             "p": self._copy_previous_players,
             "y": self._boxes_done,
             "n": self._go_to_next_problem,
+            "t": self._ask_for_stroke,
             "u": self._undo_last,
             "esc": self._cancel,
         }
@@ -154,8 +196,13 @@ class LabelSession:
             "k": self._save_court,
             "p": self._copy_earlier_court,
         }
+        strokes = dict(STROKE_KEYS)
         if self.court_clicks is not None and key in marking:
             marking[key]()
+        elif self.stroke_for is not None and key in strokes:
+            self._set_stroke(strokes[key])
+        elif self.stroke_for is not None and key == "x":
+            self._clear_stroke()
         elif key in {"1", "2", "3", "4"}:
             self._number(int(key))
         elif key in actions:
@@ -206,6 +253,10 @@ class LabelSession:
         self._reopen_if_unassigned()
 
     # Side panel -----------------------------------------------------------
+    def key_help(self) -> tuple[tuple[str, str], ...]:
+        """The keys to show: the strokes while one is asked for, else all keys."""
+        return STROKE_HELP if self.stroke_for is not None else KEY_HELP
+
     def checklist(self) -> list[ChecklistItem]:
         segment = self.segment
         index = self.labels.segments.index(segment) + 1
@@ -215,6 +266,23 @@ class LabelSession:
                 segment.status != "unreviewed",
             )
         ]
+        near = self._near_team_impacts()
+        if near:
+            stroked = sum(event.stroke is not None for event in near)
+            items.append(
+                ChecklistItem(
+                    f"Strokes: {stroked} of {len(near)} near-team hits (t)", None
+                )
+            )
+        asked = self._impact_at(self.stroke_for)
+        if asked is not None:
+            stroke = asked.stroke.replace("_", " ") if asked.stroke else "none yet"
+            items.append(
+                ChecklistItem(
+                    f"Stroke of P{asked.player}'s hit at frame {asked.frame}: {stroke}",
+                    False,
+                )
+            )
         if segment.status != "label":
             return items
         events_here = [event for event in segment.events if event.frame == self.frame]
@@ -282,7 +350,7 @@ class LabelSession:
 
     # Actions --------------------------------------------------------------
     def _edit(self) -> None:
-        self._undo.append(copy.deepcopy(self.labels))
+        self._undo.append((copy.deepcopy(self.labels), self.stroke_for))
         del self._undo[:-MAX_UNDO]
         self.dirty = True
 
@@ -290,15 +358,101 @@ class LabelSession:
         if not self._undo:
             self.message = "Nothing to undo"
             return
-        self.labels = self._undo.pop()
+        self.labels, stroke_for = self._undo.pop()
         self.selected = None
         self.dirty = True
         self.message = "Undone"
+        # Undoing a stroke goes back to its hit, to set the right one.
+        asked = self._impact_at(stroke_for)
+        if asked is not None and stroke_for != self.stroke_for:
+            self._ask(asked)
+            self.message = "Undone. " + self.message
 
     def _cancel(self) -> None:
         self.pending = None
         self.selected = None
         self.court_clicks = None
+        self.stroke_for = None
+
+    # Strokes ----------------------------------------------------------------
+    def _impact_at(self, frame: int | None) -> BallEvent | None:
+        if frame is None:
+            return None
+        events = self.labels.segment_at(frame).events
+        return next(
+            (e for e in events if e.kind == "impact" and e.frame == frame), None
+        )
+
+    def _near_team_impacts(self) -> list[BallEvent]:
+        """Impacts by players 1 and 2 in labelled segments, in frame order."""
+        return sorted(
+            (
+                event
+                for segment in self.labels.segments
+                if segment.status == "label"
+                for event in segment.events
+                if event.kind == "impact" and event.player in NEAR_TEAM
+            ),
+            key=lambda event: event.frame,
+        )
+
+    def _ask_for_stroke(self) -> None:
+        """Ask for the stroke of the near-team hit on this frame, if not asked
+        already, else of the next hit without one."""
+        here = self._impact_at(self.frame)
+        if (
+            here is not None
+            and here.player in NEAR_TEAM
+            and here.frame != self.stroke_for
+        ):
+            self._ask(here, lead=False)
+            return
+        self._ask_next(after=self.frame if self.stroke_for is None else self.stroke_for)
+
+    def _ask_next(self, after: int) -> None:
+        missing = [event for event in self._near_team_impacts() if event.stroke is None]
+        later = [event for event in missing if event.frame > after]
+        if not missing:
+            self.stroke_for = None
+            self.message = "Every near-team hit has a stroke"
+            return
+        self._ask((later or missing)[0])
+
+    def _ask(self, impact: BallEvent, lead: bool = True) -> None:
+        """Ask for this impact's stroke, from just before it unless ``lead`` is off."""
+        if lead:
+            start = self.labels.segment_at(impact.frame).start
+            before = round(STROKE_LEAD_SECONDS * self.labels.fps)
+            self.go_to(max(start, impact.frame - before))
+        self.stroke_for = impact.frame
+        now = f" (now {impact.stroke.replace('_', ' ')})" if impact.stroke else ""
+        self.message = (
+            f"Stroke of P{impact.player}'s hit at frame {impact.frame}{now}? "
+            "Play it (space), then press its key"
+        )
+
+    def _set_stroke(self, stroke: str) -> None:
+        impact = self._impact_at(self.stroke_for)
+        if impact is None:
+            self.message = f"The hit at frame {self.stroke_for} is gone"
+            self.stroke_for = None
+            return
+        self._edit()
+        impact.stroke = stroke
+        done = (
+            f"{stroke.replace('_', ' ')} for P{impact.player} at frame {impact.frame}"
+        )
+        self._ask_next(after=impact.frame)
+        self.message = f"{done}. {self.message}"
+
+    def _clear_stroke(self) -> None:
+        impact = self._impact_at(self.stroke_for)
+        if impact is None or impact.stroke is None:
+            self.message = "This hit has no stroke to clear"
+            return
+        self._edit()
+        impact.stroke = None
+        self.message = f"Stroke cleared for the hit at frame {impact.frame}"
 
     def _start_court(self) -> None:
         """Mark the court: click or skip (x) each landmark asked for, then save (k).
@@ -309,6 +463,7 @@ class LabelSession:
         if not self._labelling():
             return
         self.pending = None
+        self.stroke_for = None
         self.court_clicks = {}
         self.court_step = 0
         self.message = _court_prompt(0, 0)
@@ -512,7 +667,11 @@ class LabelSession:
             for event in segment.events
             if not (event.kind == "impact" and event.frame == self.frame)
         ]
-        segment.events.append(BallEvent("impact", self.frame, player=player))
+        # A new hitter keeps the stroke: it was labelled by watching the hit.
+        stroke = here[0].stroke if here else None
+        segment.events.append(
+            BallEvent("impact", self.frame, player=player, stroke=stroke)
+        )
         self.message = (
             f"Impact by player {player} at frame {self.frame}" + self._outside_rally()
         )
