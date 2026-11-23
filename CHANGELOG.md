@@ -4,7 +4,7 @@
 
 ### Labelling
 
-- label the stroke of each near-team hit: `t` goes from hit to hit, half a second before each so the swing can be played, and one key sets the stroke; 14 strokes (serve; forehand, backhand; their volleys; bandeja, víbora, smash, rulo, bajada; lob; drop shot; contrapared; unsure) in 7 groups, so the detailed stroke is labelled once and a first model can learn the groups; labels schema 4, and older files load without strokes (#80)
+- label the stroke of each near-team hit: `t` goes from hit to hit, half a second before each so the swing can be played, and one key sets the stroke; 14 strokes (serve; forehand, backhand; their volleys; bandeja, víbora, smash, rulo, bajada; lob; drop shot; glass; unsure) in 7 groups, so the detailed stroke is labelled once and a first model can learn the groups; labels schema 4, and older files load without strokes (#80)
 - open the label tool at any frame with `--frame`, to go straight back to an event that needs fixing
 - changing the hitter of an impact needs a second press of the number, so a number meant for a box that wasn't selected can't change a hit (#93)
 - mark the court from any four or more landmarks the camera sees, so a phone on the back glass, where the near service line runs off the picture, can be marked; with five or more the court is fit to all of them and each click shows its distance from the fit in pixels; `u` steps back one click while marking; `k` then `p` copies the court from an earlier segment; labels schema 3 names the landmarks, and older files load unchanged (#90)

@@ -148,7 +148,7 @@ jumping 10 frames. `t` skips a hit; `t` on a hit's own frame changes its stroke;
 | `p` | bajada | overhead | attacking a high ball as it comes down off the back glass |
 | `l` | lob | lob | a high ball over the players at the net |
 | `o` | drop shot | soft | a soft ball that dies just over the net |
-| `w` | contrapared | other | hit into your own glass so the ball goes back over the net |
+| `g` | glass | other | hit backwards into your own glass so it goes back over the net |
 | `z` | unsure | other | the stroke can't be told, or the hit is hidden |
 
 ### Checking labels
