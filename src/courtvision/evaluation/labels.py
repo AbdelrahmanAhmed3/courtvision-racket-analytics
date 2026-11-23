@@ -40,7 +40,7 @@ STROKE_GROUPS = {
     "bajada": "overhead",
     "lob": "lob",
     "drop_shot": "soft",
-    "contrapared": "other",
+    "glass": "other",
     "unsure": "other",
 }
 SEGMENT_STATUSES = ("unreviewed", "label", "skip")
