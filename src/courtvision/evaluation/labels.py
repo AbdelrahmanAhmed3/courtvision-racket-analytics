@@ -40,7 +40,6 @@ STROKE_GROUPS = {
     "bajada": "overhead",
     "lob": "lob",
     "drop_shot": "soft",
-    "chiquita": "soft",
     "contrapared": "other",
     "unsure": "other",
 }
