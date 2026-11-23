@@ -214,10 +214,11 @@ which near player made it? Three rules, on the same 53 hits:
 | Ball: the nearest player among everyone tracked (the pipeline's rule) | 25 | 10 (40 %) | 19 % |
 | Ball: the nearest player on the near half | 31 | 16 (52 %) | 30 % |
 
-- **From behind, the nearest player to the ball is often the wrong one.** The
-  likely reason, not checked frame by frame: the near players' boxes are large and
-  cover much of the court behind them in the picture, so a ball near one of them in
-  the picture can be metres away.
+- **The ball rule fails through the ball.** It names no one at 28 of the 53 hits,
+  where no ball is found within ±2 frames. In the 3 hits where pose was right and
+  the ball rule named someone else, checked by eye, the tracker's "ball" was not the
+  ball (a floodlight, or a bright spot beside a far player), so the far player next
+  to it was named.
 - **Pose doesn't need the ball,** so it names a hitter even where the ball is lost.
 - **It names no one 13 times,** each time because the fastest player's track
   started after the rally start (the tracker lost and found them), so the boxes
