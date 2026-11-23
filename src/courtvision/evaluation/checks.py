@@ -25,7 +25,8 @@ def team(player: int) -> int:
 
 def describe(event: BallEvent) -> str:
     if event.kind == "impact":
-        return f"impact by P{event.player}"
+        stroke = f", {event.stroke.replace('_', ' ')}" if event.stroke else ""
+        return f"impact by P{event.player}{stroke}"
     return event.kind.replace("_", " ")
 
 

@@ -1,7 +1,8 @@
 """Hand labels for evaluating CourtVision on a source video.
 
 A source video is split into segments at camera cuts. Each labelled segment holds
-one rally: its start and end frames, every impact (with the hitter), every bounce
+one rally: its start and end frames, every impact (with the hitter, and the stroke
+for the near team), every bounce
 and wall rebound (with the ball's image position), player boxes with identities
 on every ``box_interval``-th frame, and where the court is in the image. See
 docs/evaluation.md for the file format.
@@ -17,11 +18,32 @@ from pathlib import Path
 from courtvision.evaluation.court import named_points
 
 # 2 added court points; version 1 files load without them. 3 lets the court points
-# be any named landmarks; version 2 files hold the four service-line ends.
-SCHEMA_VERSION = 3
-READABLE_SCHEMA_VERSIONS = (1, 2, 3)
+# be any named landmarks; version 2 files hold the four service-line ends. 4 adds
+# an impact's stroke; older files load without strokes.
+SCHEMA_VERSION = 4
+READABLE_SCHEMA_VERSIONS = (1, 2, 3, 4)
 PLAYER_IDS = (1, 2, 3, 4)
+NEAR_TEAM = (1, 2)  # the team nearer the camera at the rally start
 EVENT_KINDS = ("impact", "bounce", "wall_rebound")
+# Each stroke and its group: labels hold the stroke, and a first model can learn
+# the groups from them. Only the near team's strokes are labelled.
+STROKE_GROUPS = {
+    "serve": "serve",
+    "forehand": "ground_stroke",
+    "backhand": "ground_stroke",
+    "forehand_volley": "volley",
+    "backhand_volley": "volley",
+    "bandeja": "overhead",
+    "vibora": "overhead",
+    "smash": "overhead",
+    "rulo": "overhead",
+    "bajada": "overhead",
+    "lob": "lob",
+    "drop_shot": "soft",
+    "chiquita": "soft",
+    "contrapared": "other",
+    "unsure": "other",
+}
 SEGMENT_STATUSES = ("unreviewed", "label", "skip")
 # Cuts closer together than this are flashes or fades, not new camera shots.
 MIN_SEGMENT_FRAMES = 5
@@ -29,13 +51,15 @@ MIN_SEGMENT_FRAMES = 5
 
 @dataclass
 class BallEvent:
-    """An impact (player set) or a bounce or wall rebound (ball position set)."""
+    """An impact (player set, stroke optional) or a bounce or wall rebound (ball
+    position set)."""
 
     kind: str
     frame: int
     player: int | None = None
     x: float | None = None
     y: float | None = None
+    stroke: str | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in EVENT_KINDS:
@@ -44,6 +68,10 @@ class BallEvent:
             raise ValueError("An impact needs a player from 1 to 4")
         if self.kind != "impact" and (self.x is None or self.y is None):
             raise ValueError(f"A {self.kind} needs the ball's x and y")
+        if self.stroke is not None and self.kind != "impact":
+            raise ValueError(f"Only an impact has a stroke, not a {self.kind}")
+        if self.stroke is not None and self.stroke not in STROKE_GROUPS:
+            raise ValueError(f"Unknown stroke: {self.stroke}")
 
 
 @dataclass

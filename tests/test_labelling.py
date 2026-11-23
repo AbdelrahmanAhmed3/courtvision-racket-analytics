@@ -2,6 +2,7 @@ import pytest
 
 from courtvision.evaluation.checks import find_all_problems
 from courtvision.evaluation.labels import (
+    SCHEMA_VERSION,
     BallEvent,
     PlayerBox,
     VideoLabels,
@@ -303,7 +304,9 @@ def test_invalid_labels_are_rejected(tmp_path) -> None:
     path = tmp_path / "labels.json"
     save_labels(make_labels(), path)
     path.write_text(
-        path.read_text().replace('"schema_version": 3', '"schema_version": 9')
+        path.read_text().replace(
+            f'"schema_version": {SCHEMA_VERSION}', '"schema_version": 9'
+        )
     )
     with pytest.raises(ValueError, match="schema"):
         load_labels(path)

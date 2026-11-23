@@ -41,13 +41,15 @@ after every change; run the same command again to continue, with `--frame <n>` t
 open at a frame. The side panel shows a
 checklist for the current segment and frame, and every key.
 
-Label each rally in **two passes**:
+Label each rally in **two passes**, then the strokes:
 
 - **Events pass, frame by frame.** Play with `space`, pause near each shot, then step
   with `a` / `d` to the exact frame of each impact, bounce and wall rebound. Never
   place events while jumping between box frames with `g`: box frames are a second
   apart, and an impact even a few frames off cannot be scored.
 - **Boxes pass.** `g` to the next box frame, `p` to copy the players, check, `y`.
+- **Strokes pass**, once the impacts are done: `t` from hit to hit (see
+  [Strokes](#strokes)).
 
 For each segment:
 
@@ -114,6 +116,39 @@ For each segment:
    The near half then rests on one point, the near T, so check its drawn lines most
    closely. The camera stays put for the whole clip, so on each later segment press
    `k` then `p` to copy the court from the nearest earlier segment that has one.
+
+### Strokes
+
+Each hit by the near team (players 1 and 2) gets the stroke that made it. The far
+players are left out: from the back glass they are about 80 px tall, too small to
+tell a víbora from a bandeja. The detailed stroke is labelled once, and each
+belongs to a group, so a first model can learn the groups from the same labels and
+later ones split them.
+
+Press `t`: the tool goes to half a second before the next near-team hit without a
+stroke. Play it (`space`, or step with `a` / `d`), watch the swing through the hit,
+and press the stroke's key; the tool moves on to the next hit. While a stroke is
+asked for, the side panel lists the keys, and `s` and `f` set strokes instead of
+jumping 10 frames. `t` skips a hit; `t` on a hit's own frame changes its stroke;
+`x` clears it; `u` undoes it and goes back to the hit; `esc` stops.
+
+| Key | Stroke | Group | What it is |
+| --- | --- | --- | --- |
+| `s` | serve | serve | the serve, first or second |
+| `f` | forehand | ground stroke | after the bounce, on the racket side, off the glass too |
+| `b` | backhand | ground stroke | after the bounce, on the other side, off the glass too |
+| `v` | forehand volley | volley | before the bounce, below the shoulder, racket side |
+| `c` | backhand volley | volley | before the bounce, below the shoulder, other side |
+| `j` | bandeja | overhead | above the head, controlled and sliced, to keep the net |
+| `i` | víbora | overhead | above the head with a faster, whipping side-slice swing |
+| `m` | smash | overhead | a hard overhead to win the point, flat or out over the walls |
+| `r` | rulo | overhead | a smash with topspin, the racket brushing over the ball |
+| `p` | bajada | overhead | attacking a high ball as it comes down off the back glass |
+| `l` | lob | lob | a high ball over the players at the net |
+| `o` | drop shot | soft | a soft ball that dies just over the net |
+| `h` | chiquita | soft | a soft, low ball at the feet of the players at the net |
+| `w` | contrapared | other | hit into your own glass so the ball goes back over the net |
+| `z` | unsure | other | the stroke can't be told, or the hit is hidden |
 
 ### Checking labels
 
@@ -204,14 +239,14 @@ Every labelled player counts towards recall, including players outside the court
 
 ## File format
 
-Schema version 3, produced by `courtvision.evaluation.labels` (field order in saved
+Schema version 4, produced by `courtvision.evaluation.labels` (field order in saved
 files may differ; coordinates are floats). Version 1 files, without court points,
-and version 2 files, whose court points are always the four service-line ends,
-still load and are saved as version 3.
+version 2 files, whose court points are always the four service-line ends, and
+version 3 files, without strokes, still load and are saved as version 4.
 
 ```jsonc
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "video": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4",
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
@@ -223,9 +258,13 @@ still load and are saved as version 3.
       "status": "label",                    // "label", "skip" or "unreviewed"
       "rally_start": 500, "rally_end": 880,
       "events": [
-        {"kind": "impact", "frame": 512, "player": 3, "x": null, "y": null},
-        {"kind": "bounce", "frame": 530, "player": null, "x": 640.0, "y": 410.0},
-        {"kind": "wall_rebound", "frame": 545, "player": null, "x": 980.0, "y": 300.0}
+        // stroke: a near-team impact's stroke (see Strokes), or null
+        {"kind": "impact", "frame": 512, "player": 1, "x": null, "y": null,
+         "stroke": "bandeja"},
+        {"kind": "bounce", "frame": 530, "player": null, "x": 640.0, "y": 410.0,
+         "stroke": null},
+        {"kind": "wall_rebound", "frame": 545, "player": null, "x": 980.0, "y": 300.0,
+         "stroke": null}
       ],
       "boxes": {"525": [{"x1": 430.0, "y1": 245.0, "x2": 485.0, "y2": 358.0, "player": 1}]},
       "reviewed_box_frames": [525],         // box frames whose boxes are final
