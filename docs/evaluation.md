@@ -123,7 +123,9 @@ Each hit by the near team (players 1 and 2) gets the stroke that made it. The fa
 players are left out: from the back glass they are about 80 px tall, too small to
 tell a víbora from a bandeja. The detailed stroke is labelled once, and each
 belongs to a group, so a first model can learn the groups from the same labels and
-later ones split them.
+later ones split them. Label the swing you see, not what it was meant to do: a
+chiquita is a forehand, a backhand or a volley, and how soft and low the ball
+went comes from the ball track.
 
 Press `t`: the tool goes to half a second before the next near-team hit without a
 stroke. Play it (`space`, or step with `a` / `d`), watch the swing through the hit,
@@ -146,7 +148,6 @@ jumping 10 frames. `t` skips a hit; `t` on a hit's own frame changes its stroke;
 | `p` | bajada | overhead | attacking a high ball as it comes down off the back glass |
 | `l` | lob | lob | a high ball over the players at the net |
 | `o` | drop shot | soft | a soft ball that dies just over the net |
-| `h` | chiquita | soft | a soft, low ball at the feet of the players at the net |
 | `w` | contrapared | other | hit into your own glass so the ball goes back over the net |
 | `z` | unsure | other | the stroke can't be told, or the hit is hidden |
 

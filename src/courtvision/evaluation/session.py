@@ -46,7 +46,6 @@ STROKE_KEYS = (
     ("p", "bajada"),
     ("l", "lob"),
     ("o", "drop_shot"),
-    ("h", "chiquita"),
     ("w", "contrapared"),
     ("z", "unsure"),
 )
