@@ -15,6 +15,7 @@ no timestamps are needed: segments record their own frame ranges.
 | `youtube_gFl3ADnFRtc_15s.mp4` | [Daily Padel on YouTube](https://www.youtube.com/watch?v=gFl3ADnFRtc), 720p, 30 fps | 15 s, one rally at the Qatar Major (12 impacts), the README's demo clip. A test from another event: the event model never trains on it. Where the 15 s start in the video is not recorded yet |
 | `IMG_1086.MOV` | Our own recording, not published | 46 s, 1080p, 30 fps, from a phone on the near back glass; 2 rallies (15 impacts); players boxed at each rally start only |
 | `IMG_1089.MOV` | Our own recording, not published | 7.7 min, same court, phone on the back glass again; 17 rallies (87 impacts); players boxed at each rally start only. The phone moved a few pixels during the clip, so each rally has its own court |
+| `IMG_1099.MOV` | Our own recording, not published | 1.3 min, 1080p, 30 fps, from higher behind the near baseline, a coach standing in front of the camera; 4 rallies (23 impacts, all with strokes, far players' too); players boxed at each rally start only. The coach hides the near service box, so 3 serve bounces are labelled out of sight |
 
 Download a video into `data/raw/` (ignored by git), for example:
 
