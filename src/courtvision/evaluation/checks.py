@@ -68,7 +68,7 @@ def find_problems(labels: VideoLabels, segment: Segment) -> list[Problem]:
                 )
             )
         between = [e for e in events if first.frame < e.frame < second.frame]
-        bounces = [event for event in between if event.kind == "bounce"]
+        bounces = [e for e in between if e.kind in ("bounce", "hidden_bounce")]
         if serve_expected and first.frame == start and not bounces:
             problems.append(
                 Problem(second.frame, "The serve was returned before it bounced")

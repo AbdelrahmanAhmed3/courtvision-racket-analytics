@@ -71,7 +71,10 @@ For each segment:
    change the hitter of an impact already there, press the new number twice: one
    press never changes it, so a number meant for a box cannot.
 4. **Bounces** (`b`, then click the ball): the frame the ball touches the floor,
-   including the serve's bounce in the service box.
+   including the serve's bounce in the service box. If a bounce is out of sight,
+   behind someone or below the picture, step to about where it happens and press
+   `b` twice: a bounce out of sight has no position, so the rules checks count it
+   but nothing is scored against it.
    **Wall rebounds** (`w`, then click): the frame it touches glass or mesh, whether
    play goes on or the point ends there. Label what happens, not whether it was
    legal. The net, a player's body and a ball leaving over the walls are not wall
@@ -121,14 +124,15 @@ For each segment:
 ### Strokes
 
 Each hit by the near team (players 1 and 2) gets the stroke that made it. The far
-players are left out: from the back glass they are about 80 px tall, too small to
-tell a víbora from a bandeja. The detailed stroke is labelled once, and each
-belongs to a group, so a first model can learn the groups from the same labels and
-later ones split them. Label the swing you see, not what it was meant to do: a
-chiquita is a forehand, a backhand or a volley, and how soft and low the ball
-went comes from the ball track.
+players are left out by default: from the back glass they are about 80 px tall,
+too small to tell a víbora from a bandeja. On a clip where they are clear enough,
+run with `--far-strokes` and `t` asks for every player's hits. The detailed stroke
+is labelled once, and each belongs to a group, so a first model can learn the
+groups from the same labels and later ones split them. Label the swing you see,
+not what it was meant to do: a chiquita is a forehand, a backhand or a volley, and
+how soft and low the ball went comes from the ball track.
 
-Press `t`: the tool goes to half a second before the next near-team hit without a
+Press `t`: the tool goes to half a second before the next hit without a
 stroke. Play it (`space`, or step with `a` / `d`), watch the swing through the hit,
 and press the stroke's key; the tool moves on to the next hit. While a stroke is
 asked for, the side panel lists the keys, and `s` and `f` set strokes instead of
@@ -241,14 +245,15 @@ Every labelled player counts towards recall, including players outside the court
 
 ## File format
 
-Schema version 4, produced by `courtvision.evaluation.labels` (field order in saved
+Schema version 5, produced by `courtvision.evaluation.labels` (field order in saved
 files may differ; coordinates are floats). Version 1 files, without court points,
 version 2 files, whose court points are always the four service-line ends, and
-version 3 files, without strokes, still load and are saved as version 4.
+version 3 files, without strokes, and version 4 files, without bounces out of
+sight, still load and are saved as version 5.
 
 ```jsonc
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "video": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4",
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
@@ -266,6 +271,9 @@ version 3 files, without strokes, still load and are saved as version 4.
         {"kind": "bounce", "frame": 530, "player": null, "x": 640.0, "y": 410.0,
          "stroke": null},
         {"kind": "wall_rebound", "frame": 545, "player": null, "x": 980.0, "y": 300.0,
+         "stroke": null},
+        // a bounce out of sight: a frame, no position
+        {"kind": "hidden_bounce", "frame": 560, "player": null, "x": null, "y": null,
          "stroke": null}
       ],
       "boxes": {"525": [{"x1": 430.0, "y1": 245.0, "x2": 485.0, "y2": 358.0, "player": 1}]},

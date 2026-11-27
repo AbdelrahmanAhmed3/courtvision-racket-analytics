@@ -16,7 +16,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 from courtvision.analytics.shots import ShotEvent
-from courtvision.evaluation.labels import EVENT_KINDS, VideoLabels
+from courtvision.evaluation.labels import SCORED_KINDS, VideoLabels
 
 DEFAULT_TOLERANCE_FRAMES = 2
 
@@ -86,7 +86,7 @@ def score_events(
     by the tolerance, so a prediction just before the serve still counts.
     """
     scores = {}
-    for kind in EVENT_KINDS:
+    for kind in SCORED_KINDS:
         hits = predicted = labelled = 0
         frame_errors: list[int] = []
         for segment in labels.segments:
@@ -140,7 +140,7 @@ def load_predictions(path: str | Path) -> list[PredictedEvent]:
     events = [
         PredictedEvent(item["kind"], int(item["frame"])) for item in data["events"]
     ]
-    unknown = {event.kind for event in events} - set(EVENT_KINDS)
+    unknown = {event.kind for event in events} - set(SCORED_KINDS)
     if unknown:
         raise ValueError(f"Unknown event kinds in predictions: {sorted(unknown)}")
     return events

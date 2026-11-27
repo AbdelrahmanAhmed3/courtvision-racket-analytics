@@ -31,6 +31,8 @@ from courtvision.evaluation.court import (  # noqa: E402
 )
 from courtvision.evaluation.cuts import detect_cuts  # noqa: E402
 from courtvision.evaluation.labels import (  # noqa: E402
+    NEAR_TEAM,
+    PLAYER_IDS,
     VideoLabels,
     load_labels,
     save_labels,
@@ -81,6 +83,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=900,
         help="Video height in the window, for videos filmed upright.",
+    )
+    parser.add_argument(
+        "--far-strokes",
+        action="store_true",
+        help="t asks for the far team's strokes too, on clips where they are clear.",
     )
     parser.add_argument("--rfdetr-size", default="nano")
     parser.add_argument(
@@ -268,7 +275,11 @@ def main() -> None:
 
     reader = FrameReader(args.input)
     proposer = None if args.no_prefill else BoxProposer(args.rfdetr_size)
-    session = LabelSession(labels, frame=args.frame)
+    session = LabelSession(
+        labels,
+        frame=args.frame,
+        stroke_players=PLAYER_IDS if args.far_strokes else NEAR_TEAM,
+    )
     scale = min(
         1.0,
         (args.max_width - PANEL_WIDTH) / labels.width,

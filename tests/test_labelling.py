@@ -586,3 +586,30 @@ def test_a_clip_of_one_session_is_boxed_only_at_each_rally_start(tmp_path) -> No
 
     assert find_all_problems(load_labels(path)) == []
     assert load_labels(path).box_interval is None
+
+
+def test_a_bounce_out_of_sight_is_b_twice_and_counts_for_the_rules() -> None:
+    from courtvision.evaluation.scoring import score_events
+
+    session = labelled_session(frame=10)
+    session.key("r")
+    session.key("1")  # P1 serves at 10
+    session.go_to(40)
+    session.key("3")  # returned, with no bounce seen in between
+    assert (40, "The serve was returned before it bounced") in problems_in(session)
+
+    session.go_to(25)
+    session.key("b")
+    assert "press b again if it is out of sight" in session.message
+    session.key("b")
+
+    assert BallEvent("hidden_bounce", 25) in session.segment.events
+    assert (40, "The serve was returned before it bounced") not in problems_in(session)
+    # Nothing can see it, so nothing is scored against it.
+    assert score_events(session.labels, [])["bounce"].labelled == 0
+    assert "hidden_bounce" not in score_events(session.labels, [])
+
+
+def test_a_bounce_out_of_sight_has_no_position() -> None:
+    with pytest.raises(ValueError, match="no ball position"):
+        BallEvent("hidden_bounce", 25, x=600.0, y=400.0)
