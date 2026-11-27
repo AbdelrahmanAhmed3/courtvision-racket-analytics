@@ -76,6 +76,12 @@ def parse_args() -> argparse.Namespace:
         "clip of one session (new labels files only).",
     )
     parser.add_argument("--max-width", type=int, default=1400, help="Window width.")
+    parser.add_argument(
+        "--max-height",
+        type=int,
+        default=900,
+        help="Video height in the window, for videos filmed upright.",
+    )
     parser.add_argument("--rfdetr-size", default="nano")
     parser.add_argument(
         "--no-prefill", action="store_true", help="Do not propose boxes with RF-DETR."
@@ -263,7 +269,11 @@ def main() -> None:
     reader = FrameReader(args.input)
     proposer = None if args.no_prefill else BoxProposer(args.rfdetr_size)
     session = LabelSession(labels, frame=args.frame)
-    scale = min(1.0, (args.max_width - PANEL_WIDTH) / labels.width)
+    scale = min(
+        1.0,
+        (args.max_width - PANEL_WIDTH) / labels.width,
+        args.max_height / labels.height,
+    )
     mouse = {"down": None, "events": []}
 
     def on_mouse(event, x, y, _flags, _param):

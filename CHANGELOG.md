@@ -4,6 +4,7 @@
 
 ### Labelling
 
+- a video filmed upright fits the label window: `--max-height` caps the video's height in it, 900 px by default
 - label the stroke of each near-team hit: `t` goes from hit to hit, half a second before each so the swing can be played, and one key sets the stroke; 14 strokes (serve; forehand, backhand; their volleys; bandeja, víbora, smash, rulo, bajada; lob; drop shot; glass; unsure) in 7 groups, so the detailed stroke is labelled once and a first model can learn the groups; labels schema 4, and older files load without strokes (#80)
 - open the label tool at any frame with `--frame`, to go straight back to an event that needs fixing
 - changing the hitter of an impact needs a second press of the number, so a number meant for a box that wasn't selected can't change a hit (#93)
