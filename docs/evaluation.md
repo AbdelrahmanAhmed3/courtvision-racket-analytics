@@ -38,7 +38,8 @@ enough to tell who is who, since each person keeps one number for the whole clip
 
 The first run finds camera cuts and splits the video into **segments**. Labels save
 after every change; run the same command again to continue, with `--frame <n>` to
-open at a frame. The side panel shows a
+open at a frame, and with `--max-height` to fit a video filmed upright on a
+smaller screen (900 px by default). The side panel shows a
 checklist for the current segment and frame, and every key.
 
 Label each rally in **two passes**, then the strokes:
