@@ -19,12 +19,16 @@ from courtvision.evaluation.court import named_points
 
 # 2 added court points; version 1 files load without them. 3 lets the court points
 # be any named landmarks; version 2 files hold the four service-line ends. 4 adds
-# an impact's stroke; older files load without strokes.
-SCHEMA_VERSION = 4
-READABLE_SCHEMA_VERSIONS = (1, 2, 3, 4)
+# an impact's stroke; older files load without strokes. 5 adds bounces out of sight.
+SCHEMA_VERSION = 5
+READABLE_SCHEMA_VERSIONS = (1, 2, 3, 4, 5)
 PLAYER_IDS = (1, 2, 3, 4)
 NEAR_TEAM = (1, 2)  # the team nearer the camera at the rally start
-EVENT_KINDS = ("impact", "bounce", "wall_rebound")
+# Events a prediction can be scored against.
+SCORED_KINDS = ("impact", "bounce", "wall_rebound")
+# A bounce out of sight (behind someone, or below the picture) has a frame but no
+# position: the rules checks count it, and nothing is scored against it.
+EVENT_KINDS = (*SCORED_KINDS, "hidden_bounce")
 # Each stroke and its group: labels hold the stroke, and a first model can learn
 # the groups from them. Only the near team's strokes are labelled.
 STROKE_GROUPS = {
@@ -50,8 +54,8 @@ MIN_SEGMENT_FRAMES = 5
 
 @dataclass
 class BallEvent:
-    """An impact (player set, stroke optional) or a bounce or wall rebound (ball
-    position set)."""
+    """An impact (player set, stroke optional), a bounce or wall rebound (ball
+    position set), or a bounce out of sight (frame only)."""
 
     kind: str
     frame: int
@@ -65,8 +69,11 @@ class BallEvent:
             raise ValueError(f"Unknown event kind: {self.kind}")
         if self.kind == "impact" and self.player not in PLAYER_IDS:
             raise ValueError("An impact needs a player from 1 to 4")
-        if self.kind != "impact" and (self.x is None or self.y is None):
+        seen = self.kind in ("bounce", "wall_rebound")
+        if seen and (self.x is None or self.y is None):
             raise ValueError(f"A {self.kind} needs the ball's x and y")
+        if not seen and (self.x is not None or self.y is not None):
+            raise ValueError(f"A {self.kind} has no ball position")
         if self.stroke is not None and self.kind != "impact":
             raise ValueError(f"Only an impact has a stroke, not a {self.kind}")
         if self.stroke is not None and self.stroke not in STROKE_GROUPS:

@@ -76,8 +76,9 @@ KEY_HELP = (
     ("c / m", "cut here / merge with previous segment"),
     ("r / e", "rally starts / ends here"),
     ("1-4", "impact by player (or assign box)"),
-    ("t", "stroke of each hit by player 1 or 2"),
+    ("t", "stroke of each hit, one after another"),
     ("b / w", "bounce / wall rebound, then click ball"),
+    ("b, b", "bounce out of sight, on this frame"),
     ("k", "court: click, x skips, u back, k saves"),
     ("k, p", "court: copy from an earlier segment"),
     ("click box", "select; drag: draw or resize selected"),
@@ -97,8 +98,14 @@ class ChecklistItem:
 
 
 class LabelSession:
-    def __init__(self, labels: VideoLabels, frame: int = 0) -> None:
+    def __init__(
+        self,
+        labels: VideoLabels,
+        frame: int = 0,
+        stroke_players: tuple[int, ...] = NEAR_TEAM,
+    ) -> None:
         self.labels = labels
+        self.stroke_players = stroke_players  # whose hits t asks strokes for
         self.frame = 0
         self.pending: str | None = None  # "bounce" or "wall_rebound" awaiting a click
         self.court_clicks: dict[str, list[float]] | None = None  # while marking
@@ -265,12 +272,12 @@ class LabelSession:
                 segment.status != "unreviewed",
             )
         ]
-        near = self._near_team_impacts()
-        if near:
-            stroked = sum(event.stroke is not None for event in near)
+        hits = self._stroke_impacts()
+        if hits:
+            stroked = sum(event.stroke is not None for event in hits)
             items.append(
                 ChecklistItem(
-                    f"Strokes: {stroked} of {len(near)} near-team hits (t)", None
+                    f"Strokes: {stroked} of {len(hits)} {self._whose()}hits (t)", None
                 )
             )
         asked = self._impact_at(self.stroke_for)
@@ -286,6 +293,7 @@ class LabelSession:
             return items
         events_here = [event for event in segment.events if event.frame == self.frame]
         impacts = [event for event in segment.events if event.kind == "impact"]
+        hidden = sum(event.kind == "hidden_bounce" for event in segment.events)
         items += [
             ChecklistItem("Rally start marked (r)", segment.rally_start is not None),
             ChecklistItem("Rally end marked (e)", segment.rally_end is not None),
@@ -293,8 +301,9 @@ class LabelSession:
             *_court_fit_items(segment),
             ChecklistItem(
                 f"Impacts {len(impacts)}, bounces "
-                f"{sum(event.kind == 'bounce' for event in segment.events)}, "
-                f"wall rebounds "
+                f"{sum(event.kind == 'bounce' for event in segment.events)}"
+                + (f" (+{hidden} out of sight)" if hidden else "")
+                + ", wall rebounds "
                 f"{sum(event.kind == 'wall_rebound' for event in segment.events)}",
                 None,
             ),
@@ -382,26 +391,29 @@ class LabelSession:
             (e for e in events if e.kind == "impact" and e.frame == frame), None
         )
 
-    def _near_team_impacts(self) -> list[BallEvent]:
-        """Impacts by players 1 and 2 in labelled segments, in frame order."""
+    def _whose(self) -> str:
+        return "near-team " if self.stroke_players == NEAR_TEAM else ""
+
+    def _stroke_impacts(self) -> list[BallEvent]:
+        """Impacts in labelled segments that t asks strokes for, in frame order."""
         return sorted(
             (
                 event
                 for segment in self.labels.segments
                 if segment.status == "label"
                 for event in segment.events
-                if event.kind == "impact" and event.player in NEAR_TEAM
+                if event.kind == "impact" and event.player in self.stroke_players
             ),
             key=lambda event: event.frame,
         )
 
     def _ask_for_stroke(self) -> None:
-        """Ask for the stroke of the near-team hit on this frame, if not asked
-        already, else of the next hit without one."""
+        """Ask for the stroke of the hit on this frame, if not asked already, else
+        of the next hit without one."""
         here = self._impact_at(self.frame)
         if (
             here is not None
-            and here.player in NEAR_TEAM
+            and here.player in self.stroke_players
             and here.frame != self.stroke_for
         ):
             self._ask(here, lead=False)
@@ -409,11 +421,11 @@ class LabelSession:
         self._ask_next(after=self.frame if self.stroke_for is None else self.stroke_for)
 
     def _ask_next(self, after: int) -> None:
-        missing = [event for event in self._near_team_impacts() if event.stroke is None]
+        missing = [event for event in self._stroke_impacts() if event.stroke is None]
         later = [event for event in missing if event.frame > after]
         if not missing:
             self.stroke_for = None
-            self.message = "Every near-team hit has a stroke"
+            self.message = f"Every {self._whose()}hit has a stroke"
             return
         self._ask((later or missing)[0])
 
@@ -630,8 +642,19 @@ class LabelSession:
     def _await_click(self, kind: str) -> None:
         if not self._labelling():
             return
+        if kind == "bounce" and self.pending == "bounce":
+            # b twice: the ball bounced on this frame, out of sight.
+            self.pending = None
+            self._edit()
+            self.segment.events.append(BallEvent("hidden_bounce", self.frame))
+            self.message = (
+                f"Bounce out of sight at frame {self.frame}" + self._outside_rally()
+            )
+            return
         self.pending = kind
         self.message = f"Click the ball for the {kind.replace('_', ' ')}"
+        if kind == "bounce":
+            self.message += ", or press b again if it is out of sight"
 
     def _number(self, player: int) -> None:
         if self.selected is not None:

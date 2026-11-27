@@ -164,3 +164,15 @@ def test_every_stroke_has_one_key_that_leaves_frame_stepping_free() -> None:
     assert sorted(stroke for _, stroke in STROKE_KEYS) == sorted(STROKE_GROUPS)
     assert len(set(keys)) == len(keys)
     assert not set(keys) & {"a", "d", "t", "x", "u", "esc", "space", "1", "2"}
+
+
+def test_far_strokes_asks_for_every_players_hits() -> None:
+    labels = near_team_hits().labels
+    session = LabelSession(labels, stroke_players=(1, 2, 3, 4))
+
+    session.key("t")
+    session.key("f")
+
+    assert session.stroke_for == 50  # the far player's hit is asked for too
+    texts = [item.text for item in session.checklist()]
+    assert "Strokes: 1 of 4 hits (t)" in texts

@@ -4,6 +4,8 @@
 
 ### Labelling
 
+- a bounce out of sight, behind someone or below the picture, is `b` twice: it has a frame and no position, so the rules checks count it (a serve then bounced) but nothing is scored against it; labels schema 5
+- `--far-strokes`: `t` asks for every player's strokes, on clips where the far players are clear enough
 - a video filmed upright fits the label window: `--max-height` caps the video's height in it, 900 px by default
 - label the stroke of each near-team hit: `t` goes from hit to hit, half a second before each so the swing can be played, and one key sets the stroke; 14 strokes (serve; forehand, backhand; their volleys; bandeja, víbora, smash, rulo, bajada; lob; drop shot; glass; unsure) in 7 groups, so the detailed stroke is labelled once and a first model can learn the groups; labels schema 4, and older files load without strokes (#80)
 - open the label tool at any frame with `--frame`, to go straight back to an event that needs fixing
