@@ -6,6 +6,7 @@
  "height": 1080,
  "frame_count": 2323,
  "box_interval": null,
+ "coach_feeds": true,
  "segments": [
   {
    "start": 0,
@@ -20,7 +21,7 @@
      "player": 1,
      "x": null,
      "y": null,
-     "stroke": "serve"
+     "stroke": "bajada"
     },
     {
      "kind": "impact",
@@ -28,7 +29,7 @@
      "player": 3,
      "x": null,
      "y": null,
-     "stroke": "serve"
+     "stroke": "forehand_volley"
     },
     {
      "kind": "bounce",
@@ -52,7 +53,7 @@
      "player": 3,
      "x": null,
      "y": null,
-     "stroke": "serve"
+     "stroke": "bandeja"
     },
     {
      "kind": "impact",
@@ -76,7 +77,7 @@
      "player": 4,
      "x": null,
      "y": null,
-     "stroke": "serve"
+     "stroke": "lob"
     },
     {
      "kind": "impact",
@@ -252,7 +253,7 @@
      "player": 3,
      "x": null,
      "y": null,
-     "stroke": "serve"
+     "stroke": "backhand"
     },
     {
      "kind": "impact",
@@ -260,7 +261,7 @@
      "player": 3,
      "x": null,
      "y": null,
-     "stroke": "serve"
+     "stroke": "forehand"
     }
    ],
    "boxes": {
@@ -360,7 +361,7 @@
      "player": 3,
      "x": null,
      "y": null,
-     "stroke": "backhand"
+     "stroke": "bandeja"
     },
     {
      "kind": "bounce",
@@ -376,7 +377,7 @@
      "player": 4,
      "x": null,
      "y": null,
-     "stroke": "backhand"
+     "stroke": "lob"
     },
     {
      "kind": "impact",
@@ -688,5 +689,5 @@
    "court_points": null
   }
  ],
- "schema_version": 5
+ "schema_version": 6
 }

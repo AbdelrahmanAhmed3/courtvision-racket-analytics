@@ -99,6 +99,22 @@ def court_estimate(points: CourtPoints) -> HomographyEstimate:
     )
 
 
+def court_half(
+    points: CourtPoints, x: float, y: float, margin: float = 0.0
+) -> int | None:
+    """0 if image point (x, y) on the floor is in the near half, 1 if the far.
+
+    None if it is within ``margin`` of the net, as a share of the court's
+    length, where a click a few pixels off could put it on either side.
+    """
+    estimate = court_estimate(points)
+    point = np.float32([[[x, y]]])
+    _, court_y = cv2.perspectiveTransform(point, estimate.image_to_template)[0, 0]
+    if abs(court_y - 0.5) < margin:
+        return None
+    return 0 if court_y > 0.5 else 1
+
+
 def court_residuals(points: CourtPoints) -> dict[str, float]:
     """How far each click is from where the fitted court puts its landmark, in pixels.
 

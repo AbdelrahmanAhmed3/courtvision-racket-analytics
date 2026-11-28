@@ -15,7 +15,7 @@ no timestamps are needed: segments record their own frame ranges.
 | `youtube_gFl3ADnFRtc_15s.mp4` | [Daily Padel on YouTube](https://www.youtube.com/watch?v=gFl3ADnFRtc), 720p, 30 fps | 15 s, one rally at the Qatar Major (12 impacts), the README's demo clip. A test from another event: the event model never trains on it. Where the 15 s start in the video is not recorded yet |
 | `IMG_1086.MOV` | Our own recording, not published | 46 s, 1080p, 30 fps, from a phone on the near back glass; 2 rallies (15 impacts); players boxed at each rally start only |
 | `IMG_1089.MOV` | Our own recording, not published | 7.7 min, same court, phone on the back glass again; 17 rallies (87 impacts); players boxed at each rally start only. The phone moved a few pixels during the clip, so each rally has its own court |
-| `IMG_1099.MOV` | Our own recording, not published | 1.3 min, 1080p, 30 fps, from higher behind the near baseline, a coach standing in front of the camera; 4 rallies (23 impacts, all with strokes, far players' too); players boxed at each rally start only. The coach hides the near service box, so 3 serve bounces are labelled out of sight |
+| `IMG_1099.MOV` | Our own recording, not published | 1.3 min, 1080p, 30 fps, from higher behind the near baseline, a coach standing in front of the camera; 4 rallies (23 impacts, all with strokes, far players' too); players boxed at each rally start only. The coach feeds the first ball of every rally (`coach_feeds`), so no rally starts with a serve; bounces he hides are labelled out of sight |
 
 Download a video into `data/raw/` (ignored by git), for example:
 
@@ -140,6 +140,10 @@ asked for, the side panel lists the keys, and `s` and `f` set strokes instead of
 jumping 10 frames. `t` skips a hit; `t` on a hit's own frame changes its stroke;
 `x` clears it; `u` undoes it and goes back to the hit; `esc` stops.
 
+In a clip where a coach under the camera feeds the first ball of every rally, press
+`h` once: the whole video is then marked as coach-fed, no rally is expected to start
+with a serve, and `s` is refused while a stroke is asked for.
+
 | Key | Stroke | Group | What it is |
 | --- | --- | --- | --- |
 | `s` | serve | serve | the serve, first or second |
@@ -172,7 +176,18 @@ python scripts/check_labels.py evaluation/labels/*.json
   on, one of them is not a bounce.
 - **A serve returned before it bounced**, which is never legal.
 - **An event outside the rally**, or a rally that starts mid-segment but not on the
-  serve's impact.
+  serve's impact. In a video the coach feeds (`h`), the rally isn't expected to
+  start on a serve, and a hit labelled serve is the problem instead.
+- **A hit and a bounce or wall rebound on the same frame.** The ball can't touch
+  the racket and the floor or glass at once.
+- **A stroke that doesn't fit the bounces before it:** a volley after a bounce, a
+  forehand or backhand with no bounce (or a missed bounce out of sight), a serve that
+  isn't the rally's first hit, or a far player's glass or bajada with no wall
+  rebound. The near back glass is behind the camera, so near players' rebounds
+  can't be labelled and aren't checked.
+- **A hit by the team whose side the ball didn't bounce on.** A bounce within 5% of
+  the court's length from the net (about 1 m) counts for neither side, since a click
+  a few pixels off would move it across.
 - A rally with no start or end, box frames not done, a segment not reviewed.
 
 The checks point at frames worth a second look; they cannot prove labels right.
@@ -246,20 +261,22 @@ Every labelled player counts towards recall, including players outside the court
 
 ## File format
 
-Schema version 5, produced by `courtvision.evaluation.labels` (field order in saved
+Schema version 6, produced by `courtvision.evaluation.labels` (field order in saved
 files may differ; coordinates are floats). Version 1 files, without court points,
 version 2 files, whose court points are always the four service-line ends, and
-version 3 files, without strokes, and version 4 files, without bounces out of
-sight, still load and are saved as version 5.
+version 3 files, without strokes, version 4 files, without bounces out of sight,
+and version 5 files, without `coach_feeds` (they load as served rallies), still
+load and are saved as version 6.
 
 ```jsonc
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "video": "BEST-OF-AGUSTIN-TAPIA-RED-BULL-OUT-THE-COURT.mp4",
   "source_url": "https://www.youtube.com/watch?v=ZSneXJfDqjI",
   "fps": 25.0, "width": 1280, "height": 720, "frame_count": 11244,
   "box_interval": 25,                       // box frames are multiples of this;
                                             // null: only at each rally start
+  "coach_feeds": false,                     // true: a coach feeds every rally, no serves
   "segments": [
     {
       "start": 462, "end": 915,             // frames; end is exclusive

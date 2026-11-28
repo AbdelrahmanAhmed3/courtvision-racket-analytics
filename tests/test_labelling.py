@@ -366,8 +366,8 @@ def test_a_team_hitting_twice_is_a_problem() -> None:
         session.key(str(player))
     session.key("e")
     session.go_to(20)
-    session.key("b")  # the serve bounces before the return
-    session.click(600, 400)
+    session.key("b")  # the serve bounces in the far service box before the return
+    session.click(600, 270)
     mark_court(session)
     assert problems_in(session) == [(25, "Boxes not done"), (50, "Boxes not done")]
 

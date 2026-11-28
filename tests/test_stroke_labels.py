@@ -176,3 +176,24 @@ def test_far_strokes_asks_for_every_players_hits() -> None:
     assert session.stroke_for == 50  # the far player's hit is asked for too
     texts = [item.text for item in session.checklist()]
     assert "Strokes: 1 of 4 hits (t)" in texts
+
+
+def test_h_marks_a_video_the_coach_feeds_and_t_then_refuses_a_serve(tmp_path) -> None:
+    session = near_team_hits()
+    session.key("h")
+    assert session.labels.coach_feeds
+    path = tmp_path / "labels.json"
+    save_labels(session.labels, path)
+    assert load_labels(path).coach_feeds
+
+    session.key("t")
+    session.key("s")  # serve
+    assert stroke_at(session, 30) is None
+    assert session.stroke_for == 30
+    assert "No serves" in session.message
+    session.key("f")
+    assert stroke_at(session, 30) == "forehand"
+
+    session.key("esc")
+    session.key("h")
+    assert not session.labels.coach_feeds

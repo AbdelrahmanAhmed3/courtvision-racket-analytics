@@ -4,6 +4,8 @@
 
 ### Labelling
 
+- the rules checks now test each stroke against the ball: a volley after a bounce, a forehand or backhand with no bounce, a serve that isn't the rally's first hit, a far player's glass or bajada with no wall rebound, a hit by the team whose side the ball didn't bounce on (bounces within about 1 m of the net count for neither side), and a hit on the same frame as a bounce or wall rebound; `n` steps to them and CI rejects them in committed labels
+- `h` marks a video where a coach feeds the first ball of every rally (`coach_feeds`): no serve is expected, a hit labelled serve is a problem, and `s` is refused while a stroke is asked for; labels schema 6
 - a bounce out of sight, behind someone or below the picture, is `b` twice: it has a frame and no position, so the rules checks count it (a serve then bounced) but nothing is scored against it; labels schema 5
 - `--far-strokes`: `t` asks for every player's strokes, on clips where the far players are clear enough
 - a video filmed upright fits the label window: `--max-height` caps the video's height in it, 900 px by default
