@@ -1,0 +1,1260 @@
+{
+ "video": "IMG_1102.MOV",
+ "source_url": "",
+ "fps": 29.988431540844125,
+ "width": 1080,
+ "height": 1920,
+ "frame_count": 4018,
+ "box_interval": null,
+ "coach_feeds": true,
+ "segments": [
+  {
+   "start": 0,
+   "end": 257,
+   "status": "label",
+   "rally_start": 16,
+   "rally_end": 242,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 17,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 42,
+     "player": null,
+     "x": 514.1333333333333,
+     "y": 1088.0,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 52,
+     "player": null,
+     "x": 520.5333333333333,
+     "y": 1056.0,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 65,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "impact",
+     "frame": 107,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "bandeja"
+    },
+    {
+     "kind": "bounce",
+     "frame": 130,
+     "player": null,
+     "x": 704.0,
+     "y": 1134.9333333333334,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 145,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "backhand"
+    },
+    {
+     "kind": "impact",
+     "frame": 166,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 209,
+     "player": null,
+     "x": 448.0,
+     "y": 1079.4666666666667,
+     "stroke": null
+    }
+   ],
+   "boxes": {
+    "16": [
+     {
+      "x1": 206.42481994628906,
+      "y1": 1090.8916015625,
+      "x2": 451.0193176269531,
+      "y2": 1321.0908203125,
+      "player": 1
+     },
+     {
+      "x1": 616.7696533203125,
+      "y1": 1090.379150390625,
+      "x2": 739.2796020507812,
+      "y2": 1369.1376953125,
+      "player": 2
+     },
+     {
+      "x1": 658.8761596679688,
+      "y1": 1002.67041015625,
+      "x2": 691.3299560546875,
+      "y2": 1094.385009765625,
+      "player": 4
+     },
+     {
+      "x1": 402.86810302734375,
+      "y1": 1006.9495239257812,
+      "x2": 444.59527587890625,
+      "y2": 1086.9903564453125,
+      "player": 3
+     }
+    ]
+   },
+   "reviewed_box_frames": [
+    16
+   ],
+   "court_points": {
+    "far_left_service_intersection": [
+     285.8666666666667,
+     1100.8
+    ],
+    "far_right_service_intersection": [
+     795.7333333333333,
+     1096.5333333333333
+    ],
+    "far_service_center": [
+     541.8666666666667,
+     1100.8
+    ],
+    "near_service_center": [
+     516.2666666666667,
+     1704.5333333333333
+    ],
+    "left_net_point": [
+     108.8,
+     1190.4
+    ],
+    "right_net_point": [
+     968.5333333333333,
+     1186.1333333333334
+    ],
+    "net_center": [
+     537.6,
+     1192.5333333333333
+    ],
+    "far_left_baseline_corner": [
+     326.4,
+     1077.3333333333333
+    ],
+    "far_right_baseline_corner": [
+     759.4666666666667,
+     1073.0666666666666
+    ]
+   }
+  },
+  {
+   "start": 257,
+   "end": 356,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 356,
+   "end": 1037,
+   "status": "label",
+   "rally_start": 380,
+   "rally_end": 1023,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 382,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 399,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "impact",
+     "frame": 426,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "hidden_bounce",
+     "frame": 516,
+     "player": null,
+     "x": null,
+     "y": null,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 522,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "unsure"
+    },
+    {
+     "kind": "impact",
+     "frame": 556,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "hidden_bounce",
+     "frame": 584,
+     "player": null,
+     "x": null,
+     "y": null,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 595,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "unsure"
+    },
+    {
+     "kind": "impact",
+     "frame": 626,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "forehand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 637,
+     "player": null,
+     "x": 793.6,
+     "y": 1275.7333333333333,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 653,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "impact",
+     "frame": 698,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "bandeja"
+    },
+    {
+     "kind": "bounce",
+     "frame": 715,
+     "player": null,
+     "x": 134.4,
+     "y": 1282.1333333333334,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 730,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "unsure"
+    },
+    {
+     "kind": "bounce",
+     "frame": 754,
+     "player": null,
+     "x": 409.6,
+     "y": 1117.8666666666666,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 761,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 783,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "impact",
+     "frame": 797,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "impact",
+     "frame": 819,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 833,
+     "player": null,
+     "x": 686.9333333333333,
+     "y": 1124.2666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 836,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "impact",
+     "frame": 867,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "rulo"
+    },
+    {
+     "kind": "impact",
+     "frame": 903,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "glass"
+    },
+    {
+     "kind": "bounce",
+     "frame": 944,
+     "player": null,
+     "x": 970.6666666666666,
+     "y": 1267.2,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 958,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "bounce",
+     "frame": 986,
+     "player": null,
+     "x": 768.0,
+     "y": 1158.4,
+     "stroke": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 1011,
+     "player": null,
+     "x": 733.8666666666667,
+     "y": 1143.4666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 887,
+     "player": null,
+     "x": 819.2,
+     "y": 981.3333333333334,
+     "stroke": null
+    }
+   ],
+   "boxes": {
+    "380": [
+     {
+      "x1": 205.57876586914062,
+      "y1": 1064.7060546875,
+      "x2": 318.724609375,
+      "y2": 1332.9586181640625,
+      "player": 1
+     },
+     {
+      "x1": 688.058349609375,
+      "y1": 1097.0811767578125,
+      "x2": 834.0362548828125,
+      "y2": 1359.61962890625,
+      "player": 2
+     },
+     {
+      "x1": 403.5774841308594,
+      "y1": 1007.2760009765625,
+      "x2": 436.9736328125,
+      "y2": 1094.707763671875,
+      "player": 3
+     },
+     {
+      "x1": 586.855224609375,
+      "y1": 1018.6918334960938,
+      "x2": 622.6904296875,
+      "y2": 1097.0321044921875,
+      "player": 4
+     }
+    ]
+   },
+   "reviewed_box_frames": [
+    380
+   ],
+   "court_points": {
+    "far_left_service_intersection": [
+     285.8666666666667,
+     1100.8
+    ],
+    "far_right_service_intersection": [
+     795.7333333333333,
+     1096.5333333333333
+    ],
+    "far_service_center": [
+     541.8666666666667,
+     1100.8
+    ],
+    "near_service_center": [
+     516.2666666666667,
+     1704.5333333333333
+    ],
+    "left_net_point": [
+     108.8,
+     1190.4
+    ],
+    "right_net_point": [
+     968.5333333333333,
+     1186.1333333333334
+    ],
+    "net_center": [
+     537.6,
+     1192.5333333333333
+    ],
+    "far_left_baseline_corner": [
+     326.4,
+     1077.3333333333333
+    ],
+    "far_right_baseline_corner": [
+     759.4666666666667,
+     1073.0666666666666
+    ]
+   }
+  },
+  {
+   "start": 1037,
+   "end": 2007,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 2007,
+   "end": 2233,
+   "status": "label",
+   "rally_start": 2007,
+   "rally_end": 2231,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 2008,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 2060,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "bandeja"
+    },
+    {
+     "kind": "bounce",
+     "frame": 2077,
+     "player": null,
+     "x": 610.1333333333333,
+     "y": 1147.7333333333333,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2099,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 2120,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 2144,
+     "player": null,
+     "x": 433.06666666666666,
+     "y": 1105.0666666666666,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2175,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand_volley"
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 2221,
+     "player": null,
+     "x": 428.8,
+     "y": 1011.2,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2154,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    }
+   ],
+   "boxes": {
+    "2007": [
+     {
+      "x1": 705.0299682617188,
+      "y1": 1082.34130859375,
+      "x2": 831.8024291992188,
+      "y2": 1356.7193603515625,
+      "player": 2
+     },
+     {
+      "x1": 84.44441223144531,
+      "y1": 1086.6788330078125,
+      "x2": 223.07553100585938,
+      "y2": 1374.573974609375,
+      "player": 1
+     },
+     {
+      "x1": 392.8623962402344,
+      "y1": 1009.0587768554688,
+      "x2": 425.1138000488281,
+      "y2": 1090.6295166015625,
+      "player": 3
+     },
+     {
+      "x1": 703.2196044921875,
+      "y1": 1011.0736083984375,
+      "x2": 741.3828735351562,
+      "y2": 1081.418212890625,
+      "player": 4
+     }
+    ]
+   },
+   "reviewed_box_frames": [
+    2007
+   ],
+   "court_points": {
+    "far_left_service_intersection": [
+     285.8666666666667,
+     1100.8
+    ],
+    "far_right_service_intersection": [
+     795.7333333333333,
+     1096.5333333333333
+    ],
+    "far_service_center": [
+     541.8666666666667,
+     1100.8
+    ],
+    "near_service_center": [
+     516.2666666666667,
+     1704.5333333333333
+    ],
+    "left_net_point": [
+     108.8,
+     1190.4
+    ],
+    "right_net_point": [
+     968.5333333333333,
+     1186.1333333333334
+    ],
+    "net_center": [
+     537.6,
+     1192.5333333333333
+    ],
+    "far_left_baseline_corner": [
+     326.4,
+     1077.3333333333333
+    ],
+    "far_right_baseline_corner": [
+     759.4666666666667,
+     1073.0666666666666
+    ]
+   }
+  },
+  {
+   "start": 2233,
+   "end": 2412,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 2412,
+   "end": 2606,
+   "status": "label",
+   "rally_start": 2412,
+   "rally_end": 2601,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 2417,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "backhand"
+    },
+    {
+     "kind": "impact",
+     "frame": 2439,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 2464,
+     "player": null,
+     "x": 580.2666666666667,
+     "y": 1092.2666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 2475,
+     "player": null,
+     "x": 614.4,
+     "y": 1045.3333333333333,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2487,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    }
+   ],
+   "boxes": {
+    "2412": [
+     {
+      "x1": 202.3495330810547,
+      "y1": 1063.758544921875,
+      "x2": 272.63385009765625,
+      "y2": 1338.4630126953125,
+      "player": 1
+     },
+     {
+      "x1": 670.3427124023438,
+      "y1": 1003.6437377929688,
+      "x2": 695.7938842773438,
+      "y2": 1091.4222412109375,
+      "player": 4
+     },
+     {
+      "x1": 399.585693359375,
+      "y1": 1034.3685302734375,
+      "x2": 454.4088439941406,
+      "y2": 1091.06298828125,
+      "player": 3
+     }
+    ]
+   },
+   "reviewed_box_frames": [
+    2412
+   ],
+   "court_points": {
+    "far_left_service_intersection": [
+     285.8666666666667,
+     1100.8
+    ],
+    "far_right_service_intersection": [
+     795.7333333333333,
+     1096.5333333333333
+    ],
+    "far_service_center": [
+     541.8666666666667,
+     1100.8
+    ],
+    "near_service_center": [
+     516.2666666666667,
+     1704.5333333333333
+    ],
+    "left_net_point": [
+     108.8,
+     1190.4
+    ],
+    "right_net_point": [
+     968.5333333333333,
+     1186.1333333333334
+    ],
+    "net_center": [
+     537.6,
+     1192.5333333333333
+    ],
+    "far_left_baseline_corner": [
+     326.4,
+     1077.3333333333333
+    ],
+    "far_right_baseline_corner": [
+     759.4666666666667,
+     1073.0666666666666
+    ]
+   }
+  },
+  {
+   "start": 2606,
+   "end": 2772,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 2772,
+   "end": 3177,
+   "status": "label",
+   "rally_start": 2790,
+   "rally_end": 3163,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 2790,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 2807,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand_volley"
+    },
+    {
+     "kind": "impact",
+     "frame": 2827,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "backhand"
+    },
+    {
+     "kind": "impact",
+     "frame": 2851,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 2887,
+     "player": null,
+     "x": 488.53333333333336,
+     "y": 1081.6,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 2897,
+     "player": null,
+     "x": 486.4,
+     "y": 1036.8,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 2913,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "impact",
+     "frame": 2964,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "bandeja"
+    },
+    {
+     "kind": "bounce",
+     "frame": 2992,
+     "player": null,
+     "x": 669.8666666666667,
+     "y": 1090.1333333333334,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 3005,
+     "player": null,
+     "x": 695.4666666666667,
+     "y": 1034.6666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3018,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "hidden_bounce",
+     "frame": 3089,
+     "player": null,
+     "x": null,
+     "y": null,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3097,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3139,
+     "player": null,
+     "x": 418.1333333333333,
+     "y": 1124.2666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 3160,
+     "player": null,
+     "x": 460.8,
+     "y": 1079.4666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 2817,
+     "player": null,
+     "x": 388.26666666666665,
+     "y": 1143.4666666666667,
+     "stroke": null
+    }
+   ],
+   "boxes": {
+    "2790": [
+     {
+      "x1": 602.4722290039062,
+      "y1": 1086.8460693359375,
+      "x2": 702.9555053710938,
+      "y2": 1350.13525390625,
+      "player": 2
+     },
+     {
+      "x1": 119.77424621582031,
+      "y1": 1059.98193359375,
+      "x2": 225.83888244628906,
+      "y2": 1300.9996337890625,
+      "player": 1
+     },
+     {
+      "x1": 650.3016967773438,
+      "y1": 999.7222290039062,
+      "x2": 681.1981811523438,
+      "y2": 1084.369140625,
+      "player": 4
+     },
+     {
+      "x1": 317.25244140625,
+      "y1": 1025.0567626953125,
+      "x2": 362.3292541503906,
+      "y2": 1101.6614990234375,
+      "player": 3
+     }
+    ]
+   },
+   "reviewed_box_frames": [
+    2790
+   ],
+   "court_points": {
+    "far_left_service_intersection": [
+     285.8666666666667,
+     1100.8
+    ],
+    "far_right_service_intersection": [
+     795.7333333333333,
+     1096.5333333333333
+    ],
+    "far_service_center": [
+     541.8666666666667,
+     1100.8
+    ],
+    "near_service_center": [
+     516.2666666666667,
+     1704.5333333333333
+    ],
+    "left_net_point": [
+     108.8,
+     1190.4
+    ],
+    "right_net_point": [
+     968.5333333333333,
+     1186.1333333333334
+    ],
+    "net_center": [
+     537.6,
+     1192.5333333333333
+    ],
+    "far_left_baseline_corner": [
+     326.4,
+     1077.3333333333333
+    ],
+    "far_right_baseline_corner": [
+     759.4666666666667,
+     1073.0666666666666
+    ]
+   }
+  },
+  {
+   "start": 3177,
+   "end": 3425,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  },
+  {
+   "start": 3425,
+   "end": 3833,
+   "status": "label",
+   "rally_start": 3425,
+   "rally_end": 3831,
+   "events": [
+    {
+     "kind": "impact",
+     "frame": 3425,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 3436,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3461,
+     "player": null,
+     "x": 439.46666666666664,
+     "y": 1299.2,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3466,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "smash"
+    },
+    {
+     "kind": "impact",
+     "frame": 3519,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "smash"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3535,
+     "player": null,
+     "x": 296.53333333333336,
+     "y": 1365.3333333333333,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3543,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3579,
+     "player": null,
+     "x": 654.9333333333333,
+     "y": 1094.4,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3589,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "lob"
+    },
+    {
+     "kind": "impact",
+     "frame": 3646,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "backhand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3678,
+     "player": null,
+     "x": 635.7333333333333,
+     "y": 1102.9333333333334,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3689,
+     "player": 4,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
+    },
+    {
+     "kind": "impact",
+     "frame": 3713,
+     "player": 2,
+     "x": null,
+     "y": null,
+     "stroke": "forehand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3737,
+     "player": null,
+     "x": 544.0,
+     "y": 1085.8666666666666,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 3755,
+     "player": null,
+     "x": 522.6666666666666,
+     "y": 1047.4666666666667,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3783,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand_volley"
+    },
+    {
+     "kind": "bounce",
+     "frame": 3799,
+     "player": null,
+     "x": 283.73333333333335,
+     "y": 1102.9333333333334,
+     "stroke": null
+    },
+    {
+     "kind": "wall_rebound",
+     "frame": 3801,
+     "player": null,
+     "x": 285.8666666666667,
+     "y": 1090.1333333333334,
+     "stroke": null
+    },
+    {
+     "kind": "bounce",
+     "frame": 3819,
+     "player": null,
+     "x": 407.46666666666664,
+     "y": 1088.0,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 3763,
+     "player": 3,
+     "x": null,
+     "y": null,
+     "stroke": "backhand"
+    }
+   ],
+   "boxes": {
+    "3425": [
+     {
+      "x1": 727.17333984375,
+      "y1": 1081.06005859375,
+      "x2": 814.5315551757812,
+      "y2": 1350.4217529296875,
+      "player": 2
+     },
+     {
+      "x1": 131.48391723632812,
+      "y1": 1101.4298095703125,
+      "x2": 250.40159606933594,
+      "y2": 1313.5836181640625,
+      "player": 1
+     },
+     {
+      "x1": 643.4876708984375,
+      "y1": 1009.3934936523438,
+      "x2": 682.0890502929688,
+      "y2": 1088.8834228515625,
+      "player": 4
+     },
+     {
+      "x1": 406.6335754394531,
+      "y1": 1012.1985473632812,
+      "x2": 435.8380432128906,
+      "y2": 1091.6029052734375,
+      "player": 3
+     }
+    ]
+   },
+   "reviewed_box_frames": [
+    3425
+   ],
+   "court_points": {
+    "far_left_service_intersection": [
+     285.8666666666667,
+     1100.8
+    ],
+    "far_right_service_intersection": [
+     795.7333333333333,
+     1096.5333333333333
+    ],
+    "far_service_center": [
+     541.8666666666667,
+     1100.8
+    ],
+    "near_service_center": [
+     516.2666666666667,
+     1704.5333333333333
+    ],
+    "left_net_point": [
+     108.8,
+     1190.4
+    ],
+    "right_net_point": [
+     968.5333333333333,
+     1186.1333333333334
+    ],
+    "net_center": [
+     537.6,
+     1192.5333333333333
+    ],
+    "far_left_baseline_corner": [
+     326.4,
+     1077.3333333333333
+    ],
+    "far_right_baseline_corner": [
+     759.4666666666667,
+     1073.0666666666666
+    ]
+   }
+  },
+  {
+   "start": 3833,
+   "end": 4018,
+   "status": "skip",
+   "rally_start": null,
+   "rally_end": null,
+   "events": [],
+   "boxes": {},
+   "reviewed_box_frames": [],
+   "court_points": null
+  }
+ ],
+ "schema_version": 6
+}
