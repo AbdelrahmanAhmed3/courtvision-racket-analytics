@@ -45,7 +45,8 @@ The top-down view of the court on which players and the ball are drawn in metres
 _Avoid_: minimap, radar, template
 
 **Near side** / **Far side**:
-The half of the court closer to / further from the camera.
+The half of the court closer to / further from the camera. For the labelling rules
+checks, a bounce within about 1 m of the net is on neither side.
 
 ## Players
 
@@ -74,14 +75,25 @@ The player who plays a shot / the player who plays the next shot.
 The ball touching the court floor.
 _Avoid_: rebound (reserved for Wall rebound)
 
+**Bounce out of sight**:
+A bounce hidden behind someone or below the picture, labelled with its frame only.
+The labelling rules checks count it; nothing is scored against it. In code:
+`hidden_bounce`.
+
 **Wall rebound**:
 The ball touching a glass or mesh wall (padel only). Labelled, but not detected yet:
 from the image alone it looks like a bounce (#74).
 _Avoid_: bounce
 
 **Rally**:
-The sequence of shots from a serve until the ball goes dead.
+The sequence of shots from a serve (or, in a coach-fed video, the coach's feed)
+until the ball goes dead.
 _Avoid_: point (the scoring unit, which also includes the outcome)
+
+**Coach-fed video**:
+A video where a coach under the camera feeds the first ball of every rally, so no
+rally starts with a serve. The coach is not a player. In the labels file:
+`coach_feeds`.
 
 **Point**:
 A rally together with its outcome: which team won it.

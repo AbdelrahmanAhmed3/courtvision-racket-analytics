@@ -20,8 +20,9 @@ from courtvision.evaluation.court import named_points
 # 2 added court points; version 1 files load without them. 3 lets the court points
 # be any named landmarks; version 2 files hold the four service-line ends. 4 adds
 # an impact's stroke; older files load without strokes. 5 adds bounces out of sight.
-SCHEMA_VERSION = 5
-READABLE_SCHEMA_VERSIONS = (1, 2, 3, 4, 5)
+# 6 adds coach_feeds; older files load as served rallies.
+SCHEMA_VERSION = 6
+READABLE_SCHEMA_VERSIONS = (1, 2, 3, 4, 5, 6)
 PLAYER_IDS = (1, 2, 3, 4)
 NEAR_TEAM = (1, 2)  # the team nearer the camera at the rally start
 # Events a prediction can be scored against.
@@ -29,8 +30,11 @@ SCORED_KINDS = ("impact", "bounce", "wall_rebound")
 # A bounce out of sight (behind someone, or below the picture) has a frame but no
 # position: the rules checks count it, and nothing is scored against it.
 EVENT_KINDS = (*SCORED_KINDS, "hidden_bounce")
+# The ball touching the floor, seen or not.
+BOUNCE_KINDS = ("bounce", "hidden_bounce")
 # Each stroke and its group: labels hold the stroke, and a first model can learn
-# the groups from them. Only the near team's strokes are labelled.
+# the groups from them. The near team's strokes are labelled, and with
+# --far-strokes every player's.
 STROKE_GROUPS = {
     "serve": "serve",
     "forehand": "ground_stroke",
@@ -170,6 +174,8 @@ class VideoLabels:
     height: int
     frame_count: int
     box_interval: int | None = 25  # None: boxes only at each rally start
+    # A coach under the camera feeds the first ball of every rally: no serves.
+    coach_feeds: bool = False
     segments: list[Segment] = field(default_factory=list)
     schema_version: int = SCHEMA_VERSION
 
@@ -245,7 +251,7 @@ def load_labels(path: str | Path) -> VideoLabels:
         for item in data["segments"]
     ]
     known = {"video", "source_url", "fps", "width", "height", "frame_count"}
-    known |= {"box_interval", "schema_version"}
+    known |= {"box_interval", "coach_feeds", "schema_version"}
     unknown = set(data) - known - {"segments"}
     if unknown:
         raise ValueError(f"Unknown fields in labels file: {sorted(unknown)}")

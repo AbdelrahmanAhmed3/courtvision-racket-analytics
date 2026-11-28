@@ -86,6 +86,7 @@ KEY_HELP = (
     ("p", "copy players from previous box frame"),
     ("y", "boxes done; unassigned ones removed"),
     ("n", "next problem (labels breaking a rule)"),
+    ("h", "coach feeds every rally: no serves (on / off)"),
     ("u / esc", "undo / cancel"),
     ("q", "save and quit"),
 )
@@ -192,6 +193,7 @@ class LabelSession:
             "p": self._copy_previous_players,
             "y": self._boxes_done,
             "n": self._go_to_next_problem,
+            "h": self._toggle_coach_feeds,
             "t": self._ask_for_stroke,
             "u": self._undo_last,
             "esc": self._cancel,
@@ -206,7 +208,10 @@ class LabelSession:
         if self.court_clicks is not None and key in marking:
             marking[key]()
         elif self.stroke_for is not None and key in strokes:
-            self._set_stroke(strokes[key])
+            if strokes[key] == "serve" and self.labels.coach_feeds:
+                self.message = "No serves: the coach feeds every rally (h turns it off)"
+            else:
+                self._set_stroke(strokes[key])
         elif self.stroke_for is not None and key == "x":
             self._clear_stroke()
         elif key in {"1", "2", "3", "4"}:
@@ -272,6 +277,8 @@ class LabelSession:
                 segment.status != "unreviewed",
             )
         ]
+        if self.labels.coach_feeds:
+            items.append(ChecklistItem("Coach feeds every rally: no serves (h)", None))
         hits = self._stroke_impacts()
         if hits:
             stroked = sum(event.stroke is not None for event in hits)
@@ -455,6 +462,15 @@ class LabelSession:
         )
         self._ask_next(after=impact.frame)
         self.message = f"{done}. {self.message}"
+
+    def _toggle_coach_feeds(self) -> None:
+        self._edit()
+        self.labels.coach_feeds = not self.labels.coach_feeds
+        self.message = (
+            "Coach feeds every rally: no serves expected"
+            if self.labels.coach_feeds
+            else "Rallies start with a serve"
+        )
 
     def _clear_stroke(self) -> None:
         impact = self._impact_at(self.stroke_for)
