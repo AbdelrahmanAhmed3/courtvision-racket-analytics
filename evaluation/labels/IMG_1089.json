@@ -30,112 +30,128 @@
      "frame": 1157,
      "player": null,
      "x": 637.4399999999999,
-     "y": 606.7199999999999
+     "y": 606.7199999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1172,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1194,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand_volley"
     },
     {
      "kind": "bounce",
      "frame": 1229,
      "player": null,
      "x": 825.5999999999999,
-     "y": 591.36
+     "y": 591.36,
+     "stroke": null
     },
     {
      "kind": "wall_rebound",
      "frame": 1242,
      "player": null,
      "x": 817.92,
-     "y": 549.12
+     "y": 549.12,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1254,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1331,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "vibora"
     },
     {
      "kind": "bounce",
      "frame": 1344,
      "player": null,
      "x": 743.04,
-     "y": 606.7199999999999
+     "y": 606.7199999999999,
+     "stroke": null
     },
     {
      "kind": "wall_rebound",
      "frame": 1359,
      "player": null,
      "x": 729.5999999999999,
-     "y": 535.68
+     "y": 535.68,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1377,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1433,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "bandeja"
     },
     {
      "kind": "impact",
      "frame": 1454,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 1446,
      "player": null,
      "x": 969.5999999999999,
-     "y": 614.4
+     "y": 614.4,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 1490,
      "player": null,
      "x": 696.9599999999999,
-     "y": 675.8399999999999
+     "y": 675.8399999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1515,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand"
     },
     {
      "kind": "impact",
      "frame": 1128,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     }
    ],
    "boxes": {
@@ -209,42 +225,48 @@
      "frame": 1780,
      "player": null,
      "x": 1063.6799999999998,
-     "y": 608.64
+     "y": 608.64,
+     "stroke": null
     },
     {
      "kind": "wall_rebound",
      "frame": 1794,
      "player": null,
      "x": 1098.24,
-     "y": 556.8
+     "y": 556.8,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1799,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1836,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand_volley"
     },
     {
      "kind": "bounce",
      "frame": 1857,
      "player": null,
      "x": 873.5999999999999,
-     "y": 647.04
+     "y": 647.04,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 1753,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     }
    ],
    "boxes": {
@@ -325,28 +347,32 @@
      "frame": 2139,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 2160,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "vibora"
     },
     {
      "kind": "bounce",
      "frame": 2202,
      "player": null,
      "x": 660.4799999999999,
-     "y": 604.8
+     "y": 604.8,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 2098,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     }
    ],
    "boxes": {
@@ -420,21 +446,24 @@
      "frame": 2398,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     },
     {
      "kind": "bounce",
      "frame": 2426,
      "player": null,
      "x": 1034.8799999999999,
-     "y": 600.9599999999999
+     "y": 600.9599999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 2436,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -515,28 +544,32 @@
      "frame": 2742,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     },
     {
      "kind": "bounce",
      "frame": 2768,
      "player": null,
      "x": 625.92,
-     "y": 610.56
+     "y": 610.56,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 2785,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 2845,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "smash"
     }
    ],
    "boxes": {
@@ -610,42 +643,48 @@
      "frame": 3479,
      "player": null,
      "x": 470.4,
-     "y": 906.2399999999999
+     "y": 906.2399999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 3496,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "lob"
     },
     {
      "kind": "impact",
      "frame": 3543,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 3574,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "unsure"
     },
     {
      "kind": "wall_rebound",
      "frame": 3628,
      "player": null,
      "x": 1090.56,
-     "y": 531.8399999999999
+     "y": 531.8399999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 3445,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -719,126 +758,144 @@
      "frame": 3796,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 3826,
      "player": null,
      "x": 28.799999999999997,
-     "y": 825.5999999999999
+     "y": 825.5999999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 3878,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "bajada"
     },
     {
      "kind": "wall_rebound",
      "frame": 3930,
      "player": null,
      "x": 977.28,
-     "y": 468.47999999999996
+     "y": 468.47999999999996,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 3951,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 3969,
      "player": null,
      "x": 533.76,
-     "y": 695.04
+     "y": 695.04,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 3973,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand"
     },
     {
      "kind": "impact",
      "frame": 4011,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 4030,
      "player": null,
      "x": 414.71999999999997,
-     "y": 789.1199999999999
+     "y": 789.1199999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 4061,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "lob"
     },
     {
      "kind": "impact",
      "frame": 4093,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 4118,
      "player": null,
      "x": 1115.52,
-     "y": 737.28
+     "y": 737.28,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 4139,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand"
     },
     {
      "kind": "impact",
      "frame": 4161,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 4203,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "bandeja"
     },
     {
      "kind": "impact",
      "frame": 4221,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 4253,
      "player": null,
      "x": 1344.0,
-     "y": 835.1999999999999
+     "y": 835.1999999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 4285,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "glass"
     }
    ],
    "boxes": {
@@ -912,49 +969,56 @@
      "frame": 4580,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 4608,
      "player": null,
      "x": 658.56,
-     "y": 775.68
+     "y": 775.68,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 4618,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand"
     },
     {
      "kind": "impact",
      "frame": 4657,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 4673,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "lob"
     },
     {
      "kind": "impact",
      "frame": 4733,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "wall_rebound",
      "frame": 4764,
      "player": null,
      "x": 1804.8,
-     "y": 681.5999999999999
+     "y": 681.5999999999999,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -1028,70 +1092,80 @@
      "frame": 5382,
      "player": null,
      "x": 731.52,
-     "y": 750.7199999999999
+     "y": 750.7199999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 5397,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand"
     },
     {
      "kind": "bounce",
      "frame": 5462,
      "player": null,
      "x": 512.64,
-     "y": 685.4399999999999
+     "y": 685.4399999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 5420,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 5483,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand"
     },
     {
      "kind": "impact",
      "frame": 5511,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 5569,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "lob"
     },
     {
      "kind": "impact",
      "frame": 5629,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 5669,
      "player": null,
      "x": 568.3199999999999,
-     "y": 814.0799999999999
+     "y": 814.0799999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 5354,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -1165,21 +1239,32 @@
      "frame": 6003,
      "player": 3,
      "x": null,
-     "y": null
-    },
-    {
-     "kind": "impact",
-     "frame": 6052,
-     "player": 1,
-     "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 6077,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
+    },
+    {
+     "kind": "hidden_bounce",
+     "frame": 6047,
+     "player": null,
+     "x": null,
+     "y": null,
+     "stroke": null
+    },
+    {
+     "kind": "impact",
+     "frame": 6050,
+     "player": 1,
+     "x": null,
+     "y": null,
+     "stroke": "forehand"
     }
    ],
    "boxes": {
@@ -1253,28 +1338,32 @@
      "frame": 6452,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 6485,
      "player": null,
      "x": 720.0,
-     "y": 789.1199999999999
+     "y": 789.1199999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 6502,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand"
     },
     {
      "kind": "wall_rebound",
      "frame": 6532,
      "player": null,
      "x": 539.52,
-     "y": 541.4399999999999
+     "y": 541.4399999999999,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -1348,49 +1437,56 @@
      "frame": 6795,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 6911,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 6933,
      "player": null,
      "x": 30.72,
-     "y": 771.8399999999999
+     "y": 771.8399999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 6837,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "unsure"
     },
     {
      "kind": "impact",
      "frame": 6942,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "unsure"
     },
     {
      "kind": "wall_rebound",
      "frame": 7012,
      "player": null,
      "x": 833.28,
-     "y": 504.96
+     "y": 504.96,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 7020,
      "player": null,
      "x": 831.3599999999999,
-     "y": 591.36
+     "y": 591.36,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -1457,35 +1553,40 @@
      "frame": 8254,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     },
     {
      "kind": "impact",
      "frame": 8300,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 8370,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "vibora"
     },
     {
      "kind": "impact",
      "frame": 8399,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 8458,
      "player": null,
      "x": 881.28,
-     "y": 639.3599999999999
+     "y": 639.3599999999999,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -1566,105 +1667,120 @@
      "frame": 8877,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "unsure"
     },
     {
      "kind": "bounce",
      "frame": 8908,
      "player": null,
      "x": 1065.6,
-     "y": 602.88
+     "y": 602.88,
+     "stroke": null
     },
     {
      "kind": "wall_rebound",
      "frame": 8917,
      "player": null,
      "x": 1102.08,
-     "y": 556.8
+     "y": 556.8,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 8924,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 8958,
      "player": null,
      "x": 579.8399999999999,
-     "y": 731.52
+     "y": 731.52,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 8963,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand"
     },
     {
      "kind": "impact",
      "frame": 9025,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9057,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand_volley"
     },
     {
      "kind": "impact",
      "frame": 9085,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9118,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "rulo"
     },
     {
      "kind": "bounce",
      "frame": 9143,
      "player": null,
      "x": 1019.52,
-     "y": 608.64
+     "y": 608.64,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9152,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9175,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "forehand_volley"
     },
     {
      "kind": "impact",
      "frame": 9199,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9247,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "lob"
     }
    ],
    "boxes": {
@@ -1731,28 +1847,32 @@
      "frame": 9490,
      "player": null,
      "x": 645.12,
-     "y": 593.28
+     "y": 593.28,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9502,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "bounce",
      "frame": 9529,
      "player": null,
      "x": 247.67999999999998,
-     "y": 696.9599999999999
+     "y": 696.9599999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9461,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     }
    ],
    "boxes": {
@@ -1833,35 +1953,40 @@
      "frame": 9687,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     },
     {
      "kind": "bounce",
      "frame": 9713,
      "player": null,
      "x": 831.3599999999999,
-     "y": 600.9599999999999
+     "y": 600.9599999999999,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9733,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9783,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "vibora"
     },
     {
      "kind": "wall_rebound",
      "frame": 9817,
      "player": null,
      "x": 956.16,
-     "y": 493.43999999999994
+     "y": 493.43999999999994,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -1928,98 +2053,112 @@
      "frame": 9950,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "serve"
     },
     {
      "kind": "bounce",
      "frame": 9981,
      "player": null,
      "x": 1015.68,
-     "y": 593.28
+     "y": 593.28,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 9991,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 10023,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand_volley"
     },
     {
      "kind": "impact",
      "frame": 10046,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 10067,
      "player": 2,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "backhand_volley"
     },
     {
      "kind": "bounce",
      "frame": 10093,
      "player": null,
      "x": 1092.48,
-     "y": 606.7199999999999
+     "y": 606.7199999999999,
+     "stroke": null
     },
     {
      "kind": "wall_rebound",
      "frame": 10104,
      "player": null,
      "x": 1121.28,
-     "y": 545.28
+     "y": 545.28,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 10119,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 10208,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "unsure"
     },
     {
      "kind": "impact",
      "frame": 10233,
      "player": 3,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 10276,
      "player": 1,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": "unsure"
     },
     {
      "kind": "wall_rebound",
      "frame": 10349,
      "player": null,
      "x": 1009.92,
-     "y": 495.35999999999996
+     "y": 495.35999999999996,
+     "stroke": null
     },
     {
      "kind": "impact",
      "frame": 10368,
      "player": 4,
      "x": null,
-     "y": null
+     "y": null,
+     "stroke": null
     }
    ],
    "boxes": {
@@ -2086,5 +2225,5 @@
    "court_points": null
   }
  ],
- "schema_version": 3
+ "schema_version": 5
 }

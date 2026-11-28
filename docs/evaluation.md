@@ -16,6 +16,7 @@ no timestamps are needed: segments record their own frame ranges.
 | `IMG_1086.MOV` | Our own recording, not published | 46 s, 1080p, 30 fps, from a phone on the near back glass; 2 rallies (15 impacts); players boxed at each rally start only |
 | `IMG_1089.MOV` | Our own recording, not published | 7.7 min, same court, phone on the back glass again; 17 rallies (87 impacts); players boxed at each rally start only. The phone moved a few pixels during the clip, so each rally has its own court |
 | `IMG_1099.MOV` | Our own recording, not published | 1.3 min, 1080p, 30 fps, from higher behind the near baseline, a coach standing in front of the camera; 4 rallies (23 impacts, all with strokes, far players' too); players boxed at each rally start only. The coach feeds the first ball of every rally (`coach_feeds`), so no rally starts with a serve; bounces he hides are labelled out of sight |
+| `IMG_1102.MOV` | Our own recording, not published | 2.2 min, filmed upright (1080 × 1920), 30 fps; a coach feeds every rally (`coach_feeds`); 6 rallies (51 impacts, all with strokes, far players' too); players boxed at each rally start only |
 
 Download a video into `data/raw/` (ignored by git), for example:
 
